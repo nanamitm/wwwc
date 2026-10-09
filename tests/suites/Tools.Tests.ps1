@@ -60,3 +60,50 @@ Test-Case "cancel source view while receiving shows the partial source" {
   Assert-True ($len -gt 100) "partial source is shown (length $len)"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+# Tool DLL functions of wwwc.dll registered in user.ini ([TOOLS], see WWWC/Ini.c)
+function Set-Tools($Env, [object[]]$Tools) {
+  $lines = @("[TOOLS]", "Cnt=$($Tools.Count)")
+  for ($i = 0; $i -lt $Tools.Count; $i++) {
+    $t = $Tools[$i]
+    $lines += "title-$i=$($t.Title)", "FileName-$i=$(Join-Path $Env.Bin 'wwwc.dll')", "Action-$i=$($t.Action)",
+      "MenuIndex-$i=-1", "Protocol-$i=$($t.Protocol)", "CommandLine-$i=", "func-$i=$($t.Func)", "Ctrl-$i=0", "Key-$i="
+  }
+  [IO.File]::WriteAllText((Join-Path $Env.Data "user.ini"), ($lines -join "`r`n") + "`r`n", $script:Sjis)
+}
+$CMD_TOOL = 54000    # ID_MENU_TOOL_ACTION + index (item menu)
+$CMD_WTOOL = 55000   # ID_WMENU_TOOL_ACTION + index (window menu)
+
+Test-Case "open URL tool passes the URL to the configured browser at once" {
+  $e = New-TestEnv "tool-openurl" $BinDir
+  # a "browser" that records its arguments
+  $record = Join-Path $e.Dir "opened.txt"
+  Set-Content -Path (Join-Path $e.Dir "browser.cmd") -Value "@echo %*>> `"$record`"" -Encoding ascii
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[HTTP]`r`nBrowserPath=$(Join-Path $e.Dir 'browser.cmd')`r`n", $script:Sjis)
+  Set-Tools $e @([pscustomobject]@{ Title = "open"; Action = 1; Protocol = "HTTP"; Func = "DDE_OpenURL" })
+  Set-Items $e @(ItemLine "page" "http://example.invalid/a b?x=1&y=2")
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "page"
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  Send-Command $e $CMD_TOOL
+  $opened = Wait-Until { Test-Path $record } 20
+  $seconds = $sw.Elapsed.TotalSeconds
+  Assert-True $opened "browser was started"
+  if ($opened) {
+    Assert-Equal '"http://example.invalid/a b?x=1&y=2"' (Get-Content $record -Raw).Trim() "browser argument"
+    # DDE tried four browser names (about 2 seconds each) before
+    Assert-True ($seconds -lt 4) ("browser started after {0:N1} s" -f $seconds)
+  }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
+Test-Case "removed browser info tools explain that they are not available" {
+  $e = New-TestEnv "tool-browserinfo" $BinDir
+  Set-Tools $e @([pscustomobject]@{ Title = "info"; Action = 2; Protocol = ""; Func = "GetBrowserInfo" })
+  Set-Items $e @(ItemLine "page" (Url "/target"))
+  [void](Start-Wwwc $e)
+  Send-Command $e $CMD_WTOOL
+  Assert-True (Wait-Until { (Get-Dialogs $e).Count -gt 0 } 10) "a message is shown"
+  Assert-True (-not $e.Process.HasExited) "WWWC is running"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}

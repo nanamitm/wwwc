@@ -21,7 +21,6 @@
 #include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
-#include <DDEML.H>
 #include <process.h>
 #include <time.h>
 #include <wincrypt.h>
