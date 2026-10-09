@@ -13,6 +13,8 @@ WWWC/           本体 (WWWC.exe)
 http_dll/       HTTP/FILE プロトコル DLL (wwwc.dll)
   wwwcdll.h     プラグイン (プロトコル DLL / ツール DLL) 用の公開ヘッダ
 docs/           オリジナルの readme / マニュアル / サンプル
+tests/          自動テスト (run-tests.ps1)
+.github/        GitHub Actions のワークフロー (ビルドとテスト)
 ```
 
 ## ビルド
@@ -39,6 +41,28 @@ MSBuild WWWC.sln -p:Configuration=Release -p:Platform=x64
 - HTTPS のサーバ証明書は検証します。自己署名証明書のサーバなどは、アイテムのプロパティ「オプション」タブの「証明書のエラーを無視する」で個別に許可できます (オリジナルの 1.1.3 は常に無視していました)。
 - HTTP のパスワード (アイテムの認証用、プロキシ認証用) は DPAPI (`CryptProtectData`, マシン単位) で暗号化して保存します (`DP1:` で始まる値)。以前の形式 (単純な変換) で保存されている値は、読み込み時に自動で暗号化し直します。暗号化した値は別の PC では復号できないため、データを別の PC に移した場合はパスワードを入力し直してください。また、オリジナルの 1.1.3 では読めません。
 - ポインタの切り捨てにつながる警告 (C4113, C4133, C4267, C4311, C4312) はエラーとして扱います。
+
+## テスト
+
+ビルドした `WWWC.exe` / `wwwc.dll` に対して自動テストを実行します。Python 3 と PowerShell 7 (`pwsh`) が必要です。
+
+```bat
+pwsh tests\run-tests.ps1 -BinDir x64\Release
+pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
+```
+
+- テストごとに `%TEMP%\wwwc-tests` に WWWC をコピーしてデータを用意し、ウィンドウメッセージで操作して結果を確認します。マウスやキーボードは使いませんが、WWWC のウィンドウが表示されるのでデスクトップのあるセッションで実行してください。
+- HTTP のテストはローカルのテストサーバ (`tests/server/test_server.py`、127.0.0.1 - 127.0.0.5 のみで待ち受け) を使います。外部には接続しません。
+- スイート: `Parse` (Item.dat / user.ini の読み込み)、`Http` (チェック、リダイレクト、エラー、タイムアウト、キャンセル、チェック中の終了)、`Password` (パスワードの暗号化と移行)、`Tools` (ヘッダ表示、ソース表示、タイトル取得)。
+- 失敗したテストがあると終了コード 1 を返します。
+
+## CI
+
+GitHub Actions (`.github/workflows/build.yml`) で、`main` への push と pull request ごとに 4 構成 (Debug / Release × x86 / x64) をビルドし、Release の x86 / x64 でテストを実行します。
+
+- 警告はエラーとして扱います (`-warnAsError`)。
+- ランナーに v145 (VS 2026) がない場合は v143 (VS 2022) でビルドします (ジョブの通知に表示されます)。
+- Release のバイナリはアーティファクト (`wwwc-x86` / `wwwc-x64`、14 日間保存) としてダウンロードできます。
 
 ## プラグイン (プロトコル DLL / ツール DLL) を作る場合
 
