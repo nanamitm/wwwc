@@ -69,9 +69,11 @@
 	Struct
 **************************************************************************/
 
+struct HTTPREQ;
+
 struct TPHTTP{
 	HWND hWnd;
-	HANDLE hThread;
+	struct HTTPREQ *Req;				/* 通信中のリクエスト (UIスレッドでのみ参照) */
 
 	char *SvName;						/* サーバ名 */
 	char *Path;							/* パス */
