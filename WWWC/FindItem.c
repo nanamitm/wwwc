@@ -195,22 +195,27 @@ static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		//€–Ú
 		AddFlag = FALSE;
 		if((FindInfo->ItemFlag & 1) &&
+			(*(tpTreeInfo->ItemList + i))->Title != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Title) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 2) &&
+			(*(tpTreeInfo->ItemList + i))->CheckURL != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->CheckURL) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 4) &&
+			(*(tpTreeInfo->ItemList + i))->ViewURL != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->ViewURL) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 8) &&
+			(*(tpTreeInfo->ItemList + i))->Date != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Date) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 16) &&
+			(*(tpTreeInfo->ItemList + i))->Comment != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Comment) == TRUE){
 			AddFlag = TRUE;
 		}
