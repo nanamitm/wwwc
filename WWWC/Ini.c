@@ -222,7 +222,7 @@ void GetINI(void)
 
 	profile_get_string("GENERAL", "DateFormat", "yyyy/MM/dd", DateFormat, BUFSIZE - 1, app_path);
 	profile_get_string("GENERAL", "TimeFormat", "HH:mm", TimeFormat, BUFSIZE - 1, app_path);
-	DarkModeType = profile_get_int("GENERAL", "DarkMode", 0, app_path);
+	DarkModeType = profile_get_int("GENERAL", "DarkMode", 2, app_path);
 
 	GetWindowRect(GetDesktopWindow(), &DeskTopRect);
 
