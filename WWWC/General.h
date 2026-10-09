@@ -27,11 +27,18 @@
 	Define
 **************************************************************************/
 
+#include "../version.h"
+
 #define BUFSIZE						256					// バッファサイズ
 #define MAXSIZE						32768				// バッファサイズ
 
 #define APP_NAME					"WWWC"
-#define APP_VERSION					"1.1.3"
+#define APP_VERSION					WWWC_VERSION_STR
+#ifdef _WIN64
+#define APP_PLATFORM				" (x64)"
+#else
+#define APP_PLATFORM				" (x86)"
+#endif
 #define APP_COPYRIGHT				"Copyright (C) 1996-2018 by Ohno Tomoaki. All rights reserved."
 #define APP_URL						"https://www.nakka.com/"
 #define APP_MAIL					"nakka@nakka.com"

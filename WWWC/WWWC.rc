@@ -919,9 +919,11 @@ END
 // Version
 //
 
+#include "../version.h"
+
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,1,3,0
- PRODUCTVERSION 1,1,3,0
+ FILEVERSION WWWC_VERSION_MAJOR,WWWC_VERSION_MINOR,WWWC_VERSION_PATCH,0
+ PRODUCTVERSION WWWC_VERSION_MAJOR,WWWC_VERSION_MINOR,WWWC_VERSION_PATCH,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -937,12 +939,12 @@ BEGIN
         BLOCK "041104b0"
         BEGIN
             VALUE "FileDescription", "WWWC"
-            VALUE "FileVersion", "1.1.3.0"
+            VALUE "FileVersion", WWWC_VERSION_FILE_STR
             VALUE "InternalName", "WWWC"
             VALUE "LegalCopyright", "Copyright (C) 1996-2018 by Ohno Tomoaki. All rights reserved."
             VALUE "OriginalFilename", "WWWC.exe"
             VALUE "ProductName", "WWWC"
-            VALUE "ProductVersion", "1.1.3.0"
+            VALUE "ProductVersion", WWWC_VERSION_FILE_STR
         END
     END
     BLOCK "VarFileInfo"
