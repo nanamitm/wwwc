@@ -24,6 +24,11 @@
 #define STR_COPYNAME					"コピー ～ "
 #define STR_COPYNAME_CNT				"コピー (%d) ～ "
 
+//表示テーマ
+#define STR_DARKMODE_LIGHT				"ライト"
+#define STR_DARKMODE_DARK				"ダーク"
+#define STR_DARKMODE_SYSTEM				"Windows の設定に従う"
+
 #define EMSG_PROP_TITLE					"プロパティ"
 #define EMSG_PROP						"設定できるプロパティはありません。"
 

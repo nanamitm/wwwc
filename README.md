@@ -35,6 +35,7 @@ MSBuild WWWC.sln -p:Configuration=Release -p:Platform=x64
 `WWWC.exe` と `wwwc.dll` を同じフォルダに置いて実行します。データの保存先は起動オプション `/d:"フォルダ"` で変更できます。
 
 - Windows XP はサポート対象外です (v141_xp ツールセットは使用していません)。
+- ダークモードに対応しています。オプションの「全般」タブの「表示テーマ」(ライト / ダーク / Windows の設定に従う) で切り替えます (user.ini の `[GENERAL] DarkMode` = 0 / 1 / 2、既定は 2 = Windows の設定に従う)。Windows 10 1809 以降で有効です。
 - HTTPS のサーバ証明書は検証します。自己署名証明書のサーバなどは、アイテムのプロパティ「オプション」タブの「証明書のエラーを無視する」で個別に許可できます (オリジナルの 1.1.3 は常に無視していました)。
 - ポインタの切り捨てにつながる警告 (C4113, C4133, C4267, C4311, C4312) はエラーとして扱います。
 
@@ -81,6 +82,13 @@ int CALLBACK ツール関数名(HWND hWnd, struct TPITEM **ToolItemList, int Too
 ```
 
 WWWC.exe 側の対応する関数ポインタ型は `WWWC/General.h` (`PROTOCOL_ITEM_FUNC` など) で定義しています。
+
+プラグインのダイアログ (WWWC と同じスレッドで作成されるもの) には、WWWC がダークモードを自動で適用します。リッチエディットの内容やオーナードローなど、プラグインが自分で色を決めている部分は、`SendMessage(WWWCのメインウィンドウ, WM_GETDARKMODE, 0, 0)` (TRUE ならダーク表示中、未対応の WWWC は 0) で判定して切り替えてください。
+
+## サードパーティ
+
+- [win32-darkmodelib](https://github.com/ozone10/win32-darkmodelib) (`third_party/darkmodelib`, git submodule): ダークモード表示に使用。MPL-2.0 (一部 MIT)。ライセンス本文は submodule 内の `LICENSE.md` / `LICENSE-MIT.md` / `docs/LICENSE-*.md` を参照。
+  クローン時は `git clone --recursive`、または `git submodule update --init` を実行してください。
 
 ## 注意
 

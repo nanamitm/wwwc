@@ -63,6 +63,7 @@
 #define WM_ITEMINIT					(WM_USER + 13)
 #define WM_GETUPWINDOW				(WM_USER + 14)
 #define WM_GETFINDWINDOW			(WM_USER + 15)
+#define WM_GETDARKMODE				(WM_USER + 16)
 
 #define WM_WWWC_GETINI				(WM_USER + 20)		//INIファイル処理メッセージ
 #define WM_WWWC_PUTINI				(WM_USER + 21)
@@ -693,6 +694,7 @@ LRESULT ListView_NotifyProc(HWND hWnd, LPARAM lParam);
 //ToolBar
 void ReTbButtonInfo(void);
 void CreateTB(HWND hWnd);
+void TbSetDarkBitmap(HWND hWnd);
 LRESULT ToolBar_NotifyProc(HWND hWnd, LPARAM lParam);
 void ShowTbMenu(HWND hWnd, HMENU hMenu, int cmd);
 

@@ -24,6 +24,7 @@
 #include "General.h"
 #include "OleDragDrop.h"
 #include "Profile.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -168,6 +169,7 @@ extern int EndCheckMsg;
 
 extern int AutoCheck;
 extern int StartCheck;
+extern int DarkModeType;
 
 extern int AllInitMsg;
 
@@ -391,10 +393,17 @@ static void SetOption(HWND hWnd)
 {
 	char buf[BUFSIZE];
 	HICON hIcon;
+	int OldDarkModeType = DarkModeType;
 
 	//オプション画面表示
 	if(ViewProperties(hWnd) == 0){
 		return;
+	}
+
+	//表示テーマの変更を反映
+	if(DarkModeType != OldDarkModeType){
+		DarkMode_SetMode(hWnd, DarkModeType);
+		TbSetDarkBitmap(hWnd);
 	}
 
 	//設定変更
@@ -926,6 +935,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	}
 
 	WaitCursor(FALSE);
+
+	//ダークモード
+	DarkMode_ApplyMainWindow(hWnd);
 
 	//起動時ではない場合は関数を抜ける
 	if(StartFlag == FALSE){
@@ -2202,6 +2214,17 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 
+	//ダークモードで表示しているか
+	case WM_GETDARKMODE:
+		return DarkMode_IsDark();
+
+	//Windows の設定変更 (表示テーマが「Windows の設定に従う」の場合に追従)
+	case WM_SETTINGCHANGE:
+		if(DarkMode_OnSettingChange(hWnd, lParam) == TRUE){
+			TbSetDarkBitmap(hWnd);
+		}
+		break;
+
 	//設定の読み直し
 	case WM_WWWC_GETINI:
 		RefreshIniFile(hWnd);
@@ -2813,6 +2836,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	GetINI();
 	GetProtocolInfo();
 
+	//ダークモードの初期化
+	DarkMode_Initialize(DarkModeType);
+
 	//終了処理
 	if(atexit(AppExit)){
 		MessageBox(NULL, EMSG_ATEXIT, APP_NAME, MB_OK | MB_ICONERROR);
@@ -2890,6 +2916,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageFunc(hWnd, &msg);
 	}
 
+	DarkMode_Uninitialize();
 	DestroyMenu(hPOPUP);
 	if(hMutex != NULL){
 		CloseHandle(hMutex);

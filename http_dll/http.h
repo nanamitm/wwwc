@@ -53,6 +53,10 @@
 #define OP2_REFERER						7
 #define OP2_IGNORECERT					8
 
+//ダークモードのヘッダ・ソース表示の色
+#define VIEW_DARK_BACK					RGB(30, 30, 30)
+#define VIEW_DARK_TEXT					RGB(212, 212, 212)
+
 #define LVM_FIRST						0x1000      // ListView messages
 #define LVM_SETEXTENDEDLISTVIEWSTYLE	(LVM_FIRST + 54)
 #define LVM_GETEXTENDEDLISTVIEWSTYLE	(LVM_FIRST + 55)

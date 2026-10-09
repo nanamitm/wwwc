@@ -20,6 +20,7 @@
 #undef	_INC_OLE
 
 #include "General.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -167,6 +168,155 @@ static void SetTbBitmap(HWND hWnd, int id, int bitmapIndex)
 
 /******************************************************************************
 
+	CreateDarkTbBitmap
+
+	ダークモード用のツールバービットマップの作成
+	(背景に接している黒の輪郭を明るい灰色にする)
+
+******************************************************************************/
+
+static HBITMAP CreateDarkTbBitmap(void)
+{
+#define TB_BACK_COLOR(p)	((p)[0] == 192 && (p)[1] == 192 && (p)[2] == 192)
+#define TB_BLACK(p)			((p)[0] == 0 && (p)[1] == 0 && (p)[2] == 0)
+	HBITMAP hSrc, hDst, hDDB;
+	COLORREF face;
+	BITMAPINFO bmi;
+	BITMAP bm;
+	HDC hdc, hSrcDC, hDstDC;
+	BYTE *bits, *work, *p, *q;
+	int x, y, stride, i;
+
+	hSrc = (HBITMAP)LoadImage(g_hinst, MAKEINTRESOURCE(IDR_TOOLBAR), IMAGE_BITMAP, 0, 0, LR_CREATEDIBSECTION);
+	if(hSrc == NULL){
+		return NULL;
+	}
+	GetObject(hSrc, sizeof(BITMAP), &bm);
+
+	//24bitのDIBに展開
+	ZeroMemory(&bmi, sizeof(BITMAPINFO));
+	bmi.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
+	bmi.bmiHeader.biWidth = bm.bmWidth;
+	bmi.bmiHeader.biHeight = -bm.bmHeight;
+	bmi.bmiHeader.biPlanes = 1;
+	bmi.bmiHeader.biBitCount = 24;
+	bmi.bmiHeader.biCompression = BI_RGB;
+	hdc = GetDC(NULL);
+	hDst = CreateDIBSection(hdc, &bmi, DIB_RGB_COLORS, (void **)&bits, NULL, 0);
+	hSrcDC = CreateCompatibleDC(hdc);
+	hDstDC = CreateCompatibleDC(hdc);
+	ReleaseDC(NULL, hdc);
+	if(hDst == NULL || hSrcDC == NULL || hDstDC == NULL){
+		if(hDst != NULL) DeleteObject(hDst);
+		if(hSrcDC != NULL) DeleteDC(hSrcDC);
+		if(hDstDC != NULL) DeleteDC(hDstDC);
+		DeleteObject(hSrc);
+		return NULL;
+	}
+	SelectObject(hSrcDC, hSrc);
+	SelectObject(hDstDC, hDst);
+	BitBlt(hDstDC, 0, 0, bm.bmWidth, bm.bmHeight, hSrcDC, 0, 0, SRCCOPY);
+	DeleteDC(hSrcDC);
+	DeleteDC(hDstDC);
+	DeleteObject(hSrc);
+	GdiFlush();
+
+	//背景に接している黒を明るくする (判定は元の画像で行う)
+	stride = ((bm.bmWidth * 3) + 3) & ~3;
+	face = GetSysColor(COLOR_BTNFACE);
+	work = (BYTE *)LocalAlloc(LMEM_FIXED, stride * bm.bmHeight);
+	if(work != NULL){
+		CopyMemory(work, bits, stride * bm.bmHeight);
+		for(y = 0; y < bm.bmHeight; y++){
+			for(x = 0; x < bm.bmWidth; x++){
+				p = work + y * stride + x * 3;
+				if(TB_BACK_COLOR(p)){
+					//背景はリソースから読み込んだ場合と同じくボタンの面の色にする (透過色として扱われる)
+					q = bits + y * stride + x * 3;
+					q[0] = GetBValue(face);
+					q[1] = GetGValue(face);
+					q[2] = GetRValue(face);
+					continue;
+				}
+				if(!TB_BLACK(p)){
+					continue;
+				}
+				for(i = 0; i < 4; i++){
+					int nx = x + ((i == 0) ? -1 : (i == 1) ? 1 : 0);
+					int ny = y + ((i == 2) ? -1 : (i == 3) ? 1 : 0);
+					if(nx < 0 || ny < 0 || nx >= bm.bmWidth || ny >= bm.bmHeight){
+						continue;
+					}
+					if(TB_BACK_COLOR(work + ny * stride + nx * 3)){
+						q = bits + y * stride + x * 3;
+						q[0] = q[1] = q[2] = 200;
+						break;
+					}
+				}
+			}
+		}
+		LocalFree(work);
+	}
+
+	//ツールバーに渡すため画面互換のビットマップ (DDB) にする
+	hdc = GetDC(NULL);
+	hDDB = CreateDIBitmap(hdc, &bmi.bmiHeader, CBM_INIT, bits, &bmi, DIB_RGB_COLORS);
+	ReleaseDC(NULL, hdc);
+	DeleteObject(hDst);
+	return hDDB;
+#undef TB_BACK_COLOR
+#undef TB_BLACK
+}
+
+
+/******************************************************************************
+
+	TbSetDarkBitmap
+
+	ダークモードかどうかに合わせてツールバーのビットマップを差し替える
+
+******************************************************************************/
+
+static HBITMAP hDarkBitmap = NULL;
+static BOOL TbDarkApplied = FALSE;
+
+void TbSetDarkBitmap(HWND hWnd)
+{
+	TBREPLACEBITMAP rb;
+	BOOL dark = DarkMode_IsDark();
+
+	if(TbWnd == NULL || dark == TbDarkApplied){
+		return;
+	}
+	if(dark == TRUE){
+		//輪郭を明るくしたビットマップに差し替える
+		if(hDarkBitmap == NULL){
+			hDarkBitmap = CreateDarkTbBitmap();
+		}
+		if(hDarkBitmap == NULL){
+			return;
+		}
+		rb.hInstOld = g_hinst;
+		rb.nIDOld = IDR_TOOLBAR;
+		rb.hInstNew = NULL;
+		rb.nIDNew = (UINT_PTR)hDarkBitmap;
+	}else{
+		//リソースのビットマップに戻す
+		rb.hInstOld = NULL;
+		rb.nIDOld = (UINT_PTR)hDarkBitmap;
+		rb.hInstNew = g_hinst;
+		rb.nIDNew = IDR_TOOLBAR;
+	}
+	rb.nButtons = TBMAXBITMAP;
+	if(SendMessage(TbWnd, TB_REPLACEBITMAP, 0, (LPARAM)&rb) != FALSE){
+		TbDarkApplied = dark;
+	}
+	InvalidateRect(TbWnd, NULL, TRUE);
+}
+
+
+/******************************************************************************
+
 	CreateTB
 
 	ツールバーの作成
@@ -192,6 +342,10 @@ void CreateTB(HWND hWnd)
 	SetWindowLong(GetDlgItem(hWnd, WWWC_TB), GWL_STYLE,
 		GetWindowLong(GetDlgItem(hWnd, WWWC_TB), GWL_STYLE) | TbStyle);
 	SendMessage(GetDlgItem(hWnd, WWWC_TB), TB_SETINDENT, 5, 0);
+
+	//ダークモードでは輪郭を明るくしたビットマップに差し替える
+	TbDarkApplied = FALSE;
+	TbSetDarkBitmap(hWnd);
 	if(ViewTb == 1){
 		ShowWindow(GetDlgItem(hWnd, WWWC_TB), SW_SHOW);
 	}

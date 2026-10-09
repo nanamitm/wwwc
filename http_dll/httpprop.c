@@ -19,6 +19,8 @@
 #include <windows.h>
 #undef  _INC_OLE
 #include <commctrl.h>
+#include <uxtheme.h>
+#include <vssym32.h>
 
 #include "String.h"
 #include "httptools.h"
@@ -207,8 +209,31 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 		i |= DFCS_PUSHED;
 	}
 
+	//WWWCがダークモードの場合はダークテーマのスクロールバーボタンで描画
+	if((BOOL)SendMessage(GetAncestor(lpDrawItem->hwndItem, GA_ROOTOWNER), WM_GETDARKMODE, 0, 0) == TRUE){
+		HTHEME hTheme = OpenThemeData(lpDrawItem->hwndItem, L"DarkMode_Explorer::ScrollBar");
+		if(hTheme != NULL){
+			int state;
+			BOOL up = ((i & 0xF) == DFCS_SCROLLUP);
+
+			if(i & DFCS_INACTIVE){
+				state = up ? ABS_UPDISABLED : ABS_DOWNDISABLED;
+			}else if(i & DFCS_PUSHED){
+				state = up ? ABS_UPPRESSED : ABS_DOWNPRESSED;
+			}else{
+				//Windows 11 では NORMAL に矢印が描かれないため HOVER を使う
+				state = up ? ABS_UPHOVER : ABS_DOWNHOVER;
+			}
+			DrawThemeBackground(hTheme, lpDrawItem->hDC, SBP_ARROWBTN, state, &(lpDrawItem->rcItem), NULL);
+			CloseThemeData(hTheme);
+			i = (UINT)-1;
+		}
+	}
+
 	//フレームコントロールの描画
-	DrawFrameControl(lpDrawItem->hDC, &(lpDrawItem->rcItem), DFC_SCROLL, i);
+	if(i != (UINT)-1){
+		DrawFrameControl(lpDrawItem->hDC, &(lpDrawItem->rcItem), DFC_SCROLL, i);
+	}
 
 	//フォーカス
 	if(lpDrawItem->itemState & ODS_FOCUS){

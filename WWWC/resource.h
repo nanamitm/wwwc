@@ -115,6 +115,7 @@
 #define IDC_CHECK_TRAY                  1057
 #define IDC_CHECK_UPMSG                 1058
 #define IDC_CHECK_TRAYWINSHOW           1059
+#define IDC_COMBO_DARKMODE              1135
 #define IDC_CHECK_UPSND                 1060
 #define IDC_EDIT_WAVEFILE               1061
 #define IDC_BUTTON_BROWS                1062
@@ -282,7 +283,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        206
 #define _APS_NEXT_COMMAND_VALUE         40130
-#define _APS_NEXT_CONTROL_VALUE         1135
+#define _APS_NEXT_CONTROL_VALUE         1136
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
