@@ -690,7 +690,7 @@ static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_FOLDER];
@@ -861,7 +861,7 @@ static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 
 int ViewProperties(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_OPTION];

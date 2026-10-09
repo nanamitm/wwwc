@@ -722,7 +722,7 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 
 __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[3];
@@ -1101,7 +1101,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[2];
