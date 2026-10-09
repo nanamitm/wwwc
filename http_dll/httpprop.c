@@ -616,6 +616,7 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 	char user[BUFSIZE];
 	char pass[BUFSIZE];
 	char referer[BUFSIZE];
+	char encpass[PASS_ENC_SIZE];
 	BOOL EnableFlag;
 
 	switch (uMsg)
@@ -645,8 +646,8 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_SETTEXT, 0, (LPARAM)buf);
 		}
 
-		if(GetOptionString(tpItemInfo->Option2, buf, OP2_PASS) == TRUE){
-			dPass(buf, pass);
+		if(GetOptionStringEx(tpItemInfo->Option2, encpass, OP2_PASS, PASS_ENC_SIZE) == TRUE){
+			DecodePassword(encpass, pass, BUFSIZE);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_SETTEXT, 0, (LPARAM)pass);
 		}
 
@@ -712,22 +713,34 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PROXY_PORT), WM_GETTEXT, BUFSIZE - 1, (LPARAM)port);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_GETTEXT, BUFSIZE - 1, (LPARAM)user);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
-			ePass(buf, pass);
+			if(EncodePassword(buf, encpass, PASS_ENC_SIZE) == FALSE){
+				*encpass = '\0';
+			}
+			SecureZeroMemory(buf, sizeof(buf));
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_REFERER), WM_GETTEXT, BUFSIZE - 1, (LPARAM)referer);
 
 			if(tpItemInfo->Option2 != NULL){
 				GlobalFree(tpItemInfo->Option2);
 			}
 			tpItemInfo->Option2 = (char *)GlobalAlloc(GPTR,
-				21 + lstrlen(proxy) + lstrlen(port) + lstrlen(user) + lstrlen(pass) + lstrlen(referer));
+				21 + lstrlen(proxy) + lstrlen(port) + lstrlen(user) + lstrlen(encpass) + lstrlen(referer));
 			if(tpItemInfo->Option2 != NULL){
-				wsprintf(tpItemInfo->Option2, "%d;;%d;;%s;;%s;;%d;;%s;;%s;;%s;;%d",
-					IsDlgButtonChecked(hDlg, IDC_CHECK_NOPROXY),
-					IsDlgButtonChecked(hDlg, IDC_CHECK_SETPROXY),
-					proxy, port,
-					IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS),
-					user, pass, referer,
-					IsDlgButtonChecked(hDlg, IDC_CHECK_IGNORECERT));
+				char *p = tpItemInfo->Option2;
+
+				p = iStrCpy(p, (IsDlgButtonChecked(hDlg, IDC_CHECK_NOPROXY) == BST_CHECKED) ? "1;;" : "0;;");
+				p = iStrCpy(p, (IsDlgButtonChecked(hDlg, IDC_CHECK_SETPROXY) == BST_CHECKED) ? "1;;" : "0;;");
+				p = iStrCpy(p, proxy);
+				p = iStrCpy(p, ";;");
+				p = iStrCpy(p, port);
+				p = iStrCpy(p, ";;");
+				p = iStrCpy(p, (IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == BST_CHECKED) ? "1;;" : "0;;");
+				p = iStrCpy(p, user);
+				p = iStrCpy(p, ";;");
+				p = iStrCpy(p, encpass);
+				p = iStrCpy(p, ";;");
+				p = iStrCpy(p, referer);
+				p = iStrCpy(p, ";;");
+				p = iStrCpy(p, (IsDlgButtonChecked(hDlg, IDC_CHECK_IGNORECERT) == BST_CHECKED) ? "1" : "0");
 			}
 			break;
 		}
@@ -827,6 +840,7 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	char encpass[PASS_ENC_SIZE];
 	char buf[BUFSIZE];
 	BOOL EnableFlag;
 
@@ -932,8 +946,10 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 			wsprintf(buf, "%ld", pUsePass);
 			WritePrivateProfileString("PROXY", "pUsePass", buf, app_path);
 			WritePrivateProfileString("PROXY", "pUser", pUser, app_path);
-			ePass(pPass, buf);
-			WritePrivateProfileString("PROXY", "pPass", buf, app_path);
+			if(EncodePassword(pPass, encpass, PASS_ENC_SIZE) == FALSE){
+				*encpass = '\0';
+			}
+			WritePrivateProfileString("PROXY", "pPass", encpass, app_path);
 			break;
 		}
 		break;

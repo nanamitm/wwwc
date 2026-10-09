@@ -14,12 +14,20 @@
 #define _INC_STRING_H
 
 /**************************************************************************
+	Define
+**************************************************************************/
+
+//暗号化したパスワード文字列のバッファサイズ (平文 BUFSIZE - 1 文字まで)
+#define PASS_ENC_SIZE				1024
+
+/**************************************************************************
 	Function Prototypes
 **************************************************************************/
 
 void BadNameCheck(char *buf, char NewChar);
-void ePass(char *buf, char *ret);
-void dPass(char *buf, char *ret);
+BOOL EncodePassword(const char *plain, char *ret, int size);
+void DecodePassword(const char *enc, char *ret, int size);
+BOOL IsEncryptedPassword(const char *enc);
 long x2d(const char *str);
 UINT str2hash(const TCHAR *str);
 int lstrcmpn(char *buf1, char *buf2, int len);
@@ -31,6 +39,8 @@ int LresultCmp(char *Oldbuf, char *Newbuf);
 int GetURL(char *URL, char *server, char *path, int DefPort, char *user, char *pass);
 char *CreateMoveURL(char *FromURL, char *ToURL);
 BOOL GetOptionString(char *buf, char *ret, int num);
+BOOL GetOptionStringEx(char *buf, char *ret, int num, int size);
+char *SetOptionString(char *buf, int num, char *value);
 int GetOptionInt(char *buf, int num);
 void DelCrLf(char *buf);
 char *StrNextContent(char *p);

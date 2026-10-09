@@ -1593,8 +1593,9 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 
 ******************************************************************************/
 
-static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
+static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 {
+	struct TPITEM *tpItemInfo = (struct TPITEM *)lpParameter;
 	struct TPHTTP *tpHTTP;
 	HINTERNET hSession, hConnect, hRequest;
 	URL_COMPONENTS urlComponents;
@@ -1605,8 +1606,8 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 	WCHAR url[2048];
 	WCHAR *sendHeader;
 	WCHAR *s;
-	char BaseStr1[BUFSIZE];
-	char BaseStr2[BUFSIZE];
+	char BaseStr1[BUFSIZE * 2 + 2];		//"ユーザ:パスワード"
+	char BaseStr2[PASS_ENC_SIZE];		//暗号化したパスワード、Base64
 	char user[BUFSIZE];
 	char pass[BUFSIZE];
 	char referer[BUFSIZE];
@@ -1715,10 +1716,10 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 		if (GetOptionString(tpItemInfo->Option2, user, OP2_USER) == FALSE) {
 			*user = '\0';
 		}
-		if (GetOptionString(tpItemInfo->Option2, BaseStr2, OP2_PASS) == FALSE) {
+		if (GetOptionStringEx(tpItemInfo->Option2, BaseStr2, OP2_PASS, PASS_ENC_SIZE) == FALSE) {
 			*pass = '\0';
 		} else {
-			dPass(BaseStr2, pass);
+			DecodePassword(BaseStr2, pass, BUFSIZE);
 		}
 		dwSize += (lstrlen(user) + 1 + lstrlen(pass)) * 13 / 10;
 	}
@@ -1767,10 +1768,10 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 		if (GetOptionString(tpItemInfo->Option2, user, OP2_USER) == FALSE) {
 			*user = '\0';
 		}
-		if (GetOptionString(tpItemInfo->Option2, BaseStr2, OP2_PASS) == FALSE) {
+		if (GetOptionStringEx(tpItemInfo->Option2, BaseStr2, OP2_PASS, PASS_ENC_SIZE) == FALSE) {
 			*pass = '\0';
 		} else {
-			dPass(BaseStr2, pass);
+			DecodePassword(BaseStr2, pass, BUFSIZE);
 		}
 		wsprintf(BaseStr1, "%s:%s", user, pass);
 		eBase(BaseStr1, BaseStr2);
@@ -1933,14 +1934,14 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 static BOOL Start_HTTP_Thread(const HWND hWnd, struct TPITEM *tpItemInfo)
 {
 	struct TPHTTP *tpHTTP;
-	int threadId;
+	DWORD threadId;
 
 	tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
 	if (tpHTTP == NULL) {
 		return FALSE;
 	}
 	tpHTTP->hWnd = hWnd;
-	tpHTTP->hThread = CreateThread(NULL, 0, HTTP_Thread, (void *)tpItemInfo, 0, (unsigned *)&threadId);
+	tpHTTP->hThread = CreateThread(NULL, 0, HTTP_Thread, (LPVOID)tpItemInfo, 0, &threadId);
 	return TRUE;
 }
 
@@ -1953,9 +1954,40 @@ static BOOL Start_HTTP_Thread(const HWND hWnd, struct TPITEM *tpItemInfo)
 
 ******************************************************************************/
 
+/******************************************************************************
+
+	MigrateItemPassword
+
+	以前の形式で保存されているアイテムのパスワードを暗号化する
+	(アイテム情報は WWWC がアイテムを保存するときに書き込まれる)
+
+******************************************************************************/
+
+static void MigrateItemPassword(struct TPITEM *tpItemInfo)
+{
+	char enc[PASS_ENC_SIZE];
+	char pass[BUFSIZE];
+	char *p;
+
+	if(GetOptionStringEx(tpItemInfo->Option2, enc, OP2_PASS, PASS_ENC_SIZE) == FALSE ||
+		IsEncryptedPassword(enc) == TRUE){
+		return;
+	}
+	DecodePassword(enc, pass, BUFSIZE);
+	if(EncodePassword(pass, enc, PASS_ENC_SIZE) == TRUE &&
+		(p = SetOptionString(tpItemInfo->Option2, OP2_PASS, enc)) != NULL){
+		GlobalFree(tpItemInfo->Option2);
+		tpItemInfo->Option2 = p;
+	}
+	SecureZeroMemory(pass, sizeof(pass));
+}
+
+
 __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemInfo)
 {
 	struct TPHTTP *tpHTTP;
+
+	MigrateItemPassword(tpItemInfo);
 
 	tpHTTP = (struct TPHTTP *)GlobalAlloc(GPTR, sizeof(struct TPHTTP));
 	if(tpHTTP == NULL){

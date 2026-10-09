@@ -2335,7 +2335,6 @@ static void GetAppPath(HINSTANCE hinst)
 	char DefItem[BUFSIZE];
 	char gIniFile[BUFSIZE];
 	char *p, *r;
-	int i;
 
 	//アプリケーションのパスを取得
 	GetModuleFileName(hinst, DefDirPath, BUFSIZE - 1);
@@ -2388,8 +2387,9 @@ static void GetAppPath(HINSTANCE hinst)
 		lstrcpy(CurrentUser, CmdUser);
 	}else{
 		//現在のログインユーザ名の取得
-		i = BUFSIZE - 1;
-		if(GetUserName(CurrentUser, &i) == FALSE) {
+		DWORD UserLen = BUFSIZE - 1;
+
+		if(GetUserName(CurrentUser, &UserLen) == FALSE) {
 			lstrcpy(CurrentUser, DEFAULTUSER);
 		}
 	}
