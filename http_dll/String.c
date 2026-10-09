@@ -36,12 +36,18 @@
 
 #define ESC					0x1B		/* エスケープコード */
 
-//RTFヘッダ
-#define RTF_HEAD	"{\\rtf1\\ansi\\ansicpg932\\deff0\\deflang1033\\deflangfe1041"\
+//RTFヘッダ (色の表: cf1 タグ, cf2 属性値, cf3 テキスト, cf4 コメント)
+#define RTF_HEAD_FONT	"{\\rtf1\\ansi\\ansicpg932\\deff0\\deflang1033\\deflangfe1041"\
 	"{\\fonttbl{\\f0\\fnil\\fprq2\\fcharset128 \\'82\\'6c\\'82\\'72 \\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}"\
-	"{\\f1\\froman\\fprq1\\fcharset128 \\'82\\'6c\\'82\\'72 \\'82\\'6f\\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}}\r\n"\
+	"{\\f1\\froman\\fprq1\\fcharset128 \\'82\\'6c\\'82\\'72 \\'82\\'6f\\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}}\r\n"
+#define RTF_HEAD_BODY	"\\viewkind4\\uc1\\pard\\cf1\\lang1041\\f0\\fs18 "
+#define RTF_HEAD	RTF_HEAD_FONT\
 	"{\\colortbl ;\\red0\\green0\\blue128;\\red0\\green128\\blue128;\\red0\\green0\\blue0;\\red0\\green128\\blue0;}\r\n"\
-	"\\viewkind4\\uc1\\pard\\cf1\\lang1041\\f0\\fs18 "
+	RTF_HEAD_BODY
+//ダークモード用
+#define RTF_HEAD_DARK	RTF_HEAD_FONT\
+	"{\\colortbl ;\\red86\\green156\\blue214;\\red206\\green145\\blue120;\\red212\\green212\\blue212;\\red106\\green153\\blue85;}\r\n"\
+	RTF_HEAD_BODY
 
 #define to_lower(c)		((c >= TEXT('A') && c <= TEXT('Z')) ? (c - TEXT('A') + TEXT('a')) : c)
 
@@ -1934,7 +1940,7 @@ long DeleteSizeInfo(char *buf, long size)
 
 ******************************************************************************/
 
-int GetHtml2RtfSize(char *buf)
+int GetHtml2RtfSize(char *buf, BOOL dark)
 {
 	char *p, *t;
 	BOOL TagFlag = FALSE;
@@ -1946,7 +1952,7 @@ int GetHtml2RtfSize(char *buf)
 
 	if(buf == NULL) return 0;
 
-	len = lstrlen(RTF_HEAD);
+	len = lstrlen((dark == TRUE) ? RTF_HEAD_DARK : RTF_HEAD);
 	for(p = buf; *p != '\0'; p++){
 		switch(*p)
 		{
@@ -2074,7 +2080,7 @@ int GetHtml2RtfSize(char *buf)
 
 ******************************************************************************/
 
-void Html2Rtf(char *buf, char *ret)
+void Html2Rtf(char *buf, char *ret, BOOL dark)
 {
 	char *p, *r, *t;
 	BOOL TagFlag = FALSE;
@@ -2086,7 +2092,7 @@ void Html2Rtf(char *buf, char *ret)
 	if(buf == NULL || ret == NULL) return;
 
 	r = ret;
-	r = iStrCpy(r, RTF_HEAD);
+	r = iStrCpy(r, (dark == TRUE) ? RTF_HEAD_DARK : RTF_HEAD);
 	for(p = buf; *p != '\0'; p++){
 		switch(*p)
 		{

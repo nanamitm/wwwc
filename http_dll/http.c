@@ -166,6 +166,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 	char *filter_title;
 	long wl;
 	int i;
+	BOOL dark;
 
 	switch (uMsg)
 	{
@@ -190,6 +191,18 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 
 		SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETTEXTMODE, TM_RICHTEXT, 0);
+		dark = (BOOL)SendMessage(tpHTTP->hWnd, WM_GETDARKMODE, 0, 0);
+		if(dark == TRUE){
+			//ダークモード: 背景と既定の文字色
+			CHARFORMAT cf;
+
+			SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETBKGNDCOLOR, 0, VIEW_DARK_BACK);
+			ZeroMemory(&cf, sizeof(CHARFORMAT));
+			cf.cbSize = sizeof(CHARFORMAT);
+			cf.dwMask = CFM_COLOR;
+			cf.crTextColor = VIEW_DARK_TEXT;
+			SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETCHARFORMAT, SCF_DEFAULT, (LPARAM)&cf);
+		}
 		if(tpItemInfo->Param3 == 1){
 			buf = (char *)GlobalAlloc(GMEM_FIXED, lstrlen(STR_TITLE_HEADVIEW) + lstrlen(tpItemInfo->CheckURL) + 1);
 			if(buf != NULL){
@@ -215,10 +228,10 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 			buf = SrcConv(tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
 			if(buf != NULL){
-				i = GetHtml2RtfSize(buf);
+				i = GetHtml2RtfSize(buf, dark);
 				ret = (char *)GlobalAlloc(GMEM_FIXED, i + 1);
 				if(ret != NULL){
-					Html2Rtf(buf, ret);
+					Html2Rtf(buf, ret, dark);
 					SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_LIMITTEXT, i + 1, 0);
 					srcLen = 0;
 					eds.dwCookie = (DWORD_PTR)ret;

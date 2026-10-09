@@ -45,6 +45,7 @@
 #define WM_ITEMINIT					(WM_USER + 13)		/* アイテムを初期化 */
 #define WM_GETUPWINDOW				(WM_USER + 14)		/* 更新メッセージのハンドルを取得 */
 #define WM_GETFINDWINDOW			(WM_USER + 15)		/* 検索ウィンドウのハンドルを取得 */
+#define WM_GETDARKMODE				(WM_USER + 16)		/* ダークモードで表示しているか (TRUE/FALSE, 未対応のWWWCは0) */
 
 /* INIファイル処理メッセージ */
 #define WM_WWWC_GETINI				(WM_USER + 20)		/* INIファイルから設定を読み直す */

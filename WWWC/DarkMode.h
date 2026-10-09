@@ -24,6 +24,8 @@ void DarkMode_Initialize(int mode);
 void DarkMode_Uninitialize(void);
 BOOL DarkMode_IsDark(void);
 void DarkMode_ApplyMainWindow(HWND hWnd);
+BOOL DarkMode_SetMode(HWND hWnd, int mode);
+BOOL DarkMode_OnSettingChange(HWND hWnd, LPARAM lParam);
 
 #ifdef __cplusplus
 }

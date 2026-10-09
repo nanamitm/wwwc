@@ -393,10 +393,17 @@ static void SetOption(HWND hWnd)
 {
 	char buf[BUFSIZE];
 	HICON hIcon;
+	int OldDarkModeType = DarkModeType;
 
 	//オプション画面表示
 	if(ViewProperties(hWnd) == 0){
 		return;
+	}
+
+	//表示テーマの変更を反映
+	if(DarkModeType != OldDarkModeType){
+		DarkMode_SetMode(hWnd, DarkModeType);
+		TbSetDarkBitmap(hWnd);
 	}
 
 	//設定変更
@@ -2204,6 +2211,17 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_GETFINDWINDOW:
 		if(lParam != 0){
 			*(HWND *)lParam = FindWnd;
+		}
+		break;
+
+	//ダークモードで表示しているか
+	case WM_GETDARKMODE:
+		return DarkMode_IsDark();
+
+	//Windows の設定変更 (表示テーマが「Windows の設定に従う」の場合に追従)
+	case WM_SETTINGCHANGE:
+		if(DarkMode_OnSettingChange(hWnd, lParam) == TRUE){
+			TbSetDarkBitmap(hWnd);
 		}
 		break;
 

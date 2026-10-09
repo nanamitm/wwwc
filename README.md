@@ -35,6 +35,7 @@ MSBuild WWWC.sln -p:Configuration=Release -p:Platform=x64
 `WWWC.exe` と `wwwc.dll` を同じフォルダに置いて実行します。データの保存先は起動オプション `/d:"フォルダ"` で変更できます。
 
 - Windows XP はサポート対象外です (v141_xp ツールセットは使用していません)。
+- ダークモードに対応しています。オプションの「全般」タブの「表示テーマ」(ライト / ダーク / Windows の設定に従う) で切り替えます (user.ini の `[GENERAL] DarkMode` = 0 / 1 / 2、既定は 0 = ライト)。Windows 10 1809 以降で有効です。
 - ポインタの切り捨てにつながる警告 (C4113, C4133, C4267, C4311, C4312) はエラーとして扱います。
 
 ## プラグイン (プロトコル DLL / ツール DLL) を作る場合
@@ -80,6 +81,8 @@ int CALLBACK ツール関数名(HWND hWnd, struct TPITEM **ToolItemList, int Too
 ```
 
 WWWC.exe 側の対応する関数ポインタ型は `WWWC/General.h` (`PROTOCOL_ITEM_FUNC` など) で定義しています。
+
+プラグインのダイアログ (WWWC と同じスレッドで作成されるもの) には、WWWC がダークモードを自動で適用します。リッチエディットの内容やオーナードローなど、プラグインが自分で色を決めている部分は、`SendMessage(WWWCのメインウィンドウ, WM_GETDARKMODE, 0, 0)` (TRUE ならダーク表示中、未対応の WWWC は 0) で判定して切り替えてください。
 
 ## サードパーティ
 

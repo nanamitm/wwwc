@@ -25,6 +25,7 @@
 
 #include "General.h"
 #include "Profile.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -62,6 +63,7 @@ extern HTREEITEM PropItem;
 
 extern int TrayIcon;
 extern int TrayWinShow;
+extern int DarkModeType;
 extern char Inet[];
 extern int InetIndex;
 extern int CheckMax;
@@ -143,6 +145,17 @@ LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name)
 	if(_OpenThemeData == NULL){
 		return 0;
 	}
+	if(DarkMode_IsDark() == TRUE){
+		//ダークモードではダーク用のテーマを優先する
+		WCHAR dark_class[BUFSIZE];
+		HTHEME hTheme;
+
+		wsprintfW(dark_class, L"DarkMode_Explorer::%s", class_name);
+		hTheme = _OpenThemeData(hWnd, dark_class);
+		if(hTheme != NULL){
+			return (LONG_PTR)hTheme;
+		}
+	}
 	return (LONG_PTR)_OpenThemeData(hWnd, class_name);
 }
 #endif	//OP_XP_STYLE
@@ -208,7 +221,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_UPHOT;
 		}else{
-			state = ABS_UPNORMAL;
+			state = ABS_UPHOVER;		//Windows 11 では NORMAL に矢印が描かれないため HOVER を使う
 		}
 		break;
 
@@ -220,7 +233,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_DOWNHOT;
 		}else{
-			state = ABS_DOWNNORMAL;
+			state = ABS_DOWNHOVER;
 		}
 		break;
 
@@ -232,7 +245,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_RIGHTHOT;
 		}else{
-			state = ABS_RIGHTNORMAL;
+			state = ABS_RIGHTHOVER;
 		}
 		break;
 	}
@@ -749,6 +762,7 @@ int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
+	int i;
 
 	switch (uMsg)
 	{
@@ -769,6 +783,13 @@ static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 
 		CheckDlgButton(hDlg, IDC_CHECK_TRAY, TrayIcon);
 		CheckDlgButton(hDlg, IDC_CHECK_TRAYWINSHOW, TrayWinShow);
+
+		//表示テーマ (DARKMODE_LIGHT, DARKMODE_DARK, DARKMODE_SYSTEM の順)
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_LIGHT);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_DARK);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_SYSTEM);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_SETCURSEL,
+			(DarkModeType >= DARKMODE_LIGHT && DarkModeType <= DARKMODE_SYSTEM) ? DarkModeType : DARKMODE_LIGHT, 0);
 		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_TRAYWINSHOW), TrayIcon);
 
 		CheckDlgButton(hDlg, IDC_CHECK_UPMSG, UPMsg);
@@ -839,6 +860,10 @@ static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 			}
 			TrayIcon = IsDlgButtonChecked(hDlg, IDC_CHECK_TRAY);
 			TrayWinShow = IsDlgButtonChecked(hDlg, IDC_CHECK_TRAYWINSHOW);
+			i = (int)SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_GETCURSEL, 0, 0);
+			if(i >= DARKMODE_LIGHT && i <= DARKMODE_SYSTEM){
+				DarkModeType = i;
+			}
 
 			UPMsg = IsDlgButtonChecked(hDlg, IDC_CHECK_UPMSG);
 			UPSnd = IsDlgButtonChecked(hDlg, IDC_CHECK_UPSND);
