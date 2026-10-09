@@ -654,6 +654,8 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_REFERER), WM_SETTEXT, 0, (LPARAM)buf);
 		}
 
+		CheckDlgButton(hDlg, IDC_CHECK_IGNORECERT, GetOptionInt(tpItemInfo->Option2, OP2_IGNORECERT));
+
 		if(IsDlgButtonChecked(hDlg, IDC_CHECK_NOPROXY) != 0){
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_SETPROXY), FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PROXY), FALSE);
@@ -717,14 +719,15 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 				GlobalFree(tpItemInfo->Option2);
 			}
 			tpItemInfo->Option2 = (char *)GlobalAlloc(GPTR,
-				18 + lstrlen(proxy) + lstrlen(port) + lstrlen(user) + lstrlen(pass) + lstrlen(referer));
+				21 + lstrlen(proxy) + lstrlen(port) + lstrlen(user) + lstrlen(pass) + lstrlen(referer));
 			if(tpItemInfo->Option2 != NULL){
-				wsprintf(tpItemInfo->Option2, "%d;;%d;;%s;;%s;;%d;;%s;;%s;;%s",
+				wsprintf(tpItemInfo->Option2, "%d;;%d;;%s;;%s;;%d;;%s;;%s;;%s;;%d",
 					IsDlgButtonChecked(hDlg, IDC_CHECK_NOPROXY),
 					IsDlgButtonChecked(hDlg, IDC_CHECK_SETPROXY),
 					proxy, port,
 					IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS),
-					user, pass, referer);
+					user, pass, referer,
+					IsDlgButtonChecked(hDlg, IDC_CHECK_IGNORECERT));
 			}
 			break;
 		}

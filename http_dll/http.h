@@ -51,6 +51,7 @@
 #define OP2_USER						5
 #define OP2_PASS						6
 #define OP2_REFERER						7
+#define OP2_IGNORECERT					8
 
 //ダークモードのヘッダ・ソース表示の色
 #define VIEW_DARK_BACK					RGB(30, 30, 30)
