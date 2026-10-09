@@ -82,6 +82,7 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	char *p, *r;
 	char CuDir[BUFSIZE];
 	char buf[BUFSIZE];
+	char encpass[PASS_ENC_SIZE];
 	int i;
 
 	GetModuleFileName(ghinst, CuDir, BUFSIZE - 1);
@@ -118,8 +119,13 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	pNoCache = GetPrivateProfileInt("PROXY", "pNoCache", 1, app_path);
 	pUsePass = GetPrivateProfileInt("PROXY", "pUsePass", 0, app_path);
 	GetPrivateProfileString("PROXY", "pUser", "", pUser, BUFSIZE - 1, app_path);
-	GetPrivateProfileString("PROXY", "pPass", "", buf, BUFSIZE - 1, app_path);
-	dPass(buf,pPass);
+	GetPrivateProfileString("PROXY", "pPass", "", encpass, PASS_ENC_SIZE - 1, app_path);
+	DecodePassword(encpass, pPass, BUFSIZE);
+	if(*encpass != '\0' && IsEncryptedPassword(encpass) == FALSE &&
+		EncodePassword(pPass, encpass, PASS_ENC_SIZE) == TRUE){
+		//以前の形式で保存されている場合は暗号化して保存し直す
+		WritePrivateProfileString("PROXY", "pPass", encpass, app_path);
+	}
 
 	GetPrivateProfileString("HTTP", "BrowserPath", "", BrowserPath, BUFSIZE - 1, app_path);
 

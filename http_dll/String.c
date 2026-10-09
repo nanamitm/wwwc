@@ -24,11 +24,13 @@
 #include <DDEML.H>
 #include <process.h>
 #include <time.h>
+#include <wincrypt.h>
 
 #include "wwwcdll.h"
 #include "resource.h"
 
 #include "http.h"
+#include "String.h"
 
 /**************************************************************************
 	Define
@@ -97,46 +99,130 @@ void BadNameCheck(char *buf, char NewChar)
 
 /******************************************************************************
 
-	ePass
+	EncodePassword
 
-	文字列を暗号化する
+	パスワードを暗号化する (DPAPI)
+
+	"DP1:" + Base64 の形式で返す。設定ファイル (wwwc.ini) やアイテム情報は
+	複数の Windows ユーザで共有されることがあるため、マシン単位で暗号化する。
+	(別の PC に移したデータでは復号できない)
 
 ******************************************************************************/
 
-void ePass(char *buf, char *ret)
+#define PASS_PREFIX			"DP1:"
+#define PASS_ENTROPY		"WWWC password"
+
+BOOL EncodePassword(const char *plain, char *ret, int size)
 {
-	char *p;
-	char *retp;
+	DATA_BLOB in, out, entropy;
+	DWORD len;
+	int prefix_len = lstrlen(PASS_PREFIX);
 
-	for(p = buf, retp = ret; *p != '\0'; p++, retp += 2){
-		wsprintf(retp, "%02x", (*p) ^ 0xFF);
+	*ret = '\0';
+	if(*plain == '\0'){
+		return TRUE;
 	}
-	*retp = '\0';
-
+	in.pbData = (BYTE *)plain;
+	in.cbData = lstrlen(plain);
+	entropy.pbData = (BYTE *)PASS_ENTROPY;
+	entropy.cbData = lstrlen(PASS_ENTROPY);
+	if(CryptProtectData(&in, NULL, &entropy, NULL, NULL,
+		CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN, &out) == FALSE){
+		return FALSE;
+	}
+	len = size - prefix_len;
+	lstrcpy(ret, PASS_PREFIX);
+	if(size <= prefix_len ||
+		CryptBinaryToStringA(out.pbData, out.cbData, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, ret + prefix_len, &len) == FALSE){
+		*ret = '\0';
+		LocalFree(out.pbData);
+		return FALSE;
+	}
+	LocalFree(out.pbData);
+	return TRUE;
 }
 
 
 /******************************************************************************
 
-	dPass
+	IsEncryptedPassword
 
-	文字列を複合化する
+	EncodePassword で暗号化した文字列か
 
 ******************************************************************************/
 
-void dPass(char *buf, char *ret)
+BOOL IsEncryptedPassword(const char *enc)
 {
-	char *p;
+	const char *p = PASS_PREFIX;
+
+	for(; *p != '\0'; p++, enc++){
+		if(*enc != *p){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+
+/******************************************************************************
+
+	DecodePassword
+
+	パスワードを復号する
+
+	EncodePassword の形式と、以前の形式 (各バイトを 0xFF と XOR した16進) の
+	両方を受け付ける。復号できない場合は空文字列を返す。
+
+******************************************************************************/
+
+void DecodePassword(const char *enc, char *ret, int size)
+{
+	DATA_BLOB in, out, entropy;
+	const char *p;
 	char tmp[3];
+	DWORD len;
 	int i;
 
-	tmp[2] = '\0';
+	*ret = '\0';
+	if(size <= 0 || *enc == '\0'){
+		return;
+	}
 
+	if(IsEncryptedPassword(enc) == TRUE){
+		p = enc + lstrlen(PASS_PREFIX);
+		len = 0;
+		if(CryptStringToBinaryA(p, 0, CRYPT_STRING_BASE64, NULL, &len, NULL, NULL) == FALSE || len == 0){
+			return;
+		}
+		in.pbData = (BYTE *)LocalAlloc(LMEM_FIXED, len);
+		if(in.pbData == NULL){
+			return;
+		}
+		in.cbData = len;
+		if(CryptStringToBinaryA(p, 0, CRYPT_STRING_BASE64, in.pbData, &in.cbData, NULL, NULL) == FALSE){
+			LocalFree(in.pbData);
+			return;
+		}
+		entropy.pbData = (BYTE *)PASS_ENTROPY;
+		entropy.cbData = lstrlen(PASS_ENTROPY);
+		if(CryptUnprotectData(&in, NULL, &entropy, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out) == TRUE){
+			len = (out.cbData < (DWORD)(size - 1)) ? out.cbData : (DWORD)(size - 1);
+			CopyMemory(ret, out.pbData, len);
+			ret[len] = '\0';
+			SecureZeroMemory(out.pbData, out.cbData);
+			LocalFree(out.pbData);
+		}
+		LocalFree(in.pbData);
+		return;
+	}
+
+	//以前の形式
+	tmp[2] = '\0';
 	i = 0;
-	for(p = buf; *p != '\0'; p += 2){
+	for(p = enc; *p != '\0' && *(p + 1) != '\0' && i < size - 1; p += 2){
 		*tmp = *p;
 		*(tmp + 1) = *(p + 1);
-		ret[i++] = (unsigned char)strtol(tmp, NULL, 16) ^ 0xFF;
+		ret[i++] = (char)((unsigned char)strtol(tmp, NULL, 16) ^ 0xFF);
 	}
 	ret[i] = '\0';
 }
@@ -546,6 +632,11 @@ char *CreateMoveURL(char *FromURL, char *ToURL)
 
 BOOL GetOptionString(char *buf, char *ret, int num)
 {
+	return GetOptionStringEx(buf, ret, num, BUFSIZE);
+}
+
+BOOL GetOptionStringEx(char *buf, char *ret, int num, int size)
+{
 	char *p, *r;
 	int i = 0;
 
@@ -565,12 +656,63 @@ BOOL GetOptionString(char *buf, char *ret, int num)
 			p++;
 			*ret = '\0';
 			r = ret;
-		}else{
+		}else if(r - ret < size - 1){
 			*(r++) = *p;
 		}
 	}
 	*r = '\0';
 	return ((i == num) ? ((*ret == '\0') ? FALSE : TRUE) : FALSE);
+}
+
+
+/******************************************************************************
+
+	SetOptionString
+
+	オプション文字列の num 番目の値を置き換えた文字列を作成する (GlobalFree で解放)
+
+******************************************************************************/
+
+char *SetOptionString(char *buf, int num, char *value)
+{
+	char *ret, *r, *p;
+	int len, i;
+
+	if(buf == NULL){
+		buf = "";
+	}
+	//区切り (";;") が足りない場合の分も確保する
+	len = lstrlen(buf) + lstrlen(value) + (num + 1) * 2 + 1;
+	ret = (char *)GlobalAlloc(GPTR, len);
+	if(ret == NULL){
+		return NULL;
+	}
+	r = ret;
+	i = 0;
+	p = buf;
+	while(1){
+		if(i == num){
+			//置き換える値を書き込み、元の値は読み飛ばす
+			r = iStrCpy(r, value);
+			for(; *p != '\0' && !(*p == ';' && *(p + 1) == ';'); p++);
+			lstrcpy(r, p);
+			break;
+		}
+		if(*p == '\0'){
+			//項目が足りない場合は空の項目を追加する
+			r = iStrCpy(r, ";;");
+			i++;
+			continue;
+		}
+		if(*p == ';' && *(p + 1) == ';'){
+			*(r++) = *(p++);
+			*(r++) = *(p++);
+			i++;
+			continue;
+		}
+		*(r++) = *(p++);
+	}
+	return ret;
 }
 
 
