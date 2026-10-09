@@ -79,11 +79,11 @@ static void AddItemInfo(HWND hWnd, struct TPITEM *tpItemInfo);
 static struct TPITEM *GetItemInfo(HWND hWnd);
 static void DeleteItemInfo(struct TPITEM *tpItemInfo);
 static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i);
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void ReqTypeEnable(HWND hDlg);
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -229,7 +229,7 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char tmp[BUFSIZE];
@@ -438,7 +438,7 @@ static void ReqTypeEnable(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -582,7 +582,7 @@ static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -797,7 +797,7 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 ******************************************************************************/
 
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	BOOL EnableFlag;
@@ -925,7 +925,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 ******************************************************************************/
 
-static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char *buf;
 
@@ -978,7 +978,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	int i;

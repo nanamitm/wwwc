@@ -65,7 +65,7 @@ static void EnableCheckContorol(HWND hDlg, BOOL eFlag);
 static void EnableAutoTimeList(HWND hDlg, BOOL eFlag);
 static void EnableAutoTimeContorol(HWND hDlg);
 static BOOL SetAutoCheckInfo(HWND hDlg);
-static BOOL CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static BOOL InitializeAutoCheckListWindow(HWND hDlg);
 static void SetAutoCheckList(HWND hDlg);
 static void TreeCopyAutoCheckInfo(HWND hDlg);
@@ -184,7 +184,7 @@ BOOL CheckAutoTime(HWND hWnd)
 
 ******************************************************************************/
 
-void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int TimeSize;
@@ -226,7 +226,7 @@ void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	struct TPTREE *tpTreeInfoTop;
@@ -583,7 +583,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 	if(GetAutoCheckString(tpCheckTimeItem, buf) == 1){
 		if(wndParam == 0){
 			ListView_InsertItemEx(GetDlgItem(pWnd, IDC_LIST_AUTOTIME), buf, tpCheckTimeItem->flag,
-				(long)tpCheckTimeItem, -1);
+				(LPARAM)tpCheckTimeItem, -1);
 		}else{
 			ListView_SetItemText(GetDlgItem(pWnd, IDC_LIST_AUTOTIME),
 				ListView_GetNextItem(GetDlgItem(pWnd, IDC_LIST_AUTOTIME), -1, LVNI_SELECTED), 0, buf);
@@ -604,7 +604,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPCHECKTIME *tpCheckTimeItem;
 	char buf[BUFSIZE];
@@ -786,7 +786,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 			}
 			CopyMemory(tpCheckTimeItem, tpTmpTimeItem + i, sizeof(struct TPCHECKTIME));
 			ListView_InsertItemEx(GetDlgItem(hDlg, IDC_LIST_AUTOTIME),
-				buf, tpCheckTimeItem->flag, (long)tpCheckTimeItem, -1);
+				buf, tpCheckTimeItem->flag, (LPARAM)tpCheckTimeItem, -1);
 		}
 	}
 	ListView_SetRedraw(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), LDF_REDRAW);
@@ -936,7 +936,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 	tpTreeInfo->AutoCheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_DEF);
 
 	//自動チェック設定のコピー
-	CallTreeItem(WWWCWnd, hItem, (FARPROC)CopyAutoTime, (long)tpTreeInfo);
+	CallTreeItem(WWWCWnd, hItem, (FARPROC)CopyAutoTime, (LPARAM)tpTreeInfo);
 
 	if(tpTreeInfo->tpCheckTime != NULL){
 		GlobalFree(tpTreeInfo->tpCheckTime);
@@ -953,7 +953,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 
 ******************************************************************************/
 
-BOOL CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int SelectItem;
 	int i, TimeSize;

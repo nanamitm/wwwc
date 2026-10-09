@@ -943,7 +943,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 
 				if(ListFolderCnt < TreeFolderCnt){
 					ListView_InsertItemEx(GetDlgItem(hWnd, WWWC_LIST), (char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-						(long)NULL, ListFolderCnt);
+						(LPARAM)NULL, ListFolderCnt);
 				}
 
 				i = TreeView_GetListIndex(GetDlgItem(hWnd, WWWC_TREE),

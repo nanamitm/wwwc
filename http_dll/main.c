@@ -323,7 +323,7 @@ int ExecItem(HWND hWnd, char *buf, char *cmdline)
 {
 	int ret;
 
-	ret = (int)ShellExecute((HWND)NULL, (LPCTSTR)NULL, (LPCTSTR)buf, cmdline, NULL, SW_SHOWNORMAL);
+	ret = (int)(INT_PTR)ShellExecute((HWND)NULL, (LPCTSTR)NULL, (LPCTSTR)buf, cmdline, NULL, SW_SHOWNORMAL);
 	if(ret <= 32){			//エラーの場合は、エラーの文字列を取得してメッセージボックスを表示する
 		ret = GetLastError();
 		ErrMsg(hWnd, ret, STR_ERR_TITLE_OPEN);

@@ -188,7 +188,7 @@ static BOOL CreateControls(HWND hWnd);
 static void SetControls(HWND hWnd);
 static BOOL InitWindow(HWND hWnd, BOOL StartFlag);
 static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag);
-static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void DelLastYen(char *p);
 static void GetAppPath(HINSTANCE hinst);
 static void CommandLineFunc(HWND hWnd, char *StrCmdLine);
@@ -220,7 +220,7 @@ BOOL _SetForegroundWindow(HWND hWnd)
 
 	ret = SetForegroundWindow(hWnd);
 
-	SystemParametersInfo(_SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (PVOID)nTimeout, 0);
+	SystemParametersInfo(_SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (PVOID)(UINT_PTR)nTimeout, 0);
 	return ret;
 }
 
@@ -858,9 +858,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	SetProtocolMenu(hWnd);
 	//メニューに新規作成メニューを関連付ける
 	ModifyMenu(GetSubMenu(GetMenu(hWnd), MENU_HWND_FILE), ID_MENUITEM_POP_NEWITEM, MF_POPUP,
-		(UINT)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
+		(UINT_PTR)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
 	ModifyMenu(GetSubMenu(hPOPUP, MENU_POP_FOLDER), ID_MENUITEM_POP_NEWITEM, MF_POPUP,
-		(UINT)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
+		(UINT_PTR)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
 
 	//自動チェック用タイマーの設定
 	GetAutoTime();
@@ -1134,7 +1134,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 
 ******************************************************************************/
 
-static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static BOOL SepMoveFlag;
 	int ret, i;
@@ -2127,7 +2127,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	//アイテムリストの要求
 	case WM_GETCHECKLIST:
-		return (long)CheckItemList;
+		return (LRESULT)CheckItemList;
 
 	//アイテムリスト数の要求
 	case WM_GETCHECKLISTCNT:
@@ -2143,7 +2143,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	//アイテムの実体を要求
 	case WM_GETMAINITEM:
-		return (long)FindMainItem(hWnd, (struct TPITEM *)lParam);
+		return (LRESULT)FindMainItem(hWnd, (struct TPITEM *)lParam);
 
 	//アイテムを実行
 	case WM_ITEMEXEC:

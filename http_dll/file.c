@@ -278,7 +278,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 
 ******************************************************************************/
 
-static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -402,7 +402,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 __declspec(dllexport) int CALLBACK FILE_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
 	/* プロパティのダイアログを表示する */
-	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_FILEPROP), hWnd, FilePropertyProc, (long)tpItemInfo) == FALSE){
+	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_FILEPROP), hWnd, FilePropertyProc, (LPARAM)tpItemInfo) == FALSE){
 		return -1;
 	}
 	return 0;

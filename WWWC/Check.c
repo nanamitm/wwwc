@@ -88,12 +88,12 @@ static int GetItemInfoToIndex(struct TPITEM *tpItemInfo);
 static int ListCheckCount(HWND hWnd);
 static int TreeCheckCount(HWND hWnd, HTREEITEM hItem, int CheckFlag);
 static void ListCheckIni(HWND hWnd, BOOL TreeFlag);
-static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, long Param);
-static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, long Param);
-static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void SetCheckDateTime(struct TPITEM *tpItemInfo);
 static int CheckStartItem(HWND hWnd, struct TPITEM *tpItemInfo, int ProtocolIndex, int CheckListIndex);
-static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo);
 static void NotifyItemCheckEnd(HWND hWnd, struct TPITEM *tpItemInfo);
 
@@ -380,7 +380,7 @@ void FolderCheckIni(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -635,7 +635,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 
 ******************************************************************************/
 
-static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -662,7 +662,7 @@ int FindCheckItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -675,7 +675,7 @@ int FindCheckItem(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -692,7 +692,7 @@ int FindCheckNoCheckItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckNoCheckTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckNoCheckTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -799,7 +799,7 @@ static int CheckStartItem(HWND hWnd, struct TPITEM *tpItemInfo, int ProtocolInde
 
 ******************************************************************************/
 
-static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int ProtocolIndex;
@@ -884,7 +884,7 @@ int CheckProc(HWND hWnd)
 	}
 
 	//チェックするアイテムを検索してチェックを開始
-	CallTreeItem(hWnd, RootItem, (FARPROC)CheckStartFolder, (long)j);
+	CallTreeItem(hWnd, RootItem, (FARPROC)CheckStartFolder, (LPARAM)j);
 	if(CheckItemList == NULL){
 		return 0;
 	}
@@ -1295,7 +1295,7 @@ void ListCancelItem(HWND hWnd)
 
 ******************************************************************************/
 
-void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;

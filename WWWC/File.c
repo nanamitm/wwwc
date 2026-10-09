@@ -397,7 +397,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 ******************************************************************************/
 
-void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	char buf[BUFSIZE];
 

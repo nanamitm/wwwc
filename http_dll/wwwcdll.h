@@ -132,7 +132,7 @@
 struct TPITEM{
 	long iSize;						/* 構造体のサイズ */
 
-	long hItem;						/* アイテムが格納されているフォルダのハンドル (HTREEITEM) */
+	LONG_PTR hItem;						/* アイテムが格納されているフォルダのハンドル (HTREEITEM) */
 
 	char *Title;					/* タイトル */
 	char *CheckURL;					/* チェックを行うURL */
@@ -162,10 +162,10 @@ struct TPITEM{
 	int Soc2;						/* ソケット2 */
 	HANDLE hGetHost1;				/* ホスト情報のハンドル1 */
 	HANDLE hGetHost2;				/* ホスト情報のハンドル1 */
-	long Param1;					/* DLL用long値1 */
-	long Param2;					/* DLL用long値2 */
-	long Param3;					/* DLL用long値3 */
-	long Param4;					/* DLL用long値4 */
+	LONG_PTR Param1;					/* DLL用long値1 */
+	LONG_PTR Param2;					/* DLL用long値2 */
+	LONG_PTR Param3;					/* DLL用long値3 */
+	LONG_PTR Param4;					/* DLL用long値4 */
 	int user1;						/* DLL用int値1 */
 	int user2;						/* DLL用int値2 */
 

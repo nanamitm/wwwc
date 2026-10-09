@@ -355,10 +355,10 @@ struct TPITEM{
 	int Soc2;											//ソケット2
 	HANDLE hGetHost1;									//ホスト情報のハンドル1
 	HANDLE hGetHost2;									//ホスト情報のハンドル1
-	long Param1;										//DLL用long値1
-	long Param2;										//DLL用long値2
-	long Param3;										//DLL用long値3
-	long Param4;										//DLL用long値4
+	LONG_PTR Param1;										//DLL用long値1
+	LONG_PTR Param2;										//DLL用long値2
+	LONG_PTR Param3;										//DLL用long値3
+	LONG_PTR Param4;										//DLL用long値4
 	int user1;											//DLL用int値1
 	int user2;											//DLL用int値2
 
@@ -518,7 +518,7 @@ BOOL GetPathToFilename(char *fPath, char *ret);
 int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret);
 BOOL DeleteDirTree(char *Path, BOOL AllFlag);
 void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem);
-void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem);
 void mkDirStr(char *buf);
 char *LineSetItemInfo(struct TPITEM *tpItemList, char *t);
@@ -574,7 +574,7 @@ int Item_Initialize(HWND hWnd, struct TPITEM *tpItemInfo, BOOL InitIconFlag);
 void ListItemIni(HWND hWnd);
 void Item_ItemListIni(HWND hWnd, struct TPITEM **tpItemList, int cnt);
 void Item_MainItemIni(HWND hMainWnd, HWND hWnd, struct TPITEM **tpItemList, int cnt);
-void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 BOOL Item_ChangeState(HWND hWnd, int St);
 BOOL Item_SwitchCheckState(HWND hWnd, HTREEITEM hItem);
 BOOL DeleteItem(HWND hWnd);
@@ -590,17 +590,17 @@ int ImageListFileIconAdd(HIMAGELIST IconList, char *FileName, UINT uFlags, int I
 //--------------------------
 //	TreeView
 //--------------------------
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, long Param);
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param);
 HWND CreateTreeView(HWND hWnd);
 void TreeView_Initialize(HWND hWnd);
 HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, char *Title, int Icon, int IconSel);
 BOOL TreeView_NewFolderItem(HWND hWnd);
-void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, long Param);
-void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem);
-void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path);
-void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 BOOL IsTreeItem(HWND hWnd, HTREEITEM hItem);
 HTREEITEM TreeView_CheckName(HWND hTreeView, HTREEITEM hItem, char *str);
 int TreeView_GetChildCount(HWND hTreeView, HTREEITEM hItem);
@@ -611,14 +611,14 @@ int TreeView_GetItemInfo(HWND hTreeView, HTREEITEM hItem, char *buf);
 int TreeView_GetListIndex(HWND hTreeView, HTREEITEM hItem);
 HTREEITEM TreeView_GetIndexToItem(HWND hTreeView, HTREEITEM hItem, int Index);
 HTREEITEM TreeView_GetHiTestItem(HWND hTreeView);
-BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, long lParam);
+BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, LPARAM lParam);
 void *TreeView_GetlParam(HWND hTreeView, HTREEITEM hItem);
 BOOL TreeView_SetState(HWND hTreeView, HTREEITEM hItem, int State, int mask);
 int TreeView_GetState(HWND hTreeView, HTREEITEM hItem, int mask);
 BOOL TreeView_UpdateList(HWND hWnd, HTREEITEM hItem);
 BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem);
-void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, long Param);
-void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem);
 BOOL TreeView_SelItemChanging(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem);
 BOOL TreeView_SelItemChanged(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem);
@@ -635,14 +635,14 @@ void ListView_SetItemImage(HWND hListView, int IconSize, int LVFLag);
 int ListView_AddColumn(HWND hListView, char *chLvColumn, int *lColSize, struct TPLVCOLUMN *ColInfo);
 int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort);
 void ListView_SetRedraw(HWND hListView, int DrawFlag);
-int ListView_InsertItemEx(HWND LV, char *buf, int Img, long lp, int iItem);
+int ListView_InsertItemEx(HWND LV, char *buf, int Img, LPARAM lp, int iItem);
 void ListView_SetItemTitle(HWND hWnd, LV_DISPINFO *plv);
 void ListView_SetItemIcon(HWND hListView, int i, int Icon);
 int ListView_GetFolderCount(HWND hListView);
 void ListView_MoveItem(HWND hListView, int SelectItem, int Move, int ColSize);
 int ListView_GetMemToIndex(HWND hListView, struct TPITEM *tpItemInfo);
-long ListView_GetlParam(HWND hListView, int i);
-void ListView_SetlParam(HWND hListView, int i, long lParam);
+LPARAM ListView_GetlParam(HWND hListView, int i);
+void ListView_SetlParam(HWND hListView, int i, LPARAM lParam);
 struct TPITEM **ListView_SetListToMem(HWND hWnd, int *RetItemCnt);
 struct TPITEM **ListView_SelectItemToMem(HWND hListView, int *cnt);
 int ListView_GetHiTestItem(HWND hListView);
@@ -685,9 +685,9 @@ LRESULT StatusBar_NotifyProc(HWND hWnd, LPARAM lParam);
 //	Option
 //--------------------------
 #ifdef OP_XP_STYLE
-long open_theme(const HWND hWnd, const WCHAR *class_name);
-void close_theme(long hTheme);
-BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme);
+LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name);
+void close_theme(LONG_PTR hTheme);
+BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme);
 #endif	//OP_XP_STYLE
 void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i);
 BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo);
@@ -717,9 +717,9 @@ int SelectIcon(HWND hWnd, char *path, int index);
 //	AutoChaeck
 //--------------------------
 BOOL CheckAutoTime(HWND hWnd);
-void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, long Param);
-void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, long Param);
-BOOL CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	Protocol
@@ -733,7 +733,7 @@ void DeleteProtocolMenuItem(HMENU pMenu);
 void SetProtocolItemMenu(HWND hWnd, HMENU pMenu, BOOL ItemFlag, BOOL UpWndFlag);
 void SetProtocolMenu(HWND hWnd);
 void SetProtocolImage(HWND hWnd);
-BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	Tool
@@ -744,7 +744,7 @@ void SetToolMenu(HWND hWnd);
 int DllToolExec(HWND hWnd, int i, struct TPITEM **ToolItemList, int ToolItemListCnt, int type, int CheckType);
 void ExecTool(HWND hWnd, int id, BOOL MenuFlag);
 void SubItemExecTool(HWND hWnd, int id, struct TPITEM **ToolItemList, int cnt, int Action, int CheckType);
-BOOL CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	UpMessage
@@ -761,12 +761,12 @@ void ExeAction(HWND hDlg, WPARAM wParam);
 void SizeInitUpMessage(HWND hDlg, int Size, int Pos, int Expand);
 void SetUpMessageControls(HWND hWnd);
 void RefreshListView(HWND hDlg);
-BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	FindItem
 //--------------------------
-BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	Dialog
@@ -774,7 +774,7 @@ BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 HWND CreateTitleWindow(HWND hWnd);
 void CloseTitleWindow(HWND tWnd);
 
-BOOL CALLBACK AniProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK AniProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	Frame
@@ -821,7 +821,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem);
 void DeleteTmpDropFiles(char *TempDirName);
 BOOL DragDrop_GetDropItem(HWND hWnd, HGLOBAL hMem, int dwEffect, HTREEITEM hItem);
 void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem);
-long DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam);
+LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam);
 
 //--------------------------
 //	Undo
@@ -851,7 +851,7 @@ int SelectMsg(HWND hWnd, WPARAM wParam, LPARAM lParam);
 int CheckEndItem(HWND hWnd, WPARAM wParam, LPARAM lParam);
 void TimeoutItem(HWND hWnd);
 void ListCancelItem(HWND hWnd);
-void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, long Param);
+void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 void CheckEndProc(HWND hWnd);
 
 //--------------------------

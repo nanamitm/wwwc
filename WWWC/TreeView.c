@@ -102,7 +102,7 @@ static void TreeView_SetHistory(HTREEITEM NewItem);
 
 ******************************************************************************/
 
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, long Param)
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param)
 {
 	HTREEITEM cItem;
 
@@ -300,7 +300,7 @@ HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, c
 	NewItem = TreeView_SetNewItem(hTreeView, Title, pItem, Icon, IconSel, (HTREEITEM)After);
 
 	//ツリービューアイテムのlParamにツリー情報のアドレスをいれる
-	TreeView_SetlParam(hTreeView, NewItem, (long)tpTreeInfo);
+	TreeView_SetlParam(hTreeView, NewItem, (LPARAM)tpTreeInfo);
 
 	return NewItem;
 }
@@ -343,7 +343,7 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 
 	if(SucceedFromParent == 1){
 		//親情報の継承
-		CopyAutoTime(hWnd, hItem, (long)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE),
+		CopyAutoTime(hWnd, hItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE),
 			TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))));
 	}
 
@@ -381,7 +381,7 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;
@@ -440,7 +440,7 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -479,7 +479,7 @@ void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 	//ツリー情報の解放
 	GlobalFree(tpTreeInfo);
-	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem, (long)NULL);
+	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem, (LPARAM)NULL);
 }
 
 
@@ -517,7 +517,7 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -612,7 +612,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 
 ******************************************************************************/
 
-void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	HTREEITEM pItem;
 
@@ -627,7 +627,7 @@ BOOL IsTreeItem(HWND hWnd, HTREEITEM hItem)
 	HTREEITEM RetItem;
 
 	RetItem = hItem;
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)FindTreeItem, (long)&RetItem);
+	CallTreeItem(WWWCWnd, RootItem, (FARPROC)FindTreeItem, (LPARAM)&RetItem);
 	if(RetItem != NULL){
 		return FALSE;
 	}
@@ -933,7 +933,7 @@ HTREEITEM TreeView_GetHiTestItem(HWND hTreeView)
 
 ******************************************************************************/
 
-BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, long lParam)
+BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, LPARAM lParam)
 {
 	TV_ITEM tvit = { 0 };
 
@@ -1214,7 +1214,7 @@ static void TreeView_DeleteParentIcon(HWND hWnd, HTREEITEM hItem, int Icon1, int
 
 ******************************************************************************/
 
-void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i, ItemCnt, Icon;
@@ -1342,7 +1342,7 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	HTREEITEM cItem, TmpItem;
 	char path[BUFSIZE];

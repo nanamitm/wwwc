@@ -93,8 +93,8 @@ extern char TimeFormat[];
 **************************************************************************/
 
 //View
-static DWORD CALLBACK EditStreamProc(DWORD dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb);
-static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static DWORD CALLBACK EditStreamProc(DWORD_PTR dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb);
+static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //Title
 static char *GetTitle(char *buf);
@@ -119,11 +119,11 @@ static BOOL WriteInternetShortcut(char *URL, char *path);
 
 //Option
 static LRESULT OptionNotifyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -134,7 +134,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 ******************************************************************************/
 
-static DWORD CALLBACK EditStreamProc(DWORD dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb)
+static DWORD CALLBACK EditStreamProc(DWORD_PTR dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb)
 {
 	int len;
 
@@ -153,7 +153,7 @@ static DWORD CALLBACK EditStreamProc(DWORD dwCookie, LPBYTE pbBuf, LONG cb, LONG
 
 ******************************************************************************/
 
-static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	struct TPHTTP *tpHTTP;
@@ -221,7 +221,7 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 					Html2Rtf(buf, ret);
 					SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_LIMITTEXT, i + 1, 0);
 					srcLen = 0;
-					eds.dwCookie = (DWORD)ret;
+					eds.dwCookie = (DWORD_PTR)ret;
 					eds.dwError = 0;
 					eds.pfnCallback = EditStreamProc;
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_STREAMIN, SF_RTF, (LPARAM)&eds);
@@ -1030,7 +1030,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			if(tpItemInfo->Param2 != 0){
 				GlobalFree((HGLOBAL)tpItemInfo->Param2);
 			}
-			tpItemInfo->Param2 = (long)GlobalAlloc(GPTR, lstrlen(headcontent) + 1);
+			tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(headcontent) + 1);
 			if(tpItemInfo->Param2 != 0) lstrcpy((char*)tpItemInfo->Param2, headcontent);
 
 			//チェックするURLを変更
@@ -1065,7 +1065,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			if(tpItemInfo->Param2 != 0){
 				GlobalFree((HGLOBAL)tpItemInfo->Param2);
 			}
-			tpItemInfo->Param2 = (long)CreateMoveURL(tpHTTP->Path, headcontent);
+			tpItemInfo->Param2 = (LONG_PTR)CreateMoveURL(tpHTTP->Path, headcontent);
 			GlobalFree(headcontent);
 
 			//リクエストの初期化
@@ -1269,7 +1269,7 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 	case 1:
 	case 2:
 		//ヘッダ、ソース表示
-		vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (long)tpItemInfo);
+		vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 		ShowWindow(vWnd, SW_SHOW);
 		break;
 
@@ -1918,7 +1918,7 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	if(tpHTTP == NULL){
 		return CHECK_ERROR;
 	}
-	tpItemInfo->Param1 = (long)tpHTTP;
+	tpItemInfo->Param1 = (LONG_PTR)tpHTTP;
 
 	//タイマーの初期化
 	tpItemInfo->user1 = 0;
@@ -1926,13 +1926,13 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	//チェック以外の場合に表示するURLの情報を使用する
 	if(tpItemInfo->Param2 == 0){
 		if(tpItemInfo->Param3 == 3 && tpItemInfo->ViewURL != NULL && *tpItemInfo->ViewURL != '\0'){
-			if((tpItemInfo->Param2 = (long)GlobalAlloc(GPTR, lstrlen(tpItemInfo->ViewURL) + 1)) == 0){
+			if((tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(tpItemInfo->ViewURL) + 1)) == 0){
 				HTTP_FreeItem(tpItemInfo);
 				return CHECK_ERROR;
 			}
 			lstrcpy((char*)tpItemInfo->Param2, tpItemInfo->ViewURL);
 		}else{
-			if((tpItemInfo->Param2 = (long)GlobalAlloc(GPTR, lstrlen(tpItemInfo->CheckURL) + 1)) == 0){
+			if((tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(tpItemInfo->CheckURL) + 1)) == 0){
 				HTTP_FreeItem(tpItemInfo);
 				return CHECK_ERROR;
 			}
@@ -2011,7 +2011,7 @@ __declspec(dllexport) int CALLBACK HTTP_ItemCheckEnd(HWND hWnd, struct TPITEM *t
 				break;
 			}
 			//ヘッダ、ソース表示
-			vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (long)tpItemInfo);
+			vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 			ShowWindow(vWnd, SW_SHOW);
 			SetFocus(GetDlgItem(vWnd, IDC_EDIT_VIEW));
 			break;

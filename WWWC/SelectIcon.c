@@ -124,7 +124,7 @@ static int SetListIcon(HWND hListView, char *path, int index)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static ICON_INFO *icon_info;
 	char buf[BUFSIZE];

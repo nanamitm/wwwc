@@ -439,7 +439,7 @@ void SubItemExecTool(HWND hWnd, int id, struct TPITEM **ToolItemList, int cnt, i
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	struct TP_GETTOOL GetTool;
@@ -689,7 +689,7 @@ static void VisibleToolOption(HWND hDlg, int HideOption)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	HMENU hMenu;		//ポップアップメニューのハンドル
@@ -701,7 +701,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	static char funcStr[BUFSIZE];
 	int i;
 #ifdef OP_XP_STYLE
-	static long hThemeP, hThemeC;
+	static LONG_PTR hThemeP, hThemeC;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)
@@ -1186,14 +1186,14 @@ static void SetLvToolIcon(HWND hListView)
 
 ******************************************************************************/
 
-BOOL CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	LV_COLUMN lvc;
 	int SelectItem;
 	int i, j;
 #ifdef OP_XP_STYLE
-	static long hThemeUp, hThemeDown;
+	static LONG_PTR hThemeUp, hThemeDown;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)
