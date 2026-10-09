@@ -286,7 +286,7 @@ int FileNameCheck(char *buf)
 	p = buf;
 
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			//２バイトコードの場合
 			p++;
 
@@ -328,7 +328,7 @@ void FileNameConv(char *buf, char NewChar)
 	p = buf;
 
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			//２バイトコードの場合
 			p++;
 
@@ -367,7 +367,7 @@ void EscToCode(char *buf)
 	char *p, *r;
 
 	for(p = buf, r = buf; *p != '\0'; p++){
-		if(IsDBCSLeadByte(*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 		}else if(*p == '\\' && *(p + 1) == 'n'){
@@ -404,7 +404,7 @@ char *CodeToEsc(char *buf)
 	}
 	//改行、タブを変換
 	for(p = buf, r = ret ;*p != '\0'; p++){
-		if(IsDBCSLeadByte(*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 			continue;
@@ -452,7 +452,7 @@ void GetNumString(char *buf, char *ret)
 
 	//数字文字のみを戻り値のバッファに設定
 	for(p = buf, r = ret;*p != '\0';p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			//２バイトコードの場合
 			p++;
 

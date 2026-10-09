@@ -63,6 +63,34 @@ static int srcLen;
 static struct TPHOSTINFO *tpHostInfo;
 static int HostInfoCnt;
 
+//通信スレッドからの通知
+#define WM_HTTP_DONE				(WM_APP + 1)
+#define NOTIFY_WINDOW_CLASS			"WWWC_HTTP_Notify"
+static HWND hNotifyWnd;
+
+//通信スレッドに渡すリクエスト
+//通信スレッドはアイテム情報を直接参照せず、開始時に作ったコピー (Item, HTTP) だけを使う。
+//結果はUIスレッドの通知ウィンドウでアイテムに反映する。
+struct HTTPREQ{
+	volatile LONG RefCount;			/* 参照数 (UIスレッドと通信スレッド) */
+	volatile LONG Cancel;			/* キャンセルされた */
+	CRITICAL_SECTION cs;			/* hRequest と HTTP.buf の保護 */
+	HINTERNET hRequest;
+	HMODULE hModule;				/* 通信スレッドが終わるまでDLLを解放しない */
+
+	struct TPITEM *tpItemInfo;		/* 元のアイテム (UIスレッドでのみ参照) */
+	struct TPITEM Item;				/* 通信スレッド用のアイテム情報 */
+	struct TPHTTP HTTP;				/* 通信スレッド用の接続情報と受信データ */
+
+	int Proxy;
+	int pNoCache;
+	int pUsePass;
+	char pUser[BUFSIZE];
+	char pPass[BUFSIZE];
+
+	BOOL Result;					/* 通信の結果 */
+};
+
 HWND hWndList[100];
 
 
@@ -111,6 +139,9 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo);
 static void SetSBText(HWND hWnd, struct TPITEM *tpItemInfo, char *msg);
 static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP);
 static void FreeURLData(struct TPHTTP *tpHTTP);
+static void FreeHttpData(struct TPITEM *tpItemInfo);
+static void AbortRequest(struct TPHTTP *tpHTTP);
+static void TakePartialData(struct TPHTTP *tpHTTP);
 static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP);
 static BOOL CheckServer(HWND hWnd, char *RealServer);
 
@@ -1215,16 +1246,26 @@ static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 
 ******************************************************************************/
 
+static void FreeHttpData(struct TPITEM *tpItemInfo)
+{
+	struct TPHTTP *tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
+
+	if(tpHTTP == NULL){
+		return;
+	}
+	//通信中の場合は中止する
+	AbortRequest(tpHTTP);
+	if(tpHTTP->buf != NULL){
+		GlobalFree((HGLOBAL)tpHTTP->buf);
+	}
+	FreeURLData(tpHTTP);
+	GlobalFree((HGLOBAL)tpHTTP);
+	tpItemInfo->Param1 = 0;
+}
+
 __declspec(dllexport) int CALLBACK HTTP_FreeItem(struct TPITEM *tpItemInfo)
 {
-	if(tpItemInfo->Param1 != 0){
-		if((HGLOBAL)((struct TPHTTP *)tpItemInfo->Param1)->buf != NULL){
-			GlobalFree((HGLOBAL)((struct TPHTTP *)tpItemInfo->Param1)->buf);
-		}
-		FreeURLData((struct TPHTTP *)tpItemInfo->Param1);
-		GlobalFree((HGLOBAL)tpItemInfo->Param1);
-		tpItemInfo->Param1 = 0;
-	}
+	FreeHttpData(tpItemInfo);
 	if(tpItemInfo->Param2 != 0){
 		GlobalFree((HGLOBAL)tpItemInfo->Param2);
 		tpItemInfo->Param2 = 0;
@@ -1302,6 +1343,8 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 	if (tpHTTP == NULL) {
 		return 0;
 	}
+	//途中まで受信したデータ
+	TakePartialData(tpHTTP);
 	switch(tpItemInfo->Param3){
 	case 1:
 	case 2:
@@ -1312,7 +1355,8 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 
 	case 3:
 		//タイトル取得
-		if((titlebuf = GetTitle(tpHTTP->buf + HeaderSize(tpHTTP->buf))) != NULL){
+		if(tpHTTP->buf != NULL &&
+			(titlebuf = GetTitle(tpHTTP->buf + HeaderSize(tpHTTP->buf))) != NULL){
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
 			}
@@ -1324,10 +1368,6 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 			tpItemInfo->RefreshFlag = TRUE;
 		}
 		break;
-	}
-	if (tpHTTP->hThread != NULL) {
-		TerminateThread(tpHTTP->hThread, 0);
-		tpHTTP->hThread = NULL;
 	}
 	HTTP_FreeItem(tpItemInfo);
 	return 0;
@@ -1344,8 +1384,6 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 
 __declspec(dllexport) int CALLBACK HTTP_Timer(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-	struct TPHTTP *tpHTTP;
-
 	if(tpItemInfo->user1 == -1){
 		return CHECK_SUCCEED;
 	}
@@ -1354,11 +1392,6 @@ __declspec(dllexport) int CALLBACK HTTP_Timer(HWND hWnd, struct TPITEM *tpItemIn
 		if(tpItemInfo->Param3 == 1 || tpItemInfo->Param3 == 2){
 			tpItemInfo->user1 = -1;
 			MessageBox(hWnd, STR_ERROR_TIMEOUT, tpItemInfo->CheckURL, MB_ICONERROR);
-		}
-		tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
-		if (tpHTTP != NULL && tpHTTP->hThread != NULL) {
-			TerminateThread(tpHTTP->hThread, 0);
-			tpHTTP->hThread = NULL;
 		}
 		HTTP_FreeItem(tpItemInfo);
 		SendMessage(hWnd, WM_CHECK_RESULT, ST_TIMEOUT, (LPARAM)tpItemInfo);
@@ -1587,17 +1620,189 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 
 /******************************************************************************
 
-	HTTP_Thread
+	DupString
 
-	HTTP処理スレッド
+	文字列のコピーを作成
 
 ******************************************************************************/
 
-static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
+static char *DupString(const char *str)
 {
-	struct TPITEM *tpItemInfo = (struct TPITEM *)lpParameter;
-	struct TPHTTP *tpHTTP;
-	HINTERNET hSession, hConnect, hRequest;
+	char *ret;
+
+	if(str == NULL){
+		return NULL;
+	}
+	ret = (char *)GlobalAlloc(GMEM_FIXED, lstrlen(str) + 1);
+	if(ret != NULL){
+		lstrcpy(ret, str);
+	}
+	return ret;
+}
+
+
+/******************************************************************************
+
+	ReleaseRequest
+
+	リクエストの参照を解放する (最後の参照で破棄)
+
+******************************************************************************/
+
+static void ReleaseRequest(struct HTTPREQ *req)
+{
+	if(InterlockedDecrement(&req->RefCount) != 0){
+		return;
+	}
+	DeleteCriticalSection(&req->cs);
+	if(req->Item.CheckURL != NULL) GlobalFree(req->Item.CheckURL);
+	if(req->Item.Option1 != NULL) GlobalFree(req->Item.Option1);
+	if(req->Item.Option2 != NULL) GlobalFree(req->Item.Option2);
+	if(req->Item.DLLData1 != NULL) GlobalFree(req->Item.DLLData1);
+	if(req->Item.ErrStatus != NULL) GlobalFree(req->Item.ErrStatus);
+	if(req->Item.Param2 != 0) GlobalFree((HGLOBAL)req->Item.Param2);
+	if(req->HTTP.buf != NULL) GlobalFree(req->HTTP.buf);
+	FreeURLData(&req->HTTP);
+	SecureZeroMemory(req->pPass, sizeof(req->pPass));
+	GlobalFree(req);
+}
+
+
+/******************************************************************************
+
+	CreateRequest
+
+	通信スレッドに渡すリクエストを作成する (UIスレッド)
+
+******************************************************************************/
+
+static struct HTTPREQ *CreateRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
+{
+	struct HTTPREQ *req;
+
+	req = (struct HTTPREQ *)GlobalAlloc(GPTR, sizeof(struct HTTPREQ));
+	if(req == NULL){
+		return NULL;
+	}
+	req->RefCount = 1;
+	InitializeCriticalSection(&req->cs);
+	req->tpItemInfo = tpItemInfo;
+
+	//通信スレッドが参照するアイテム情報
+	req->Item.iSize = sizeof(struct TPITEM);
+	req->Item.CheckURL = DupString(tpItemInfo->CheckURL);
+	req->Item.Option1 = DupString(tpItemInfo->Option1);
+	req->Item.Option2 = DupString(tpItemInfo->Option2);
+	req->Item.DLLData1 = DupString(tpItemInfo->DLLData1);
+	req->Item.Param2 = (LONG_PTR)DupString((char *)tpItemInfo->Param2);
+	req->Item.Param3 = tpItemInfo->Param3;
+	req->Item.user2 = tpItemInfo->user2;
+
+	//接続情報
+	req->HTTP.hWnd = tpHTTP->hWnd;
+	req->HTTP.SvName = DupString(tpHTTP->SvName);
+	req->HTTP.Port = tpHTTP->Port;
+	req->HTTP.user = DupString((tpHTTP->user != NULL) ? tpHTTP->user : "");
+	req->HTTP.pass = DupString((tpHTTP->pass != NULL) ? tpHTTP->pass : "");
+	req->HTTP.HeadCheckFlag = tpHTTP->HeadCheckFlag;
+	req->HTTP.FilterFlag = tpHTTP->FilterFlag;
+
+	//プロキシの設定 (プロパティで変更されても通信中のリクエストには影響しない)
+	req->Proxy = Proxy;
+	req->pNoCache = pNoCache;
+	req->pUsePass = pUsePass;
+	lstrcpyn(req->pUser, pUser, BUFSIZE);
+	lstrcpyn(req->pPass, pPass, BUFSIZE);
+
+	if((tpItemInfo->CheckURL != NULL && req->Item.CheckURL == NULL) ||
+		(tpItemInfo->Option1 != NULL && req->Item.Option1 == NULL) ||
+		(tpItemInfo->Option2 != NULL && req->Item.Option2 == NULL) ||
+		(tpItemInfo->DLLData1 != NULL && req->Item.DLLData1 == NULL) ||
+		req->Item.Param2 == 0 || req->HTTP.SvName == NULL ||
+		req->HTTP.user == NULL || req->HTTP.pass == NULL){
+		ReleaseRequest(req);
+		return NULL;
+	}
+	return req;
+}
+
+
+/******************************************************************************
+
+	AbortRequest
+
+	通信中のリクエストを中止する (UIスレッド)
+	通信スレッドは強制終了せず、ブロックしている WinHTTP の呼び出しを
+	ハンドルを閉じて終わらせる。以降、通信スレッドはアイテムに結果を反映しない。
+
+******************************************************************************/
+
+static void AbortRequest(struct TPHTTP *tpHTTP)
+{
+	struct HTTPREQ *req = tpHTTP->Req;
+
+	if(req == NULL){
+		return;
+	}
+	tpHTTP->Req = NULL;
+	InterlockedExchange(&req->Cancel, 1);
+
+	EnterCriticalSection(&req->cs);
+	if(req->hRequest != NULL){
+		WinHttpCloseHandle(req->hRequest);
+		req->hRequest = NULL;
+	}
+	LeaveCriticalSection(&req->cs);
+	ReleaseRequest(req);
+}
+
+
+/******************************************************************************
+
+	TakePartialData
+
+	通信中のリクエストが受信済みのデータをアイテムにコピーする (UIスレッド)
+	キャンセル時に途中までのヘッダやソースを表示するため
+
+******************************************************************************/
+
+static void TakePartialData(struct TPHTTP *tpHTTP)
+{
+	struct HTTPREQ *req = tpHTTP->Req;
+	char *buf = NULL;
+
+	if(req == NULL){
+		return;
+	}
+	EnterCriticalSection(&req->cs);
+	if(req->HTTP.buf != NULL){
+		buf = DupString(req->HTTP.buf);
+	}
+	LeaveCriticalSection(&req->cs);
+	if(buf != NULL){
+		if(tpHTTP->buf != NULL){
+			GlobalFree(tpHTTP->buf);
+		}
+		tpHTTP->buf = buf;
+		tpHTTP->Size = lstrlen(buf);
+	}
+}
+
+
+/******************************************************************************
+
+	HTTP_Request
+
+	HTTPのリクエストを送信してレスポンスを受信する (通信スレッド)
+	req->Item, req->HTTP 以外のアイテム情報は参照しない
+
+******************************************************************************/
+
+static BOOL HTTP_Request(struct HTTPREQ *req)
+{
+	struct TPITEM *tpItemInfo = &req->Item;
+	struct TPHTTP *tpHTTP = &req->HTTP;
+	HINTERNET hSession = NULL, hConnect = NULL, hRequest = NULL;
 	URL_COMPONENTS urlComponents;
 	WCHAR szHostName[256], szUrlPath[2048];
 	WCHAR *wp;
@@ -1606,6 +1811,8 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	WCHAR url[2048];
 	WCHAR *sendHeader;
 	WCHAR *s;
+	BYTE *pszBuffer;
+	char *cbuf, *wkbuf, *oldbuf, *p;
 	char BaseStr1[BUFSIZE * 2 + 2];		//"ユーザ:パスワード"
 	char BaseStr2[PASS_ENC_SIZE];		//暗号化したパスワード、Base64
 	char user[BUFSIZE];
@@ -1613,19 +1820,16 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	char referer[BUFSIZE];
 	char buf[BUFSIZE];
 	int ProxyFlag;
+	int clen;
+	BOOL ret = FALSE;
 
 	SetLastError(NO_ERROR);
 
-	tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
-	if (tpHTTP == NULL) {
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
-	}
 	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
-	if ((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2) {
+	if ((ProxyFlag == 0 && req->Proxy == 1) || ProxyFlag == 2) {
 		WCHAR wproxy[2048];
 		char proxy[2048];
-		wsprintf(proxy, "http://%s:%d", tpHTTP->SvName, tpHTTP->Port);
+		wsprintf(proxy, "http://%.1000s:%d", tpHTTP->SvName, tpHTTP->Port);
 		MultiByteToWideChar(CP_ACP, 0, proxy, -1, wproxy, 2048);
 		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NAMED_PROXY, wproxy, WINHTTP_NO_PROXY_BYPASS, 0);
 	} else {
@@ -1633,11 +1837,7 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	}
 	if (hSession == NULL) {
 		SetHttpError(tpItemInfo, STR_ERROR_CONNECT, "WinHttpOpen");
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
 
 	ZeroMemory(&urlComponents, sizeof(URL_COMPONENTS));
@@ -1648,14 +1848,10 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	urlComponents.dwUrlPathLength = sizeof(szUrlPath) / sizeof(WCHAR);
 
 	MultiByteToWideChar(CP_ACP, 0, (char *)tpItemInfo->Param2, -1, url, 2048);
+	url[2047] = L'\0';
 	if (!WinHttpCrackUrl(url, (DWORD)wcslen(url), 0, &urlComponents)) {
 		SetHttpError(tpItemInfo, STR_ERROR_CONNECT, "WinHttpCrackUrl");
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
 	for (wp = szUrlPath; *wp != L'\0'; wp++) {
 		if (*wp == L'#') {
@@ -1667,12 +1863,7 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	hConnect = WinHttpConnect(hSession, szHostName, urlComponents.nPort, 0);
 	if (hConnect == NULL) {
 		SetHttpError(tpItemInfo, STR_ERROR_CONNECT, "WinHttpConnect");
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
 
 	hRequest = WinHttpOpenRequest(hConnect,
@@ -1681,14 +1872,19 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 		(INTERNET_SCHEME_HTTPS == urlComponents.nScheme) ? WINHTTP_FLAG_SECURE : 0);
 	if (hRequest == NULL) {
 		SetHttpError(tpItemInfo, STR_ERROR_SEND, "WinHttpOpenRequest");
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
+	//キャンセル時にUIスレッドから閉じられるように登録する
+	EnterCriticalSection(&req->cs);
+	if (req->Cancel != 0) {
+		LeaveCriticalSection(&req->cs);
+		WinHttpCloseHandle(hRequest);
+		hRequest = NULL;
+		goto end;
+	}
+	req->hRequest = hRequest;
+	LeaveCriticalSection(&req->cs);
+
 	//証明書は検証する。アイテムで無視が指定されている場合のみ証明書のエラーを無視する
 	if (GetOptionInt(tpItemInfo->Option2, OP2_IGNORECERT) == 1) {
 		DWORD dwFlags =
@@ -1699,17 +1895,19 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 		WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
 	}
 
+	*user = '\0';
+	*pass = '\0';
 	dwSize = BUFSIZE;
 	if (tpItemInfo->DLLData1 != NULL) {
 		dwSize += lstrlen(tpItemInfo->DLLData1);
 	}
-	if (Proxy == 1 && pUsePass == 1) {
-		dwSize += (lstrlen(pUser) + 1 + lstrlen(pPass)) * 13 / 10;
+	if (req->Proxy == 1 && req->pUsePass == 1) {
+		dwSize += (lstrlen(req->pUser) + 1 + lstrlen(req->pPass)) * 13 / 10;
 	}
 	if (GetOptionString(tpItemInfo->Option2, referer, OP2_REFERER) == TRUE) {
 		dwSize += lstrlen(referer);
 	}
-	if (tpHTTP->user[0] != '\0') {
+	if (*tpHTTP->user != '\0') {
 		dwSize += (lstrlen(tpHTTP->user) + 1 + lstrlen(tpHTTP->pass)) * 13 / 10;
 	}
 	if (GetOptionInt(tpItemInfo->Option2, OP2_USEPASS) == 1) {
@@ -1724,6 +1922,10 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 		dwSize += (lstrlen(user) + 1 + lstrlen(pass)) * 13 / 10;
 	}
 	sendHeader = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, dwSize * sizeof(WCHAR));
+	if (sendHeader == NULL) {
+		SetHttpError(tpItemInfo, STR_ERROR_SEND, "HeapAlloc");
+		goto end;
+	}
 	s = iStrCpyW(sendHeader, "Accept: */*");
 	//If-Modified-Since
 	if (tpItemInfo->user2 == REQUEST_GET && tpItemInfo->Param3 == 0 &&
@@ -1737,12 +1939,12 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 		s = iStrCpyW(s, tpItemInfo->DLLData1);
 	}
 	//キャッシュ制御
-	if (Proxy == 1 && pNoCache == 1) {
+	if (req->Proxy == 1 && req->pNoCache == 1) {
 		s = iStrCpyW(s, "\r\nPragma: no-cache\r\nCache-Control: no-cache");
 	}
 	//プロキシ認証
-	if (Proxy == 1 && pUsePass == 1) {
-		wsprintf(BaseStr1, "%s:%s", pUser, pPass);
+	if (req->Proxy == 1 && req->pUsePass == 1) {
+		wsprintf(BaseStr1, "%s:%s", req->pUser, req->pPass);
 		eBase(BaseStr1, BaseStr2);
 
 		s = iStrCpyW(s, "\r\nProxy-Authorization: Basic ");
@@ -1755,12 +1957,10 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 	}
 	//ページ認証
 	*BaseStr2 = '\0';
-	if (tpHTTP->user[0] != '\0') {
-		lstrcpy(user, tpHTTP->user);
-
-		if (tpHTTP->pass[0] != '\0') {
-			lstrcpy(pass, tpHTTP->pass);
-		}
+	if (*tpHTTP->user != '\0') {
+		//URLに含まれるユーザ名とパスワード
+		lstrcpyn(user, tpHTTP->user, BUFSIZE);
+		lstrcpyn(pass, tpHTTP->pass, BUFSIZE);
 		wsprintf(BaseStr1, "%s:%s", user, pass);
 		eBase(BaseStr1, BaseStr2);
 	}
@@ -1783,143 +1983,250 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 
 	if (!WinHttpSendRequest(hRequest, sendHeader, -1, WINHTTP_NO_REQUEST_DATA, 0, WINHTTP_IGNORE_REQUEST_TOTAL_LENGTH, 0)) {
 		SetHttpError(tpItemInfo, STR_ERROR_SEND, "WinHttpSendRequest");
+		SecureZeroMemory(sendHeader, dwSize * sizeof(WCHAR));
 		HeapFree(GetProcessHeap(), 0, sendHeader);
-		WinHttpCloseHandle(hRequest);
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
+	SecureZeroMemory(sendHeader, dwSize * sizeof(WCHAR));
 	HeapFree(GetProcessHeap(), 0, sendHeader);
 	if (WinHttpReceiveResponse(hRequest, NULL) == FALSE) {
 		SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpReceiveResponse");
-		WinHttpCloseHandle(hRequest);
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
 	dwSize = 0;
 	if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX, NULL, &dwSize, WINHTTP_NO_HEADER_INDEX) == FALSE) {
 		if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
 			SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpQueryHeaders(Size)");
-			WinHttpCloseHandle(hRequest);
-			WinHttpCloseHandle(hConnect);
-			WinHttpCloseHandle(hSession);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-			tpHTTP->hThread = NULL;
-			HTTP_FreeItem(tpItemInfo);
-			return -1;
+			goto end;
 		}
 	}
 	if (dwSize <= 12) {
 		SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpQueryHeaders(dwSize)");
-		WinHttpCloseHandle(hRequest);
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
 	header = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, dwSize);
+	if (header == NULL) {
+		SetHttpError(tpItemInfo, STR_ERROR_RECV, "HeapAlloc");
+		goto end;
+	}
 	if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_RAW_HEADERS_CRLF, WINHTTP_HEADER_NAME_BY_INDEX, header, &dwSize, WINHTTP_NO_HEADER_INDEX) == FALSE) {
 		SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpQueryHeaders");
 		HeapFree(GetProcessHeap(), 0, header);
-		WinHttpCloseHandle(hRequest);
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return -1;
+		goto end;
 	}
-	int clen = WideCharToMultiByte(CP_ACP, 0, header, -1, NULL, 0, NULL, NULL);
-	char *cbuf = (char *)GlobalAlloc(GMEM_FIXED, (clen + 1) * sizeof(char));
+	clen = WideCharToMultiByte(CP_ACP, 0, header, -1, NULL, 0, NULL, NULL);
+	cbuf = (char *)GlobalAlloc(GMEM_FIXED, (clen + 1) * sizeof(char));
+	if (cbuf == NULL) {
+		SetHttpError(tpItemInfo, STR_ERROR_RECV, "GlobalAlloc");
+		HeapFree(GetProcessHeap(), 0, header);
+		goto end;
+	}
 	WideCharToMultiByte(CP_ACP, 0, header, -1, cbuf, clen, NULL, NULL);
 	HeapFree(GetProcessHeap(), 0, header);
-	if (tpHTTP->buf != NULL) GlobalFree((HGLOBAL)tpHTTP->buf);
+	EnterCriticalSection(&req->cs);
+	oldbuf = tpHTTP->buf;
 	tpHTTP->Size = clen;
 	tpHTTP->buf = cbuf;
+	LeaveCriticalSection(&req->cs);
+	if (oldbuf != NULL) GlobalFree((HGLOBAL)oldbuf);
 	if (tpHTTP->HeadCheckFlag == FALSE && CheckHead(tpItemInfo, tpHTTP) == TRUE) {
-		WinHttpCloseHandle(hRequest);
-		WinHttpCloseHandle(hConnect);
-		WinHttpCloseHandle(hSession);
-		SendMessage(tpHTTP->hWnd, WM_CHECK_END, HeaderFunc(tpHTTP->hWnd, tpItemInfo), (LPARAM)tpItemInfo);
-		SetSBText(tpHTTP->hWnd, tpItemInfo, STR_STATUS_CHECKEND);
-		tpHTTP->hThread = NULL;
-		HTTP_FreeItem(tpItemInfo);
-		return 0;
+		ret = TRUE;
+		goto end;
 	}
-	while (1) {
-		DWORD dwSize = 0;
+	while (req->Cancel == 0) {
+		dwSize = 0;
 		if (!WinHttpQueryDataAvailable(hRequest, &dwSize)) {
 			SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpQueryDataAvailable");
-			WinHttpCloseHandle(hRequest);
-			WinHttpCloseHandle(hConnect);
-			WinHttpCloseHandle(hSession);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-			tpHTTP->hThread = NULL;
-			return -1;
+			goto end;
 		}
 		if (dwSize == 0) {
 			break;
 		}
 
-		BYTE *pszBuffer = (LPBYTE)HeapAlloc(GetProcessHeap(), 0, dwSize + 1);
+		pszBuffer = (LPBYTE)HeapAlloc(GetProcessHeap(), 0, dwSize + 1);
 		if (pszBuffer == NULL) {
 			break;
 		}
 		if (!WinHttpReadData(hRequest, pszBuffer, dwSize, NULL)) {
 			SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpReadData");
 			HeapFree(GetProcessHeap(), 0, pszBuffer);
-			WinHttpCloseHandle(hRequest);
-			WinHttpCloseHandle(hConnect);
-			WinHttpCloseHandle(hSession);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
-			SendMessage(tpHTTP->hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
-			tpHTTP->hThread = NULL;
-			HTTP_FreeItem(tpItemInfo);
-			return -1;
+			goto end;
 		}
 		pszBuffer[dwSize] = '\0';
-		tpHTTP->Size += dwSize;
 
-		wsprintf(buf, STR_STATUS_RECV, tpHTTP->Size);
-		SetSBText(tpHTTP->hWnd, tpItemInfo, buf);
-
-		char *wkbuf = (char *)GlobalAlloc(GMEM_FIXED, tpHTTP->Size + 1);
+		wkbuf = (char *)GlobalAlloc(GMEM_FIXED, tpHTTP->Size + dwSize + 1);
 		if (wkbuf != NULL) {
-			char *p = iStrCpy(wkbuf, tpHTTP->buf);
-			lstrcpy(p, pszBuffer);
-			if (tpHTTP->buf != NULL) GlobalFree((HGLOBAL)tpHTTP->buf);
+			p = iStrCpy(wkbuf, tpHTTP->buf);
+			lstrcpy(p, (char *)pszBuffer);
+			EnterCriticalSection(&req->cs);
+			oldbuf = tpHTTP->buf;
 			tpHTTP->buf = wkbuf;
-			if (tpHTTP->HeadCheckFlag == FALSE && CheckHead(tpItemInfo, tpHTTP) == TRUE) {
-				HeapFree(GetProcessHeap(), 0, pszBuffer);
-				break;
-			}
+			tpHTTP->Size += dwSize;
+			LeaveCriticalSection(&req->cs);
+			if (oldbuf != NULL) GlobalFree((HGLOBAL)oldbuf);
 		}
 		HeapFree(GetProcessHeap(), 0, pszBuffer);
-	}
-	WinHttpCloseHandle(hRequest);
-	WinHttpCloseHandle(hConnect);
-	WinHttpCloseHandle(hSession);
 
-	SendMessage(tpHTTP->hWnd, WM_CHECK_END, HeaderFunc(tpHTTP->hWnd, tpItemInfo), (LPARAM)tpItemInfo);
-	SetSBText(tpHTTP->hWnd, tpItemInfo, STR_STATUS_CHECKEND);
-	tpHTTP->hThread = NULL;
-	HTTP_FreeItem(tpItemInfo);
+		if (req->Cancel == 0) {
+			wsprintf(buf, STR_STATUS_RECV, tpHTTP->Size);
+			SetSBText(tpHTTP->hWnd, tpItemInfo, buf);
+		}
+		if (wkbuf != NULL && tpHTTP->HeadCheckFlag == FALSE && CheckHead(tpItemInfo, tpHTTP) == TRUE) {
+			break;
+		}
+	}
+	ret = (req->Cancel == 0) ? TRUE : FALSE;
+
+end:
+	if (hRequest != NULL) {
+		EnterCriticalSection(&req->cs);
+		if (req->hRequest != NULL) {
+			WinHttpCloseHandle(req->hRequest);
+			req->hRequest = NULL;
+		}
+		LeaveCriticalSection(&req->cs);
+	}
+	if (hConnect != NULL) WinHttpCloseHandle(hConnect);
+	if (hSession != NULL) WinHttpCloseHandle(hSession);
+	SecureZeroMemory(pass, sizeof(pass));
+	SecureZeroMemory(BaseStr1, sizeof(BaseStr1));
+	SecureZeroMemory(BaseStr2, sizeof(BaseStr2));
+	return ret;
+}
+
+
+/******************************************************************************
+
+	HTTP_Thread
+
+	HTTP処理スレッド
+
+******************************************************************************/
+
+static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
+{
+	struct HTTPREQ *req = (struct HTTPREQ *)lpParameter;
+	HMODULE hModule = req->hModule;
+
+	req->Result = HTTP_Request(req);
+
+	//結果のアイテムへの反映はUIスレッドで行う
+	if (req->Cancel == 0) {
+		SendMessage(hNotifyWnd, WM_HTTP_DONE, 0, (LPARAM)req);
+	}
+	ReleaseRequest(req);
+	FreeLibraryAndExitThread(hModule, 0);
 	return 0;
+}
+
+
+/******************************************************************************
+
+	RequestDone
+
+	通信スレッドの結果をアイテムに反映する (UIスレッド)
+
+******************************************************************************/
+
+static void RequestDone(struct HTTPREQ *req)
+{
+	struct TPITEM *tpItemInfo;
+	struct TPHTTP *tpHTTP;
+	HWND hWnd;
+	int ret;
+
+	if (req->Cancel != 0) {
+		//キャンセル済み (アイテムは解放されている可能性がある)
+		return;
+	}
+	tpItemInfo = req->tpItemInfo;
+	tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
+	if (tpHTTP == NULL || tpHTTP->Req != req) {
+		return;
+	}
+	tpHTTP->Req = NULL;
+	hWnd = tpHTTP->hWnd;
+
+	//タイムアウトの監視を終了
+	tpItemInfo->user1 = -1;
+
+	if (req->Result == FALSE) {
+		//エラーの内容をアイテムに設定
+		if (tpItemInfo->ErrStatus != NULL) {
+			GlobalFree(tpItemInfo->ErrStatus);
+		}
+		tpItemInfo->ErrStatus = req->Item.ErrStatus;
+		req->Item.ErrStatus = NULL;
+		ReleaseRequest(req);
+
+		SendMessage(hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);
+		SendMessage(hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
+		HTTP_FreeItem(tpItemInfo);
+		return;
+	}
+
+	//受信したデータをアイテムに設定
+	if (tpHTTP->buf != NULL) {
+		GlobalFree(tpHTTP->buf);
+	}
+	tpHTTP->buf = req->HTTP.buf;
+	tpHTTP->Size = req->HTTP.Size;
+	tpHTTP->HeadCheckFlag = req->HTTP.HeadCheckFlag;
+	req->HTTP.buf = NULL;
+	ReleaseRequest(req);
+
+	ret = HeaderFunc(hWnd, tpItemInfo);
+	SendMessage(hWnd, WM_CHECK_END, ret, (LPARAM)tpItemInfo);
+	SetSBText(hWnd, tpItemInfo, STR_STATUS_CHECKEND);
+	if (ret == CHECK_NO) {
+		//リダイレクト先のURL (Param2) と処理の種類 (Param3) は次のリクエストで使う
+		FreeHttpData(tpItemInfo);
+	} else {
+		HTTP_FreeItem(tpItemInfo);
+	}
+}
+
+
+/******************************************************************************
+
+	NotifyWndProc
+
+	通信スレッドからの通知を受けるウィンドウ (UIスレッド)
+
+******************************************************************************/
+
+static LRESULT CALLBACK NotifyWndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (uMsg == WM_HTTP_DONE) {
+		RequestDone((struct HTTPREQ *)lParam);
+		return 0;
+	}
+	return DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+
+
+/******************************************************************************
+
+	CreateNotifyWindow
+
+	通知ウィンドウの作成
+
+******************************************************************************/
+
+static BOOL CreateNotifyWindow(void)
+{
+	WNDCLASS wc;
+
+	if (hNotifyWnd != NULL) {
+		return TRUE;
+	}
+	ZeroMemory(&wc, sizeof(WNDCLASS));
+	wc.lpfnWndProc = NotifyWndProc;
+	wc.hInstance = ghinst;
+	wc.lpszClassName = NOTIFY_WINDOW_CLASS;
+	RegisterClass(&wc);
+	hNotifyWnd = CreateWindow(NOTIFY_WINDOW_CLASS, "", 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, ghinst, NULL);
+	return (hNotifyWnd != NULL) ? TRUE : FALSE;
 }
 
 
@@ -1934,6 +2241,8 @@ static DWORD WINAPI HTTP_Thread(LPVOID lpParameter)
 static BOOL Start_HTTP_Thread(const HWND hWnd, struct TPITEM *tpItemInfo)
 {
 	struct TPHTTP *tpHTTP;
+	struct HTTPREQ *req;
+	HANDLE hThread;
 	DWORD threadId;
 
 	tpHTTP = (struct TPHTTP *)tpItemInfo->Param1;
@@ -1941,18 +2250,33 @@ static BOOL Start_HTTP_Thread(const HWND hWnd, struct TPITEM *tpItemInfo)
 		return FALSE;
 	}
 	tpHTTP->hWnd = hWnd;
-	tpHTTP->hThread = CreateThread(NULL, 0, HTTP_Thread, (LPVOID)tpItemInfo, 0, &threadId);
+	if (CreateNotifyWindow() == FALSE) {
+		return FALSE;
+	}
+	req = CreateRequest(tpItemInfo, tpHTTP);
+	if (req == NULL) {
+		return FALSE;
+	}
+	//通信スレッドが終わるまでDLLを解放しない
+	if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)&hNotifyWnd, &req->hModule) == FALSE) {
+		ReleaseRequest(req);
+		return FALSE;
+	}
+	//UIスレッド (tpHTTP->Req) と通信スレッドの参照
+	req->RefCount = 2;
+	tpHTTP->Req = req;
+	hThread = CreateThread(NULL, 0, HTTP_Thread, (LPVOID)req, 0, &threadId);
+	if (hThread == NULL) {
+		tpHTTP->Req = NULL;
+		FreeLibrary(req->hModule);
+		req->RefCount = 1;
+		ReleaseRequest(req);
+		return FALSE;
+	}
+	CloseHandle(hThread);
 	return TRUE;
 }
 
-
-/******************************************************************************
-
-	HTTP_Start
-
-	チェックの開始
-
-******************************************************************************/
 
 /******************************************************************************
 
@@ -1982,6 +2306,14 @@ static void MigrateItemPassword(struct TPITEM *tpItemInfo)
 	SecureZeroMemory(pass, sizeof(pass));
 }
 
+
+/******************************************************************************
+
+	HTTP_Start
+
+	チェックの開始
+
+******************************************************************************/
 
 __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemInfo)
 {
@@ -2058,6 +2390,7 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	SetSBText(hWnd, tpItemInfo, STR_STATUS_CONNECT);
 
 	if (Start_HTTP_Thread(hWnd, tpItemInfo) == FALSE) {
+		HTTP_FreeItem(tpItemInfo);
 		return CHECK_ERROR;
 	}
 	return CHECK_SUCCEED;
@@ -2434,6 +2767,12 @@ __declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
 	}
 
 	FreeFilter();
+
+	if(hNotifyWnd != NULL){
+		DestroyWindow(hNotifyWnd);
+		hNotifyWnd = NULL;
+		UnregisterClass(NOTIFY_WINDOW_CLASS, ghinst);
+	}
 	return 0;
 }
 /* End of source */

@@ -38,7 +38,7 @@
 	Global Variables
 **************************************************************************/
 
-char fpath[BUFSIZE];
+char fpath[PATH_BUFSIZE];
 
 FILTER *FilterInfo;
 int FilterCount;
@@ -388,12 +388,15 @@ BOOL ReadFilterFile(char *cpath)
 {
 	HANDLE hFile;
 	char *buf, *p;
-	char path[BUFSIZE];
+	char path[PATH_BUFSIZE];
 	DWORD fSizeLow, fSizeHigh;
 	DWORD ret;
 	long FileSize;
 	int i;
 
+	if(lstrlen(cpath) >= BUFSIZE){
+		return FALSE;
+	}
 	lstrcpy(fpath, cpath);
 	wsprintf(path, "%s\\%s", cpath, FILE_FILTER);
 
@@ -567,7 +570,7 @@ void FreeFilter(void)
 __declspec(dllexport) int CALLBACK FilterReload(HWND hWnd, struct TPITEM **ToolItemList,
 													  int ToolItemListCnt, int type, int CheckType)
 {
-	char path[BUFSIZE];
+	char path[PATH_BUFSIZE];
 
 	if(type == TOOL_EXEC_PORP){
 		wsprintf(path, "%s\\%s", fpath, FILE_FILTER);

@@ -84,7 +84,7 @@ void BadNameCheck(char *buf, char NewChar)
 
 	p = buf;
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == FALSE){
+		if(IsDBCSLeadByte((BYTE)*p) == FALSE || *(p + 1) == '\0'){
 			if(*p == '\\' || *p == '/' || *p == ':' || *p == ',' || *p == ';' || *p == '*' ||
 				*p == '?' || *p == '\"' || *p == '<' || *p == '>' || *p == '|'){
 				*p = NewChar;

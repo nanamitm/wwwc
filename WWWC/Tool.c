@@ -830,7 +830,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 					//タイトルの設定
 					r = "";
 					for(p = buf; *p != '\0'; p++){
-						if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+						if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 							p++;
 							continue;
 						}

@@ -1215,7 +1215,7 @@ static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo)
 	//表示されているアイテムの場合は表示の更新を行う
 	if(tpItemInfo->hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		ListIndex = ListView_GetMemToIndex(GetDlgItem(hWnd, WWWC_LIST), tpItemInfo);
-		if(tpItemInfo->RefreshFlag = TRUE){
+		if(tpItemInfo->RefreshFlag == TRUE){
 			ListView_SetItemText(GetDlgItem(hWnd, WWWC_LIST), ListIndex, 0, LPSTR_TEXTCALLBACK);
 		}
 		ListView_RedrawItems(GetDlgItem(hWnd, WWWC_LIST), ListIndex, ListIndex);
@@ -1363,7 +1363,7 @@ int CheckEndItem(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 	if(((struct TPITEM *)lParam)->hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		ListIndex = ListView_GetMemToIndex(GetDlgItem(hWnd, WWWC_LIST), ((struct TPITEM *)lParam));
-		if(((struct TPITEM *)lParam)->RefreshFlag = TRUE){
+		if(((struct TPITEM *)lParam)->RefreshFlag == TRUE){
 			ListView_SetItemText(GetDlgItem(hWnd, WWWC_LIST), ListIndex, 0, LPSTR_TEXTCALLBACK);
 		}
 		ListView_RedrawItems(GetDlgItem(hWnd, WWWC_LIST), ListIndex, ListIndex);
