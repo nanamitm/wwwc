@@ -37,7 +37,7 @@
 	Global Variables
 **************************************************************************/
 
-//ŠO•”QÆ
+//å¤–éƒ¨å‚ç…§
 extern char app_path[];
 extern HINSTANCE ghinst;
 
@@ -64,7 +64,7 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView);
 
 	DDECallback
 
-	DDEƒR[ƒ‹ƒoƒbƒN
+	DDEã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯
 
 ******************************************************************************/
 
@@ -79,7 +79,7 @@ static HDDEDATA CALLBACK DDECallback(WORD wType, WORD wFmt, HCONV hConv, HSZ hsz
 
 	GetDDEStr
 
-	DDE‚É‚Äæ“¾‚µ‚½•¶š—ñ‚ğ•ª‰ğ‚·‚é
+	DDEã«ã¦å–å¾—ã—ãŸæ–‡å­—åˆ—ã‚’åˆ†è§£ã™ã‚‹
 
 ******************************************************************************/
 
@@ -132,7 +132,7 @@ static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame)
 
 	AddAppNameProc
 
-	ƒAƒvƒŠƒP[ƒVƒ‡ƒ“–¼‚Ì’Ç‰Áƒ_ƒCƒAƒƒO
+	ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³åã®è¿½åŠ ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -185,7 +185,7 @@ static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 	SetDDEAppProc
 
-	DDE‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“–¼‚ğ“o˜^‚·‚éƒ_ƒCƒAƒƒO
+	DDEã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³åã‚’ç™»éŒ²ã™ã‚‹ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -309,7 +309,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 	GetActiveURLInfo
 
-	ÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ª•\¦‚µ‚Ä‚¢‚½URL‚Æƒy[ƒWƒ^ƒCƒgƒ‹‚ğæ“¾
+	æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ãŒè¡¨ç¤ºã—ã¦ã„ãŸURLã¨ãƒšãƒ¼ã‚¸ã‚¿ã‚¤ãƒˆãƒ«ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -335,7 +335,7 @@ static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL)
 	hszTopic = DdeCreateStringHandle(m_dwDDEID, "WWW_GetWindowInfo", 0);
 	hszParam = DdeCreateStringHandle(m_dwDDEID, "0xFFFFFFFF", 0);
 
-	//DDEÚ‘±
+	//DDEæ¥ç¶š
 	hConv = DdeConnect(m_dwDDEID, hszService, hszTopic, NULL);
 	if(hConv == 0){
 		DdeFreeStringHandle(m_dwDDEID, hszParam);
@@ -345,15 +345,15 @@ static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL)
 		return 0;
 	}
 
-	//ƒgƒ‰ƒ“ƒUƒNƒVƒ‡ƒ“‚ÌŠJn
+	//ãƒˆãƒ©ãƒ³ã‚¶ã‚¯ã‚·ãƒ§ãƒ³ã®é–‹å§‹
 	hDDEData = DdeClientTransaction(NULL, 0, hConv, hszParam, CF_TEXT, XTYP_REQUEST, 10000L, NULL);
 
-	//ƒf[ƒ^‚Ìæ“¾
+	//ãƒ‡ãƒ¼ã‚¿ã®å–å¾—
 	gbuf = (char *)GlobalAlloc(GPTR, MAXSIZE);
 	DdeGetData(hDDEData, (LPBYTE)gbuf, MAXSIZE - 1, 0);
 	GetDDEStr((char *)gbuf, URL, Title, tmp);
 
-	//‰ğ•ú
+	//è§£æ”¾
 	GlobalFree(gbuf);
 
 	DdeFreeDataHandle(hDDEData);
@@ -361,7 +361,7 @@ static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL)
 	DdeFreeStringHandle(m_dwDDEID, hszTopic);
 	DdeFreeStringHandle(m_dwDDEID, hszService);
 
-	//DDEØ’f
+	//DDEåˆ‡æ–­
 	DdeDisconnect(hConv);
 	DdeUninitialize(m_dwDDEID);
 	return 1;
@@ -372,7 +372,7 @@ static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL)
 
 	GetBrowserInfo
 
-	ÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚Ìî•ñ‚ğæ“¾
+	æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã®æƒ…å ±ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -383,19 +383,19 @@ __declspec(dllexport) int CALLBACK GetBrowserInfo(HWND hWnd, struct TPITEM **Too
 	char Title[MAXSIZE], URL[MAXSIZE];
 	int i;
 
-	//ƒvƒƒpƒeƒB
+	//ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
 	if(type == TOOL_EXEC_PORP){
 		DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_SETDDEAPP), hWnd, SetDDEAppProc, 0);
 		return 1;
 	}
 
-	//ƒEƒBƒ“ƒhƒEƒƒjƒ…[ˆÈŠO‚©‚ç‚ÌŒÄ‚Ño‚µ‚Ìê‡‚Íˆ—‚ğs‚í‚È‚¢
+	//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä»¥å¤–ã‹ã‚‰ã®å‘¼ã³å‡ºã—ã®å ´åˆã¯å‡¦ç†ã‚’è¡Œã‚ãªã„
 	if(type != TOOL_EXEC_WINDOWMENU){
 		return 0;
 	}
 
-	//ÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ÌURL‚Æƒ^ƒCƒgƒ‹‚ğæ“¾
-	//IE‚ğŒŸõŒãNetscape‚ğŒŸõ
+	//æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã®URLã¨ã‚¿ã‚¤ãƒˆãƒ«ã‚’å–å¾—
+	//IEã‚’æ¤œç´¢å¾ŒNetscapeã‚’æ¤œç´¢
 	for(i = 0; i < AppCnt; i++){
 		if(GetActiveURLInfo(hWnd, AppName[i], Title, URL) != 0){
 			break;
@@ -406,19 +406,19 @@ __declspec(dllexport) int CALLBACK GetBrowserInfo(HWND hWnd, struct TPITEM **Too
 		return 0;
 	}
 
-	//ƒAƒCƒeƒ€ƒŠƒXƒg‚ğŠm•Û
+	//ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã‚’ç¢ºä¿
 	ItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *));
 	if(ItemList == NULL){
 		return 0;
 	}
-	//ƒAƒCƒeƒ€î•ñ‚ğŠm•Û
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’ç¢ºä¿
 	*ItemList = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM));
 	if(*ItemList == NULL){
 		GlobalFree(ItemList);
 		return 0;
 	}
 
-	//ƒ^ƒCƒgƒ‹‚ğİ’è
+	//ã‚¿ã‚¤ãƒˆãƒ«ã‚’è¨­å®š
 	(*(ItemList))->Title = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(Title) + 1);
 	if((*(ItemList))->Title == NULL){
 		GlobalFree(*ItemList);
@@ -427,7 +427,7 @@ __declspec(dllexport) int CALLBACK GetBrowserInfo(HWND hWnd, struct TPITEM **Too
 	}
 	lstrcpy((*(ItemList))->Title, Title);
 
-	//URL‚ğİ’è
+	//URLã‚’è¨­å®š
 	(*(ItemList))->CheckURL = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(URL) + 1);
 	if((*(ItemList))->CheckURL == NULL){
 		GlobalFree((*(ItemList))->Title);
@@ -437,7 +437,7 @@ __declspec(dllexport) int CALLBACK GetBrowserInfo(HWND hWnd, struct TPITEM **Too
 	}
 	lstrcpy((*(ItemList))->CheckURL, URL);
 
-	//–{‘Ì‚É’Ç‰Á‚·‚é‚æ‚¤‚ÉƒƒbƒZ[ƒW‚ğ‘—M
+	//æœ¬ä½“ã«è¿½åŠ ã™ã‚‹ã‚ˆã†ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’é€ä¿¡
 	SendMessage(hWnd, WM_SETITEMLIST, 1, (LPARAM)ItemList);
 
 	GlobalFree(ItemList);
@@ -449,7 +449,7 @@ __declspec(dllexport) int CALLBACK GetBrowserInfo(HWND hWnd, struct TPITEM **Too
 
 	GetURLInfo
 
-	‘S‚Ä‚Ìƒuƒ‰ƒEƒU‚Ìî•ñ‚ğæ“¾
+	å…¨ã¦ã®ãƒ–ãƒ©ã‚¦ã‚¶ã®æƒ…å ±ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -473,12 +473,12 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 		return 0;
 	}
 
-	//ƒuƒ‰ƒEƒU‚ğ—ñ‹“‚·‚é
+	//ãƒ–ãƒ©ã‚¦ã‚¶ã‚’åˆ—æŒ™ã™ã‚‹
 	hszService = DdeCreateStringHandle(m_dwDDEID, browser, 0);
 	hszTopic = DdeCreateStringHandle(m_dwDDEID, "WWW_ListWindows", 0);
 	hszParam = DdeCreateStringHandle(m_dwDDEID, "0xFFFFFFFF", 0);
 
-	//DDEÚ‘±
+	//DDEæ¥ç¶š
 	hConv = DdeConnect(m_dwDDEID, hszService, hszTopic, NULL);
 	if(hConv == 0){
 		DdeFreeStringHandle(m_dwDDEID, hszParam);
@@ -488,26 +488,26 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 		return 0;
 	}
 
-	//ƒgƒ‰ƒ“ƒUƒNƒVƒ‡ƒ“‚ÌŠJn
+	//ãƒˆãƒ©ãƒ³ã‚¶ã‚¯ã‚·ãƒ§ãƒ³ã®é–‹å§‹
 	hDDEData = DdeClientTransaction(NULL, 0, hConv, hszParam, CF_TEXT, XTYP_REQUEST, 10000L, NULL);
 
-	//ƒuƒ‰ƒEƒU‚ÌID‚ğæ“¾
+	//ãƒ–ãƒ©ã‚¦ã‚¶ã®IDã‚’å–å¾—
 	memset(dwActivateID, 0, sizeof(dwActivateID));
 	DdeGetData(hDDEData, (LPBYTE)dwActivateID, sizeof(dwActivateID), 0);
 
-	//‰ğ•ú
+	//è§£æ”¾
 	DdeFreeDataHandle(hDDEData);
 	DdeFreeStringHandle(m_dwDDEID, hszParam);
 	DdeFreeStringHandle(m_dwDDEID, hszTopic);
 
-	//DDEØ’f
+	//DDEåˆ‡æ–­
 	DdeDisconnect(hConv);
 
 
-	//ƒuƒ‰ƒEƒUî•ñ‚ğæ“¾‚·‚é
+	//ãƒ–ãƒ©ã‚¦ã‚¶æƒ…å ±ã‚’å–å¾—ã™ã‚‹
 	hszTopic = DdeCreateStringHandle(m_dwDDEID, "WWW_GetWindowInfo", 0);
 
-	//DDEÚ‘±
+	//DDEæ¥ç¶š
 	hConv = DdeConnect(m_dwDDEID, hszService, hszTopic, NULL);
 	if(hConv == 0){
 		DdeFreeStringHandle(m_dwDDEID, hszTopic);
@@ -523,28 +523,28 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 		wsprintf(tmp,"%d",dwActivateID[i]);
 		hszParam = DdeCreateStringHandle(m_dwDDEID, tmp, 0);
 
-		//ƒgƒ‰ƒ“ƒUƒNƒVƒ‡ƒ“‚ÌŠJn
+		//ãƒˆãƒ©ãƒ³ã‚¶ã‚¯ã‚·ãƒ§ãƒ³ã®é–‹å§‹
 		hDDEData = DdeClientTransaction(NULL, 0, hConv, hszParam, CF_TEXT, XTYP_REQUEST, 10000L, NULL);
 
-		//ƒuƒ‰ƒEƒUî•ñ‚Ìæ“¾
+		//ãƒ–ãƒ©ã‚¦ã‚¶æƒ…å ±ã®å–å¾—
 		DdeGetData(hDDEData, (LPBYTE)gbuf, MAXSIZE - 1, 0);
 
-		//ƒEƒBƒ“ƒhƒE‚Éæ“¾‚µ‚½î•ñ‚ğ‘—M
+		//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«å–å¾—ã—ãŸæƒ…å ±ã‚’é€ä¿¡
 		SendMessage(hWnd, sMsg, 0, (LPARAM)gbuf);
 
-		//‰ğ•ú
+		//è§£æ”¾
 		DdeFreeDataHandle(hDDEData);
 		DdeFreeStringHandle(m_dwDDEID, hszParam);
 		i++;
 	}
 
-	//‰ğ•ú
+	//è§£æ”¾
 	GlobalFree(gbuf);
 
 	DdeFreeStringHandle(m_dwDDEID, hszTopic);
 	DdeFreeStringHandle(m_dwDDEID, hszService);
 
-	//DDEØ’f
+	//DDEåˆ‡æ–­
 	DdeDisconnect(hConv);
 	DdeUninitialize(m_dwDDEID);
 	return 1;
@@ -555,7 +555,7 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 
 	SetListItem
 
-	ListView ‚ÉƒAƒCƒeƒ€‚ğ’Ç‰Á‚·‚é
+	ListView ã«ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¿½åŠ ã™ã‚‹
 
 ******************************************************************************/
 
@@ -575,7 +575,7 @@ static int SetListItem(HWND hListView, char *buf,int Img,LPARAM lp,int iItem)
 	LvItem.iImage = Img;
 	LvItem.lParam = lp;
 
-	// ƒŠƒXƒgƒrƒ…[‚ÉƒAƒCƒeƒ€‚ğ’Ç‰Á‚·‚é
+	// ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã«ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¿½åŠ ã™ã‚‹
 	return ListView_InsertItem(hListView, &LvItem);
 }
 
@@ -584,7 +584,7 @@ static int SetListItem(HWND hListView, char *buf,int Img,LPARAM lp,int iItem)
 
 	DialogLvNotifyProc
 
-	ƒ_ƒCƒAƒƒO‚Ì’Ê’mƒƒbƒZ[ƒW‚Ìˆ—
+	ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®é€šçŸ¥ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®å‡¦ç†
 
 ******************************************************************************/
 
@@ -599,7 +599,7 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 	switch(LKey->hdr.code)
 	{
-	case LVN_KEYDOWN:			//ƒL[ƒ_ƒEƒ“
+	case LVN_KEYDOWN:			//ã‚­ãƒ¼ãƒ€ã‚¦ãƒ³
 		if(((LV_KEYDOWN *)lParam)->wVKey == 'A' && GetAsyncKeyState(VK_CONTROL) < 0){
 			ListView_SetItemState(GetDlgItem(hWnd, IDC_LIST), -1, LVIS_SELECTED, LVIS_SELECTED);
 			break;
@@ -621,7 +621,7 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 	URLListroc
 
-	URLˆê——•\¦ƒ_ƒCƒAƒƒO‚ÌƒvƒƒV[ƒWƒƒ
+	URLä¸€è¦§è¡¨ç¤ºãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
 
 ******************************************************************************/
 
@@ -662,14 +662,14 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		lvc.iSubItem = i;
 		ListView_InsertColumn(GetDlgItem(hDlg, IDC_LIST), i, &lvc);
 
-		//ƒŠƒXƒgƒrƒ…[‚ÌƒXƒ^ƒCƒ‹‚Ìİ’è
+		//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã®ã‚¹ã‚¿ã‚¤ãƒ«ã®è¨­å®š
 		SetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
 			GetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SHOWSELALWAYS);
 		SendMessage(GetDlgItem(hDlg, IDC_LIST), LVM_SETEXTENDEDLISTVIEWSTYLE, 0,
 			LVS_EX_ONECLICKACTIVATE | LVS_EX_FULLROWSELECT |
 			SendMessage(GetDlgItem(hDlg, IDC_LIST), LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
 
-		//ƒuƒ‰ƒEƒUî•ñæ“¾
+		//ãƒ–ãƒ©ã‚¦ã‚¶æƒ…å ±å–å¾—
 		ret = 0;
 		for(i = 0; i < AppCnt; i++){
 			ret |= GetURLInfo(hDlg, WM_GETBROUSERINFO, AppName[i]);
@@ -684,11 +684,11 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		GetClassName((HWND)lParam, Title, MAXSIZE - 1);
 		if(lstrcmp(Title, "WWWCWindowClass") == 0){
-			//–{‘Ì‚©‚ç‚ÌŒÄ‚Ño‚µ
+			//æœ¬ä½“ã‹ã‚‰ã®å‘¼ã³å‡ºã—
 			ShowWindow(GetDlgItem(hDlg, IDC_CHECK_TITLE), SW_HIDE);
 			ShowWindow(GetDlgItem(hDlg, IDC_CHECK_CHECKURL), SW_HIDE);
 		}else{
-			//ƒvƒƒpƒeƒB‚©‚ç‚ÌŒÄ‚Ño‚µ
+			//ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã‹ã‚‰ã®å‘¼ã³å‡ºã—
 			SetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
 				GetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SINGLESEL);
 		}
@@ -696,13 +696,13 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_GETBROUSERINFO:
-		//ƒuƒ‰ƒEƒUî•ñ•¶š—ñ‚ğ•ª‰ğ
+		//ãƒ–ãƒ©ã‚¦ã‚¶æƒ…å ±æ–‡å­—åˆ—ã‚’åˆ†è§£
 		GetDDEStr((char *)lParam, URL, Title, Frame);
 		if(*Title == '\0' && *URL == '\0'){
 			break;
 		}
 
-		//ƒŠƒXƒgƒrƒ…[‚É’Ç‰Á‚·‚é
+		//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã«è¿½åŠ ã™ã‚‹
 		i = SetListItem(GetDlgItem(hDlg, IDC_LIST), Title, 0, 0, -1);
 		ListView_SetItemText(GetDlgItem(hDlg, IDC_LIST), i, 1, Frame);
 		ListView_SetItemText(GetDlgItem(hDlg, IDC_LIST), i, 2, URL);
@@ -729,7 +729,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					break;
 				}
 
-				//ƒAƒCƒeƒ€ƒŠƒXƒg‚Ìì¬
+				//ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã®ä½œæˆ
 				SelectItem = -1;
 				i = 0;
 				while((SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), SelectItem, LVNI_SELECTED)) != -1){
@@ -738,7 +738,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						EndDialog(hDlg, FALSE);
 						return TRUE;
 					}
-					//ƒ^ƒCƒgƒ‹‚Ìİ’è
+					//ã‚¿ã‚¤ãƒˆãƒ«ã®è¨­å®š
 					*Title = '\0';
 					ListView_GetItemText(GetDlgItem(hDlg, IDC_LIST), SelectItem, 0, Title, MAXSIZE - 1);
 					(*(ItemList + i))->Title = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(Title) + 1);
@@ -748,7 +748,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					}
 					lstrcpy((*(ItemList + i))->Title, Title);
 
-					//ƒ`ƒFƒbƒN‚·‚éURL‚Ìİ’è
+					//ãƒã‚§ãƒƒã‚¯ã™ã‚‹URLã®è¨­å®š
 					*URL = '\0';
 					ListView_GetItemText(GetDlgItem(hDlg, IDC_LIST), SelectItem, 2, URL, MAXSIZE - 1);
 					(*(ItemList + i))->CheckURL = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(URL) + 1);
@@ -759,7 +759,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					lstrcpy((*(ItemList + i))->CheckURL, URL);
 
 					if(IsDlgButtonChecked(hDlg, IDC_CHECK_VIEWURL) == 1){
-						//•\¦‚·‚éURL‚Ìİ’è
+						//è¡¨ç¤ºã™ã‚‹URLã®è¨­å®š
 						(*(ItemList + i))->ViewURL = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(URL) + 1);
 						if((*(ItemList + i))->ViewURL == NULL){
 							EndDialog(hDlg, FALSE);
@@ -769,13 +769,13 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					}
 					i++;
 				}
-				//–{‘Ì‚É’Ç‰Á‚·‚é‚æ‚¤‚ÉƒƒbƒZ[ƒW‚ğ‘—M
+				//æœ¬ä½“ã«è¿½åŠ ã™ã‚‹ã‚ˆã†ã«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’é€ä¿¡
 				SendMessage(pWnd, WM_SETITEMLIST, ListView_GetSelectedCount(GetDlgItem(hDlg, IDC_LIST)), (LPARAM)ItemList);
 				GlobalFree(ItemList);
 
 			}else{
 				if(IsDlgButtonChecked(hDlg, IDC_CHECK_TITLE) == 1){
-					//ƒ^ƒCƒgƒ‹
+					//ã‚¿ã‚¤ãƒˆãƒ«
 					*Title = '\0';
 					ListView_GetItemText(GetDlgItem(hDlg, IDC_LIST), SelectItem, 0, Title, MAXSIZE - 1);
 					SendMessage(GetDlgItem(pWnd, IDC_EDIT_TITLE), WM_SETTEXT, 0, (LPARAM)Title);
@@ -785,12 +785,12 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				ListView_GetItemText(GetDlgItem(hDlg,IDC_LIST), SelectItem, 2, URL, MAXSIZE - 1);
 
 				if(IsDlgButtonChecked(hDlg, IDC_CHECK_CHECKURL) == 1){
-					//ƒ`ƒFƒbƒN‚·‚éURL
+					//ãƒã‚§ãƒƒã‚¯ã™ã‚‹URL
 					SendMessage(GetDlgItem(pWnd, IDC_EDIT_URL), WM_SETTEXT, 0, (LPARAM)URL);
 				}
 
 				if(IsDlgButtonChecked(hDlg,IDC_CHECK_VIEWURL) == 1){
-					//•\¦‚·‚éURL
+					//è¡¨ç¤ºã™ã‚‹URL
 					SendMessage(GetDlgItem(pWnd, IDC_EDIT_VIEWURL), WM_SETTEXT, 0, (LPARAM)URL);
 				}
 			}
@@ -814,25 +814,25 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	GetBrowserInfoList
 
-	URLˆê——•\¦ƒ_ƒCƒAƒƒO‚Ì•\¦
+	URLä¸€è¦§è¡¨ç¤ºãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®è¡¨ç¤º
 
 ******************************************************************************/
 
 __declspec(dllexport) int CALLBACK GetBrowserInfoList(HWND hWnd, struct TPITEM **ToolItemList,
 													  int ToolItemListCnt, int type, int CheckType)
 {
-	//ƒvƒƒpƒeƒB
+	//ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
 	if(type == TOOL_EXEC_PORP){
 		DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_SETDDEAPP), hWnd, SetDDEAppProc, 0);
 		return 1;
 	}
 
-	//ƒEƒBƒ“ƒhƒEƒƒjƒ…[ˆÈŠO‚©‚ç‚ÌŒÄ‚Ño‚µ‚Ìê‡‚Íˆ—‚ğs‚í‚È‚¢
+	//ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ¡ãƒ‹ãƒ¥ãƒ¼ä»¥å¤–ã‹ã‚‰ã®å‘¼ã³å‡ºã—ã®å ´åˆã¯å‡¦ç†ã‚’è¡Œã‚ãªã„
 	if(type != TOOL_EXEC_WINDOWMENU){
 		return 0;
 	}
 
-	//ƒ_ƒCƒAƒƒO‚Ì•\¦
+	//ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®è¡¨ç¤º
 	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_URLLIST), hWnd, URLListroc, (LPARAM)hWnd) == TRUE){
 		return 0;
 	}
@@ -844,7 +844,7 @@ __declspec(dllexport) int CALLBACK GetBrowserInfoList(HWND hWnd, struct TPITEM *
 
 	DDE_SetActiveBrowser
 
-	ÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ğƒAƒNƒeƒBƒu‚É‚·‚é
+	æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã‚’ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã«ã™ã‚‹
 
 ******************************************************************************/
 
@@ -876,8 +876,8 @@ DWORD DDE_SetActiveBrowser(HWND hWnd, char *browser)
 		return 0;
 	}
 
-	// 0xFFFFFFFF ‚ÍÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ğw‚·B
-	// ƒuƒ‰ƒEƒU‚ÌID‚ğw’è‚·‚é‚Æ‚»‚Ìƒuƒ‰ƒEƒU‚ğƒAƒNƒeƒBƒu‚É‚·‚éB
+	// 0xFFFFFFFF ã¯æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã‚’æŒ‡ã™ã€‚
+	// ãƒ–ãƒ©ã‚¦ã‚¶ã®IDã‚’æŒ‡å®šã™ã‚‹ã¨ãã®ãƒ–ãƒ©ã‚¦ã‚¶ã‚’ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã«ã™ã‚‹ã€‚
 	hszParam = DdeCreateStringHandle(m_dwDDEID, "0xFFFFFFFF,0x0", 0);
 	//Client Transaction
 	hDDEData = DdeClientTransaction(NULL, 0, hConv, hszParam, CF_TEXT, XTYP_REQUEST, 10000L, NULL);
@@ -889,7 +889,7 @@ DWORD DDE_SetActiveBrowser(HWND hWnd, char *browser)
 	}
 
 	//Get Data
-	//ƒAƒNƒeƒBƒu‚É‚µ‚½ƒuƒ‰ƒEƒU‚ÌID‚ğæ“¾
+	//ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã«ã—ãŸãƒ–ãƒ©ã‚¦ã‚¶ã®IDã‚’å–å¾—
 	DdeGetData(hDDEData, (LPBYTE)&dwActivateID, sizeof(DWORD), 0);
 
     DdeFreeDataHandle(hDDEData);
@@ -903,7 +903,7 @@ DWORD DDE_SetActiveBrowser(HWND hWnd, char *browser)
 
 	DDE_SetBrowseURL
 
-	ÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ÉURL‚ğ‘—‚é
+	æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã«URLã‚’é€ã‚‹
 
 ******************************************************************************/
 
@@ -935,8 +935,8 @@ BOOL DDE_SetBrowseURL(HWND hWnd, char *browser, char *URL)
 		return FALSE;
 	}
 
-	// 0xFFFFFFFF ‚ÍÅŒã‚ÉƒAƒNƒeƒBƒu‚¾‚Á‚½ƒuƒ‰ƒEƒU‚ğw‚·B
-	//ƒuƒ‰ƒEƒU‚ÌID‚ğw’è‚·‚é‚Æ‚»‚Ìƒuƒ‰ƒEƒU‚ÉURL‚ğ‘—‚éB
+	// 0xFFFFFFFF ã¯æœ€å¾Œã«ã‚¢ã‚¯ãƒ†ã‚£ãƒ–ã ã£ãŸãƒ–ãƒ©ã‚¦ã‚¶ã‚’æŒ‡ã™ã€‚
+	//ãƒ–ãƒ©ã‚¦ã‚¶ã®IDã‚’æŒ‡å®šã™ã‚‹ã¨ãã®ãƒ–ãƒ©ã‚¦ã‚¶ã«URLã‚’é€ã‚‹ã€‚
 	wsprintf(sParam, "\"%s\",,0xFFFFFFFF,0x0,,,", URL);
 	hszParam = DdeCreateStringHandle(m_dwDDEID, (LPCSTR)sParam, 0);
 	//Client Transaction
@@ -956,7 +956,7 @@ BOOL DDE_SetBrowseURL(HWND hWnd, char *browser, char *URL)
 
 	SetBrowserProc
 
-	ƒuƒ‰ƒEƒU‚ÌêŠ‚Ìİ’è
+	ãƒ–ãƒ©ã‚¦ã‚¶ã®å ´æ‰€ã®è¨­å®š
 
 ******************************************************************************/
 
@@ -1011,7 +1011,7 @@ static INT_PTR CALLBACK SetBrowserProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 	DDE_OpenURL
 
-	ƒuƒ‰ƒEƒU‚ÉURL‚ğ‘—‚é
+	ãƒ–ãƒ©ã‚¦ã‚¶ã«URLã‚’é€ã‚‹
 
 ******************************************************************************/
 

@@ -32,7 +32,7 @@
 	Define
 **************************************************************************/
 
-#define WM_LV_EVENT					(WM_USER + 300)		//ƒŠƒXƒgƒrƒ…[ƒCƒxƒ“ƒg
+#define WM_LV_EVENT					(WM_USER + 300)		//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã‚¤ãƒ™ãƒ³ãƒˆ
 
 #define MAXPROPITEM					100
 
@@ -90,7 +90,7 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 	OptionNotifyProc
 
-	ƒ_ƒCƒAƒƒO‚Ì’Ê’m‚ðˆ—‚·‚é
+	ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®é€šçŸ¥ã‚’å‡¦ç†ã™ã‚‹
 
 ******************************************************************************/
 
@@ -125,7 +125,7 @@ static LRESULT OptionNotifyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 	AddItemInfo
 
-	ƒAƒCƒeƒ€î•ñƒŠƒXƒg‚ÉƒAƒCƒeƒ€î•ñ‚ð“o˜^
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ãƒªã‚¹ãƒˆã«ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’ç™»éŒ²
 
 ******************************************************************************/
 
@@ -147,7 +147,7 @@ static void AddItemInfo(HWND hWnd, struct TPITEM *tpItemInfo)
 
 	GetItemInfo
 
-	ƒAƒCƒeƒ€î•ñƒŠƒXƒg‚©‚çƒAƒCƒeƒ€î•ñ‚ðŒŸõ
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ãƒªã‚¹ãƒˆã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’æ¤œç´¢
 
 ******************************************************************************/
 
@@ -168,7 +168,7 @@ static struct TPITEM *GetItemInfo(HWND hWnd)
 
 	DeleteItemInfo
 
-	ƒAƒCƒeƒ€î•ñƒŠƒXƒg‚©‚çƒAƒCƒeƒ€î•ñ‚ðíœ
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ãƒªã‚¹ãƒˆã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’å‰Šé™¤
 
 ******************************************************************************/
 
@@ -190,7 +190,7 @@ static void DeleteItemInfo(struct TPITEM *tpItemInfo)
 
 	DrawScrollControl
 
-	ƒXƒNƒ[ƒ‹ƒo[‚Ìƒ{ƒ^ƒ“‚Ì•`‰æ
+	ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒãƒ¼ã®ãƒœã‚¿ãƒ³ã®æç”»
 
 ******************************************************************************/
 
@@ -199,18 +199,18 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 	#define FOCUSRECT_SIZE		3
 
 	if(lpDrawItem->itemState & ODS_DISABLED){
-		//Žg—p•s”\
+		//ä½¿ç”¨ä¸èƒ½
 		i |= DFCS_INACTIVE;
 	}
 	if(lpDrawItem->itemState & ODS_SELECTED){
-		//‘I‘ð
+		//é¸æŠž
 		i |= DFCS_PUSHED;
 	}
 
-	//ƒtƒŒ[ƒ€ƒRƒ“ƒgƒ[ƒ‹‚Ì•`‰æ
+	//ãƒ•ãƒ¬ãƒ¼ãƒ ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã®æç”»
 	DrawFrameControl(lpDrawItem->hDC, &(lpDrawItem->rcItem), DFC_SCROLL, i);
 
-	//ƒtƒH[ƒJƒX
+	//ãƒ•ã‚©ãƒ¼ã‚«ã‚¹
 	if(lpDrawItem->itemState & ODS_FOCUS){
 		lpDrawItem->rcItem.left += FOCUSRECT_SIZE;
 		lpDrawItem->rcItem.top += FOCUSRECT_SIZE;
@@ -225,7 +225,7 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 
 	PropertyProc
 
-	ƒAƒCƒeƒ€‚ÌƒvƒƒpƒeƒBÝ’èƒ_ƒCƒAƒƒO
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -244,20 +244,20 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 		tpItemInfo = gItemInfo;
 
-		/* ƒAƒCƒeƒ€‚Ìî•ñ‚ª‹ó‚Å‚È‚¢ê‡‚ÍƒAƒCƒeƒ€‚Ì“à—e‚ð•\Ž¦‚·‚é */
-		/* ƒ^ƒCƒgƒ‹ */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã®æƒ…å ±ãŒç©ºã§ãªã„å ´åˆã¯ã‚¢ã‚¤ãƒ†ãƒ ã®å†…å®¹ã‚’è¡¨ç¤ºã™ã‚‹ */
+		/* ã‚¿ã‚¤ãƒˆãƒ« */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->Title != NULL) ? tpItemInfo->Title : STR_NEWITEMNAME));
 
-		/* ƒ`ƒFƒbƒN‚·‚éURL */
+		/* ãƒã‚§ãƒƒã‚¯ã™ã‚‹URL */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->CheckURL != NULL) ? tpItemInfo->CheckURL : "https://"));
 
-		/* ŠJ‚­URL */
+		/* é–‹ãURL */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->ViewURL != NULL) ? tpItemInfo->ViewURL : ""));
 
-		/* ƒRƒƒ“ƒg */
+		/* ã‚³ãƒ¡ãƒ³ãƒˆ */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), EM_LIMITTEXT, MAXSIZE - 2, 0);
 		if(tpItemInfo->Comment != NULL){
 			buf = (char *)GlobalAlloc(GPTR, lstrlen(tpItemInfo->Comment) + 1);
@@ -283,21 +283,21 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			}
 		}
 
-		/* ƒTƒCƒY */
+		/* ã‚µã‚¤ã‚º */
 		if(tpItemInfo->Size != NULL){
-			wsprintf(tmp, "%s ƒoƒCƒg", tpItemInfo->Size);
+			wsprintf(tmp, "%s ãƒã‚¤ãƒˆ", tpItemInfo->Size);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_SIZE), WM_SETTEXT, 0, (LPARAM)tmp);
 		}
 
-		/* XV“úŽž */
+		/* æ›´æ–°æ—¥æ™‚ */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_UPDATE), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->Date != NULL) ? tpItemInfo->Date : ""));
 
-		/* ƒ`ƒFƒbƒN‚µ‚½“úŽž */
+		/* ãƒã‚§ãƒƒã‚¯ã—ãŸæ—¥æ™‚ */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_CHECKDATE), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->CheckDate != NULL) ? tpItemInfo->CheckDate : ""));
 
-		/* ƒGƒ‰[î•ñ */
+		/* ã‚¨ãƒ©ãƒ¼æƒ…å ± */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_ERRORINFO), WM_SETTEXT, 0,
 			(LPARAM)((tpItemInfo->ErrStatus != NULL) ? tpItemInfo->ErrStatus : ""));
 		break;
@@ -306,7 +306,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 		if((UINT)wParam != IDC_BUTTON_CHANGE){
 			return FALSE;
 		}
-		//ƒ{ƒ^ƒ“‚Ì•`‰æ
+		//ãƒœã‚¿ãƒ³ã®æç”»
 		DrawScrollControl((LPDRAWITEMSTRUCT)lParam, DFCS_SCROLLDOWN);
 		break;
 
@@ -319,7 +319,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 		case IDOK:
 			tpItemInfo = GetItemInfo(GetParent(hDlg));
 
-			/* ƒ^ƒCƒgƒ‹‚ðÝ’è‚·‚é */
+			/* ã‚¿ã‚¤ãƒˆãƒ«ã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
 			}
@@ -329,7 +329,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXT, len, (LPARAM)tpItemInfo->Title);
 			}
 
-			/* URL‚ðÝ’è‚·‚é */
+			/* URLã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->CheckURL != NULL){
 				len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 				buf = GlobalAlloc(GPTR, len + 1);
@@ -371,7 +371,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				SendMessage(GetDlgItem(hDlg,IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)tpItemInfo->CheckURL);
 			}
 
-			/* ŠJ‚­URL‚ðÝ’è‚·‚é */
+			/* é–‹ãURLã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->ViewURL != NULL){
 				GlobalFree(tpItemInfo->ViewURL);
 			}
@@ -381,7 +381,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXT, len, (LPARAM)tpItemInfo->ViewURL);
 			}
 
-			/* ƒRƒƒ“ƒg‚ðÝ’è‚·‚é */
+			/* ã‚³ãƒ¡ãƒ³ãƒˆã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->Comment != NULL){
 				GlobalFree(tpItemInfo->Comment);
 			}
@@ -396,8 +396,8 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_URLLIST), hDlg, URLListroc, (LPARAM)hDlg);
 			break;
 
-		case IDC_BUTTON_CHANGE:		//URL‚Ì“ü‚ê‘Ö‚¦
-			/* ƒ`ƒFƒbƒN‚·‚éURL‚ÌŽæ“¾ */
+		case IDC_BUTTON_CHANGE:		//URLã®å…¥ã‚Œæ›¿ãˆ
+			/* ãƒã‚§ãƒƒã‚¯ã™ã‚‹URLã®å–å¾— */
 			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			p = GlobalAlloc(GPTR, len + 1);
 			if(p != NULL){
@@ -434,7 +434,7 @@ static void ReqTypeEnable(HWND hDlg)
 
 	PropertyCheckProc
 
-	ƒAƒCƒeƒ€‚Ìƒ`ƒFƒbƒNÝ’èƒ_ƒCƒAƒƒO
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒã‚§ãƒƒã‚¯è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -578,7 +578,7 @@ static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, L
 
 	PropertyOptionProc
 
-	ƒAƒCƒeƒ€‚ÌƒIƒvƒVƒ‡ƒ“Ý’èƒ_ƒCƒAƒƒO
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ã‚ªãƒ—ã‚·ãƒ§ãƒ³è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -598,7 +598,7 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 	case WM_INITDIALOG:
 		tpItemInfo = GetItemInfo(GetParent(hDlg));
 
-		/* ƒAƒCƒeƒ€‚Ìî•ñ‚ª‹ó‚Å‚È‚¢ê‡‚ÍƒAƒCƒeƒ€‚Ì“à—e‚ð•\Ž¦‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã®æƒ…å ±ãŒç©ºã§ãªã„å ´åˆã¯ã‚¢ã‚¤ãƒ†ãƒ ã®å†…å®¹ã‚’è¡¨ç¤ºã™ã‚‹ */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PROXY), EM_LIMITTEXT, BUFSIZE - 2, 0);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PROXY_PORT), EM_LIMITTEXT, BUFSIZE - 2, 0);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_REFERER), EM_LIMITTEXT, BUFSIZE - 2, 0);
@@ -716,13 +716,13 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 
 	HTTP_Property
 
-	ƒAƒCƒeƒ€‚ÌƒvƒƒpƒeƒB•\Ž¦
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£è¡¨ç¤º
 
 ******************************************************************************/
 
 __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//ŒÃ‚¢ƒRƒ‚ƒ“ƒRƒ“ƒgƒ[ƒ‹‘Îô
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//å¤ã„ã‚³ãƒ¢ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«å¯¾ç­–
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[3];
@@ -793,7 +793,7 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 	ProtocolPropertyCheckProc
 
-	ƒvƒƒgƒRƒ‹‚ÌƒvƒƒpƒeƒBÝ’èƒ_ƒCƒAƒƒO
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -921,7 +921,7 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 	AddAppNameProc
 
-	ƒAƒvƒŠƒP[ƒVƒ‡ƒ“–¼‚Ì’Ç‰Áƒ_ƒCƒAƒƒO
+	ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³åã®è¿½åŠ ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -974,7 +974,7 @@ static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 	SetDDEAppProc
 
-	DDE‚ÌƒAƒvƒŠƒP[ƒVƒ‡ƒ“–¼‚ð“o˜^‚·‚éƒ_ƒCƒAƒƒO
+	DDEã®ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³åã‚’ç™»éŒ²ã™ã‚‹ãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -1095,13 +1095,13 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 	ViewProtocolProperties
 
-	ƒvƒƒgƒRƒ‹‚ÌƒvƒƒpƒeƒB•\Ž¦
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£è¡¨ç¤º
 
 ******************************************************************************/
 
 __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//ŒÃ‚¢ƒRƒ‚ƒ“ƒRƒ“ƒgƒ[ƒ‹‘Îô
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//å¤ã„ã‚³ãƒ¢ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«å¯¾ç­–
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[2];

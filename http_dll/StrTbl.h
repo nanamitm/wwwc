@@ -18,87 +18,87 @@
 **************************************************************************/
 
 //general
-#define STR_NEWITEMNAME					"�V�����A�C�e��"
+#define STR_NEWITEMNAME					"新しいアイテム"
 
-#define STR_Q_TITLE_DEL					"�폜"
-#define STR_Q_MSG_DEL					"�폜���Ă���낵���ł����H"
+#define STR_Q_TITLE_DEL					"削除"
+#define STR_Q_MSG_DEL					"削除してもよろしいですか？"
 
-#define STR_TITLE_FILESELECT			"�t�@�C���̑I��"
+#define STR_TITLE_FILESELECT			"ファイルの選択"
 
-#define STR_ERROR_MEMORY				"�������̊m�ۂɎ��s���܂����B"
+#define STR_ERROR_MEMORY				"メモリの確保に失敗しました。"
 
 //main.c
-#define STR_TOOL_TITLE_BROWSINFO		"�u���E�U���擾(&B)"
-#define STR_TOOL_TITLE_BROWSINFOLIST	"���ׂẴu���E�U��񂩂�I��(&A)..."
-#define STR_TOOL_TITLE_OPENURL			"�����̃u���E�U�ɊJ��(&D)"
-#define STR_TOOL_TITLE_FILTERRELOAD		"�t�B���^�ēǂݍ���(&F)"
+#define STR_TOOL_TITLE_BROWSINFO		"ブラウザ情報取得(&B)"
+#define STR_TOOL_TITLE_BROWSINFOLIST	"すべてのブラウザ情報から選択(&A)..."
+#define STR_TOOL_TITLE_OPENURL			"既存のブラウザに開く(&D)"
+#define STR_TOOL_TITLE_FILTERRELOAD		"フィルタ再読み込み(&F)"
 
-#define STR_ERR_TITLE_OPEN				"�J��"
+#define STR_ERR_TITLE_OPEN				"開く"
 
-#define STR_FILTER_EXESELECT			"���s�t�@�C�� (*.exe)\0*.exe\0\0"
+#define STR_FILTER_EXESELECT			"実行ファイル (*.exe)\0*.exe\0\0"
 
 //http.c
-#define STR_TITLE_HEADVIEW				"�w�b�_�[�\�� - [%s]"
+#define STR_TITLE_HEADVIEW				"ヘッダー表示 - [%s]"
 
-#define STR_TITLE_SOURCEVIEW			"�\�[�X�\��%s - [%s]"
-#define STR_TITLE_FILTER				" (�t�B���^)"
-#define STR_TITLE_FILTERERR				" (�t�B���^ �G���[)"
+#define STR_TITLE_SOURCEVIEW			"ソース表示%s - [%s]"
+#define STR_TITLE_FILTER				" (フィルタ)"
+#define STR_TITLE_FILTERERR				" (フィルタ エラー)"
 
-#define STR_ERR_TITLE_URLOPEN			"URL���J��"
-#define STR_ERR_MSG_URLOPEN				"URL���ݒ肳��Ă��܂���B"
+#define STR_ERR_TITLE_URLOPEN			"URLを開く"
+#define STR_ERR_MSG_URLOPEN				"URLが設定されていません。"
 
-#define STR_ERROR_URL					"URL��W�J�ł��܂���ł����B"
-#define STR_ERROR_GETHOST_TH			"gethostbyname�p�X���b�h�̍쐬�Ɏ��s���܂����B"
-#define STR_ERROR_GETHOST				"IP�A�h���X�̎擾�Ɏ��s���܂����B"
-#define STR_ERROR_SOCKET				"soket�̍쐬�Ɏ��s���܂����B"
-#define STR_ERROR_SELECT				"WSAAsyncSelect�Ɏ��s���܂����B"
-#define STR_ERROR_CONNECT				"�ڑ��Ɏ��s���܂����B"
-#define STR_ERROR_SEND					"���M�Ɏ��s���܂����B"
-#define STR_ERROR_RECV					"��M�Ɏ��s���܂����B"
-#define STR_ERROR_HEADER				"�w�b�_����͂ł��܂���ł����B"
-#define STR_ERROR_MOVE					"�]���G���["
-#define STR_ERROR_TIMEOUT				"�^�C���A�E�g���܂����B"
+#define STR_ERROR_URL					"URLを展開できませんでした。"
+#define STR_ERROR_GETHOST_TH			"gethostbyname用スレッドの作成に失敗しました。"
+#define STR_ERROR_GETHOST				"IPアドレスの取得に失敗しました。"
+#define STR_ERROR_SOCKET				"soketの作成に失敗しました。"
+#define STR_ERROR_SELECT				"WSAAsyncSelectに失敗しました。"
+#define STR_ERROR_CONNECT				"接続に失敗しました。"
+#define STR_ERROR_SEND					"送信に失敗しました。"
+#define STR_ERROR_RECV					"受信に失敗しました。"
+#define STR_ERROR_HEADER				"ヘッダを解析できませんでした。"
+#define STR_ERROR_MOVE					"転送エラー"
+#define STR_ERROR_TIMEOUT				"タイムアウトしました。"
 
-#define STR_STATUS_GETHOST				"�z�X�g�����擾���Ă��܂�..."
-#define STR_STATUS_CONNECT				"�ڑ���..."
-#define STR_STATUS_RESPONSE				"�T�[�o����̉�����҂��Ă��܂�..."
-#define STR_STATUS_RECV					"%ld �o�C�g��M"
-#define STR_STATUS_CHECKEND				"�`�F�b�N�I��"
+#define STR_STATUS_GETHOST				"ホスト情報を取得しています..."
+#define STR_STATUS_CONNECT				"接続中..."
+#define STR_STATUS_RESPONSE				"サーバからの応答を待っています..."
+#define STR_STATUS_RECV					"%ld バイト受信"
+#define STR_STATUS_CHECKEND				"チェック終了"
 
-#define STR_GETINFO_HTTP_NEWMENU		"HTTP�A�C�e���̒ǉ�(&H)..."
-#define STR_GETINFO_HTTP_OPEN			"�J��(&O)"
-#define STR_GETINFO_HTTP_CHECKOPEN		"�`�F�b�N����URL�ŊJ��(&U)"
-#define STR_GETINFO_HTTP_HEADER			"�w�b�_�[�\��(&H)"
-#define STR_GETINFO_HTTP_SOURCE			"�\�[�X�\��(&S)"
-#define STR_GETINFO_HTTP_GETTITLE		"�^�C�g���擾(&L)"
+#define STR_GETINFO_HTTP_NEWMENU		"HTTPアイテムの追加(&H)..."
+#define STR_GETINFO_HTTP_OPEN			"開く(&O)"
+#define STR_GETINFO_HTTP_CHECKOPEN		"チェックするURLで開く(&U)"
+#define STR_GETINFO_HTTP_HEADER			"ヘッダー表示(&H)"
+#define STR_GETINFO_HTTP_SOURCE			"ソース表示(&S)"
+#define STR_GETINFO_HTTP_GETTITLE		"タイトル取得(&L)"
 
 //httpprop.c
-#define STR_REQTYPE_AUTO_GET			"����(&A) (���� GET)"
+#define STR_REQTYPE_AUTO_GET			"自動(&A) (現在 GET)"
 
-#define STR_TITLE_PROP					"%s�̃v���p�e�B"
-#define STR_TITLE_ADDITEM				"HTTP�A�C�e���̒ǉ�"
+#define STR_TITLE_PROP					"%sのプロパティ"
+#define STR_TITLE_ADDITEM				"HTTPアイテムの追加"
 
-#define STR_TITLE_SETHTTP				"HTTP�v���g�R���̐ݒ�"
+#define STR_TITLE_SETHTTP				"HTTPプロトコルの設定"
 
 //httptools.c
-#define STR_ERR_TITLE_DDEEINIT			"DDE������"
-#define STR_ERR_MSG_DDEEINIT			"DDE�̏������Ɏ��s���܂����B"
+#define STR_ERR_TITLE_DDEEINIT			"DDE初期化"
+#define STR_ERR_MSG_DDEEINIT			"DDEの初期化に失敗しました。"
 
-#define STR_ERR_TITLE_DDE				"�u���E�U���̎擾"
-#define STR_ERR_MSG_DDE					"�u���E�U���N������Ă��Ȃ����A�u���E�U���̎擾�Ɏ��s���܂����B"
+#define STR_ERR_TITLE_DDE				"ブラウザ情報の取得"
+#define STR_ERR_MSG_DDE					"ブラウザが起動されていないか、ブラウザ情報の取得に失敗しました。"
 
-#define ST_LV_COL_TITLE					"�^�C�g��"
-#define ST_LV_COL_FLAME					"�t���[��"
+#define ST_LV_COL_TITLE					"タイトル"
+#define ST_LV_COL_FLAME					"フレーム"
 #define ST_LV_COL_URL					"URL"
 
 //file.c
-#define STR_ERR_TITLE_FILEOPEN			"�t�@�C�����J��"
-#define STR_ERR_MSG_FILEOPEN			"�t�@�C�����ݒ肳��Ă��܂���B"
+#define STR_ERR_TITLE_FILEOPEN			"ファイルを開く"
+#define STR_ERR_MSG_FILEOPEN			"ファイルが設定されていません。"
 
-#define STR_FILTER_FILESELECT			"���ׂẴt�@�C�� (*.*)\0*.*\0\0"
+#define STR_FILTER_FILESELECT			"すべてのファイル (*.*)\0*.*\0\0"
 
-#define STR_GETINFO_FILE_NEWMENU		"�t�@�C���̒ǉ�(&I)..."
-#define STR_GETINFO_FILE_OPEN			"�J��(&O)"
+#define STR_GETINFO_FILE_NEWMENU		"ファイルの追加(&I)..."
+#define STR_GETINFO_FILE_OPEN			"開く(&O)"
 
 #endif
 /* End of source */

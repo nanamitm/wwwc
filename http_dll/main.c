@@ -73,7 +73,7 @@ extern FILTER *FilterInfo;
 
 	DllInitialize
 
-	‰Šú‰»
+	åˆæœŸåŒ–
 
 ******************************************************************************/
 
@@ -149,7 +149,7 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 
 	DllMain
 
-	ƒƒCƒ“
+	ãƒ¡ã‚¤ãƒ³
 
 ******************************************************************************/
 
@@ -189,7 +189,7 @@ int WINAPI DllMain(HINSTANCE hInst, DWORD fdwReason, PVOID pvReserved)
 
 	GetProtocolList
 
-	ƒvƒƒgƒRƒ‹İ’è
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«è¨­å®š
 
 ******************************************************************************/
 
@@ -229,7 +229,7 @@ __declspec(dllexport) int CALLBACK GetProtocolList(int cnt, struct TPPROTOCOLSET
 
 	GetToolList
 
-	ƒc[ƒ‹İ’è
+	ãƒ„ãƒ¼ãƒ«è¨­å®š
 
 ******************************************************************************/
 
@@ -277,7 +277,7 @@ __declspec(dllexport) int CALLBACK GetToolList(int cnt, struct TP_TOOLS *tpToolI
 
 	GetToolHideOption
 
-	ƒc[ƒ‹İ’è‚Å”ñ•\¦‚É‚·‚éƒIƒvƒVƒ‡ƒ“‚Ìæ“¾ (–ß‚è’l TOOL_HIDE_ ‚Ì‘g‚İ‡‚í‚¹)
+	ãƒ„ãƒ¼ãƒ«è¨­å®šã§éè¡¨ç¤ºã«ã™ã‚‹ã‚ªãƒ—ã‚·ãƒ§ãƒ³ã®å–å¾— (æˆ»ã‚Šå€¤ TOOL_HIDE_ ã®çµ„ã¿åˆã‚ã›)
 
 ******************************************************************************/
 
@@ -291,7 +291,7 @@ __declspec(dllexport) int CALLBACK GetToolHideOption(char *FuncName)
 
 	ErrMsg
 
-	ƒGƒ‰[ƒƒbƒZ[ƒW‚Ì•\¦
+	ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®è¡¨ç¤º
 
 ******************************************************************************/
 
@@ -301,11 +301,11 @@ void ErrMsg(HWND hWnd, int ErrCode, char *Title)
 
 	p = (Title == NULL) ? "Error" : Title;
 
-	//ƒGƒ‰[ƒR[ƒh‚©‚ç•¶š—ñ‚ğæ“¾
+	//ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰ã‹ã‚‰æ–‡å­—åˆ—ã‚’å–å¾—
 	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, ErrCode, 0, (LPTSTR)&ErrStr, BUFSIZE - 1, NULL);
 
-	//ƒGƒ‰[ƒƒbƒZ[ƒW‚ğ•\¦
+	//ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¡¨ç¤º
 	MessageBox(hWnd, ErrStr, p, MB_ICONEXCLAMATION);
 	LocalFree(ErrStr);
 }
@@ -315,7 +315,7 @@ void ErrMsg(HWND hWnd, int ErrCode, char *Title)
 
 	ExecItem
 
-	ƒtƒ@ƒCƒ‹,URL ‚ÌÀs
+	ãƒ•ã‚¡ã‚¤ãƒ«,URL ã®å®Ÿè¡Œ
 
 ******************************************************************************/
 
@@ -324,7 +324,7 @@ int ExecItem(HWND hWnd, char *buf, char *cmdline)
 	int ret;
 
 	ret = (int)(INT_PTR)ShellExecute((HWND)NULL, (LPCTSTR)NULL, (LPCTSTR)buf, cmdline, NULL, SW_SHOWNORMAL);
-	if(ret <= 32){			//ƒGƒ‰[‚Ìê‡‚ÍAƒGƒ‰[‚Ì•¶š—ñ‚ğæ“¾‚µ‚ÄƒƒbƒZ[ƒWƒ{ƒbƒNƒX‚ğ•\¦‚·‚é
+	if(ret <= 32){			//ã‚¨ãƒ©ãƒ¼ã®å ´åˆã¯ã€ã‚¨ãƒ©ãƒ¼ã®æ–‡å­—åˆ—ã‚’å–å¾—ã—ã¦ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ãƒœãƒƒã‚¯ã‚¹ã‚’è¡¨ç¤ºã™ã‚‹
 		ret = GetLastError();
 		ErrMsg(hWnd, ret, STR_ERR_TITLE_OPEN);
 		return -1;
@@ -337,7 +337,7 @@ int ExecItem(HWND hWnd, char *buf, char *cmdline)
 
 	FileSelect
 
-	ƒtƒ@ƒCƒ‹‚Ì‘I‘ğ
+	ãƒ•ã‚¡ã‚¤ãƒ«ã®é¸æŠ
 
 ******************************************************************************/
 

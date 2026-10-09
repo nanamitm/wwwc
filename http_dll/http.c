@@ -42,7 +42,7 @@
 	Define
 **************************************************************************/
 
-#define ESC					0x1B		/* ƒGƒXƒP[ƒvƒR[ƒh */
+#define ESC					0x1B		/* ã‚¨ã‚¹ã‚±ãƒ¼ãƒ—ã‚³ãƒ¼ãƒ‰ */
 
 #define TH_EXIT				(WM_USER + 1200)
 
@@ -66,7 +66,7 @@ static int HostInfoCnt;
 HWND hWndList[100];
 
 
-//ŠO•”QÆ
+//å¤–éƒ¨å‚ç…§
 extern HINSTANCE ghinst;
 
 extern int CheckType;
@@ -130,7 +130,7 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 	EditStreamProc
 
-	ƒŠƒbƒ`ƒGƒfƒBƒbƒg‚Ö‚Ì•¶š—ñ‚Ìİ’è
+	ãƒªãƒƒãƒã‚¨ãƒ‡ã‚£ãƒƒãƒˆã¸ã®æ–‡å­—åˆ—ã®è¨­å®š
 
 ******************************************************************************/
 
@@ -149,7 +149,7 @@ static DWORD CALLBACK EditStreamProc(DWORD_PTR dwCookie, LPBYTE pbBuf, LONG cb, 
 
 	ViewProc
 
-	ƒAƒCƒeƒ€‚Ìƒwƒbƒ_[Eƒ\[ƒX•\¦ƒ_ƒCƒAƒƒO
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ˜ãƒƒãƒ€ãƒ¼ãƒ»ã‚½ãƒ¼ã‚¹è¡¨ç¤ºãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -204,7 +204,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 			filter_title = "";
 			if(tpHTTP->FilterFlag == TRUE){
-				//Shift‚ª‰Ÿ‚³‚ê‚Ä‚¢‚éê‡‚ÍƒtƒBƒ‹ƒ^‚ğˆ—
+				//ShiftãŒæŠ¼ã•ã‚Œã¦ã„ã‚‹å ´åˆã¯ãƒ•ã‚£ãƒ«ã‚¿ã‚’å‡¦ç†
 				tpHTTP->FilterFlag = FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
 				if(tpHTTP->FilterFlag == TRUE){
 					filter_title = STR_TITLE_FILTER;
@@ -346,7 +346,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 	GetTitle
 
-	HTML‚Ìƒ^ƒCƒgƒ‹‚ğæ“¾
+	HTMLã®ã‚¿ã‚¤ãƒˆãƒ«ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -357,16 +357,16 @@ static char *GetTitle(char *buf)
 	int len;
 	BOOL rc;
 
-	//JIS ‚ğ SJIS ‚É•ÏŠ·
+	//JIS ã‚’ SJIS ã«å¤‰æ›
 	SjisBuf = SrcConv(buf, lstrlen(buf) + 1);
 
-	//ƒ^ƒCƒgƒ‹ƒ^ƒO‚ÌƒTƒCƒY‚ğæ“¾
+	//ã‚¿ã‚¤ãƒˆãƒ«ã‚¿ã‚°ã®ã‚µã‚¤ã‚ºã‚’å–å¾—
 	len = GetTagContentSize(SjisBuf, TITLE_TAG);
 	if(len == 0){
 		return NULL;
 	}
 
-	//ƒ^ƒCƒgƒ‹‚ğæ“¾
+	//ã‚¿ã‚¤ãƒˆãƒ«ã‚’å–å¾—
 	ret = (char *)GlobalAlloc(GMEM_FIXED, len + 1);
 	if(ret == NULL){
 		GlobalFree(SjisBuf);
@@ -379,7 +379,7 @@ static char *GetTitle(char *buf)
 		GlobalFree(ret);
 		ret = NULL;
 	}
-	//“Áê•¶š‚Ì•ÏŠ·
+	//ç‰¹æ®Šæ–‡å­—ã®å¤‰æ›
 	ConvHTMLChar(ret);
 	return ret;
 }
@@ -390,7 +390,7 @@ static char *GetTitle(char *buf)
 
 	SetErrorString
 
-	ƒGƒ‰[•¶š—ñ‚Ìİ’è
+	ã‚¨ãƒ©ãƒ¼æ–‡å­—åˆ—ã®è¨­å®š
 
 ******************************************************************************/
 
@@ -426,7 +426,7 @@ static void SetErrorString(struct TPITEM *tpItemInfo, char *buf, BOOL HeadFlag)
 
 	SetHttpError
 
-	HTTPƒGƒ‰[‚ğİ’è
+	HTTPã‚¨ãƒ©ãƒ¼ã‚’è¨­å®š
 
 ******************************************************************************/
 
@@ -472,7 +472,7 @@ static void SetHttpError(struct TPITEM *tpItemInfo, char *def, char *func)
 
 	CreateOldData
 
-	‹Œƒf[ƒ^‚Ìì¬
+	æ—§ãƒ‡ãƒ¼ã‚¿ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -500,7 +500,7 @@ static char *CreateOldData(char *buf)
 
 	GetMetaString
 
-	METAƒ^ƒO‚Ìæ“¾
+	METAã‚¿ã‚°ã®å–å¾—
 
 ******************************************************************************/
 
@@ -535,24 +535,24 @@ static int GetMetaString(struct TPITEM *tpItemInfo)
 		lstrcpy(content, DEF_META_CONTENT);
 	}
 
-	//SJIS‚É•ÏŠ·
+	//SJISã«å¤‰æ›
 	p = SrcConv(tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
 
 	if((MetaContent = GetMETATag(p, type, name, content)) != NULL){
-		//“Áê•¶š‚Ì•ÏŠ·
+		//ç‰¹æ®Šæ–‡å­—ã®å¤‰æ›
 		ConvHTMLChar(MetaContent);
 
 		if(LresultCmp(tpItemInfo->Date, MetaContent) != 0){
 			CmpMsg = ST_UP;
 		}
 		if(CmpMsg == ST_UP || tpItemInfo->Date == NULL || *tpItemInfo->Date == '\0'){
-			//‹ŒXV“ú‚Ìİ’è
+			//æ—§æ›´æ–°æ—¥ã®è¨­å®š
 			if(tpItemInfo->OldDate != NULL){
 				GlobalFree(tpItemInfo->OldDate);
 			}
 			tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
-			// ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ğƒZƒbƒg‚·‚é
+			// ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›ã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹
 			if(tpItemInfo->Date != NULL){
 				GlobalFree(tpItemInfo->Date);
 			}
@@ -564,7 +564,7 @@ static int GetMetaString(struct TPITEM *tpItemInfo)
 		GlobalFree(MetaContent);
 
 	}else{
-		//METAƒ^ƒO‚ğæ“¾‚Å‚«‚È‚©‚Á‚½ƒƒbƒZ[ƒW‚ğİ’è
+		//METAã‚¿ã‚°ã‚’å–å¾—ã§ããªã‹ã£ãŸãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã‚’è¨­å®š
 		if(tpItemInfo->Date != NULL){
 			GlobalFree(tpItemInfo->Date);
 		}
@@ -582,7 +582,7 @@ static int GetMetaString(struct TPITEM *tpItemInfo)
 
 	Head_GetDate
 
-	ƒwƒbƒ_‚©‚çXV“ú‚ğæ“¾
+	ãƒ˜ãƒƒãƒ€ã‹ã‚‰æ›´æ–°æ—¥æ™‚ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -611,7 +611,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 			CmpMsg = ST_UP;
 		}
 		if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->DLLData1 == NULL || *tpItemInfo->DLLData1 == '\0'){
-			//DLL—pƒf[ƒ^‚É“ú•t‚ğŠi”[
+			//DLLç”¨ãƒ‡ãƒ¼ã‚¿ã«æ—¥ä»˜ã‚’æ ¼ç´
 			if(tpItemInfo->DLLData1 != NULL){
 				GlobalFree(tpItemInfo->DLLData1);
 			}
@@ -620,17 +620,17 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 		}
 
 		if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->Date == NULL || *tpItemInfo->Date == '\0'){
-			//‹ŒXV“ú‚Ìİ’è
+			//æ—§æ›´æ–°æ—¥ã®è¨­å®š
 			if(tpItemInfo->OldDate != NULL){
 				GlobalFree(tpItemInfo->OldDate);
 			}
 			tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
-			//“ú•tŒ`®‚Ì•ÏŠ·
+			//æ—¥ä»˜å½¢å¼ã®å¤‰æ›
 			if(DateConv(headcontent, chtime) == 0){
 				lstrcpy(headcontent, chtime);
 			}
-			/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ğƒZƒbƒg‚·‚é */
+			/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›ã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 			if(tpItemInfo->Date != NULL){
 				GlobalFree(tpItemInfo->Date);
 			}
@@ -638,7 +638,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 			if(tpItemInfo->Date != NULL){
 				lstrcpy(tpItemInfo->Date, headcontent);
 				if(CmpMsg == ST_UP){
-					//“ú•t‚Ì•ÏX‚ğ¦‚·‹L†‚Ì•t‰Á
+					//æ—¥ä»˜ã®å¤‰æ›´ã‚’ç¤ºã™è¨˜å·ã®ä»˜åŠ 
 					lstrcat(tpItemInfo->Date, "*");
 				}
 			}
@@ -653,7 +653,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 
 	Head_GetSize
 
-	ƒwƒbƒ_‚©‚çƒTƒCƒY‚ğæ“¾
+	ãƒ˜ãƒƒãƒ€ã‹ã‚‰ã‚µã‚¤ã‚ºã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -670,7 +670,7 @@ static int Head_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate, B
 		return ST_DEFAULT;
 	}
 
-	/* ƒTƒCƒY‚ğæ“¾‚·‚é */
+	/* ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹ */
 	len = GetHeadContentSize(tpHTTP->buf, "Content-Length:");
 	headcontent = (char *)HeapAlloc(GetProcessHeap(), 0, len + 2);
 	if(headcontent == NULL){
@@ -678,18 +678,18 @@ static int Head_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate, B
 	}
 	*SizeRet = GetHeadContent(tpHTTP->buf, "Content-Length:", headcontent);
 	if(*SizeRet == TRUE){
-		/* ‘O‰ñƒ`ƒFƒbƒN‚Ì‚à‚Ì‚Æ”äŠr‚·‚é */
+		/* å‰å›ãƒã‚§ãƒƒã‚¯æ™‚ã®ã‚‚ã®ã¨æ¯”è¼ƒã™ã‚‹ */
 		if(CmpOption == 1 && LresultCmp(tpItemInfo->Size, headcontent) != 0){
 			CmpMsg = ST_UP;
 
 			if(SetDate == 0 && CreateDateTime(buf) == 0){
-				//‹ŒXV“ú‚Ìİ’è
+				//æ—§æ›´æ–°æ—¥ã®è¨­å®š
 				if(tpItemInfo->OldDate != NULL){
 					GlobalFree(tpItemInfo->OldDate);
 				}
 				tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
-				/* ƒAƒCƒeƒ€‚ÉŒ»İ‚Ì‚ğİ’è‚·‚é */
+				/* ã‚¢ã‚¤ãƒ†ãƒ ã«ç¾åœ¨ã®æ™‚åˆ»ã‚’è¨­å®šã™ã‚‹ */
 				if(tpItemInfo->Date != NULL){
 					GlobalFree(tpItemInfo->Date);
 				}
@@ -698,13 +698,13 @@ static int Head_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate, B
 			}
 		}
 		if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->Size == NULL || *tpItemInfo->Size == '\0'){
-			//‹ŒƒTƒCƒY‚Ìİ’è
+			//æ—§ã‚µã‚¤ã‚ºã®è¨­å®š
 			if(tpItemInfo->OldSize != NULL){
 				GlobalFree(tpItemInfo->OldSize);
 			}
 			tpItemInfo->OldSize = CreateOldData(tpItemInfo->Size);
 
-			/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ğƒZƒbƒg‚·‚é */
+			/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›ã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 			if(tpItemInfo->Size != NULL){
 				GlobalFree(tpItemInfo->Size);
 			}
@@ -721,7 +721,7 @@ static int Head_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate, B
 
 	Get_GetSize
 
-	HTML‚ÌƒTƒCƒY‚ğæ“¾
+	HTMLã®ã‚µã‚¤ã‚ºã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -741,7 +741,7 @@ static int Get_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate)
 
 	head_size = HeaderSize(tpHTTP->buf);
 	if(GetOptionInt(tpItemInfo->Option1, OP1_NOTAGSIZE) == 1){
-		/* óM‚µ‚½‚à‚Ì‚©‚çƒwƒbƒ_‚Æƒ^ƒO‚ğœ‹‚µ‚½ƒTƒCƒY‚ğŒvZ‚·‚é */
+		/* å—ä¿¡ã—ãŸã‚‚ã®ã‹ã‚‰ãƒ˜ãƒƒãƒ€ã¨ã‚¿ã‚°ã‚’é™¤å»ã—ãŸã‚µã‚¤ã‚ºã‚’è¨ˆç®—ã™ã‚‹ */
 		p = SrcConv(tpHTTP->buf + head_size, tpHTTP->Size);
 		tpHTTP->Size = DelTagSize(p);
 		wsprintf(tmp, "%ld", tpHTTP->Size);
@@ -750,22 +750,22 @@ static int Get_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate)
 		tpHTTP->Size = lstrlen(tpHTTP->buf + head_size);
 		wsprintf(tmp, "%ld", tpHTTP->Size);
 	}else{
-		/* óM‚µ‚½‚à‚Ì‚©‚çƒwƒbƒ_‚ğœ‹‚µ‚½ƒTƒCƒY‚ğŒvZ‚·‚é */
+		/* å—ä¿¡ã—ãŸã‚‚ã®ã‹ã‚‰ãƒ˜ãƒƒãƒ€ã‚’é™¤å»ã—ãŸã‚µã‚¤ã‚ºã‚’è¨ˆç®—ã™ã‚‹ */
 		wsprintf(tmp, "%ld", tpHTTP->Size - head_size);
 	}
 
-	/* ‘O‰ñƒ`ƒFƒbƒN‚Ì‚à‚Ì‚Æ”äŠr‚·‚é */
+	/* å‰å›ãƒã‚§ãƒƒã‚¯æ™‚ã®ã‚‚ã®ã¨æ¯”è¼ƒã™ã‚‹ */
 	if(CmpOption == 1 && LresultCmp(tpItemInfo->Size, tmp) != 0){
 		CmpMsg = ST_UP;
 
 		if(SetDate == 0 && CreateDateTime(buf) == 0){
-			//‹ŒXV“ú‚Ìİ’è
+			//æ—§æ›´æ–°æ—¥ã®è¨­å®š
 			if(tpItemInfo->OldDate != NULL){
 				GlobalFree(tpItemInfo->OldDate);
 			}
 			tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
-			/* ƒAƒCƒeƒ€‚ÉŒ»İ‚Ì‚ğİ’è‚·‚é */
+			/* ã‚¢ã‚¤ãƒ†ãƒ ã«ç¾åœ¨ã®æ™‚åˆ»ã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->Date != NULL){
 				GlobalFree(tpItemInfo->Date);
 			}
@@ -774,13 +774,13 @@ static int Get_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate)
 		}
 	}
 	if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->Size == NULL || *tpItemInfo->Size == '\0'){
-		//‹ŒƒTƒCƒY‚Ìİ’è
+		//æ—§ã‚µã‚¤ã‚ºã®è¨­å®š
 		if(tpItemInfo->OldSize != NULL){
 			GlobalFree(tpItemInfo->OldSize);
 		}
 		tpItemInfo->OldSize = CreateOldData(tpItemInfo->Size);
 
-		/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ğƒZƒbƒg‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›ã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 		if(tpItemInfo->Size != NULL){
 			GlobalFree(tpItemInfo->Size);
 		}
@@ -795,7 +795,7 @@ static int Get_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate)
 
 	Get_MD5Check
 
-	MD5‚Ìƒ_ƒCƒWƒFƒXƒg’l‚ğæ“¾‚µ‚Äƒ`ƒFƒbƒN
+	MD5ã®ãƒ€ã‚¤ã‚¸ã‚§ã‚¹ãƒˆå€¤ã‚’å–å¾—ã—ã¦ãƒã‚§ãƒƒã‚¯
 
 ******************************************************************************/
 
@@ -814,7 +814,7 @@ static int Get_MD5Check(struct TPITEM *tpItemInfo, int SetDate)
 		return ST_DEFAULT;
 	}
 
-	//ƒ_ƒCƒWƒFƒXƒg’l‚Ì¶¬
+	//ãƒ€ã‚¤ã‚¸ã‚§ã‚¹ãƒˆå€¤ã®ç”Ÿæˆ
     MD5Init(&context);
     MD5Update(&context, tpHTTP->buf + HeaderSize(tpHTTP->buf), lstrlen(tpHTTP->buf + HeaderSize(tpHTTP->buf)));
     MD5Final(digest, &context);
@@ -824,18 +824,18 @@ static int Get_MD5Check(struct TPITEM *tpItemInfo, int SetDate)
 	}
 	*(tmp + len) = '\0';
 
-	/* ‘O‰ñƒ`ƒFƒbƒN‚Ì‚à‚Ì‚Æ”äŠr‚·‚é */
+	/* å‰å›ãƒã‚§ãƒƒã‚¯æ™‚ã®ã‚‚ã®ã¨æ¯”è¼ƒã™ã‚‹ */
 	if(LresultCmp(tpItemInfo->DLLData2, tmp) != 0){
 		CmpMsg = ST_UP;
 
 		if(SetDate == 0 && CreateDateTime(buf) == 0){
-			//‹ŒXV“ú‚Ìİ’è
+			//æ—§æ›´æ–°æ—¥ã®è¨­å®š
 			if(tpItemInfo->OldDate != NULL){
 				GlobalFree(tpItemInfo->OldDate);
 			}
 			tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
-			/* ƒAƒCƒeƒ€‚ÉŒ»İ‚Ì‚ğİ’è‚·‚é */
+			/* ã‚¢ã‚¤ãƒ†ãƒ ã«ç¾åœ¨ã®æ™‚åˆ»ã‚’è¨­å®šã™ã‚‹ */
 			if(tpItemInfo->Date != NULL){
 				GlobalFree(tpItemInfo->Date);
 			}
@@ -844,7 +844,7 @@ static int Get_MD5Check(struct TPITEM *tpItemInfo, int SetDate)
 		}
 	}
 	if(CmpMsg == ST_UP || tpItemInfo->DLLData2 == NULL || *tpItemInfo->DLLData2 == '\0'){
-		/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ğƒZƒbƒg‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›ã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 		if(tpItemInfo->DLLData2 != NULL){
 			GlobalFree(tpItemInfo->DLLData2);
 		}
@@ -859,7 +859,7 @@ static int Get_MD5Check(struct TPITEM *tpItemInfo, int SetDate)
 
 	HeaderFunc
 
-	ƒwƒbƒ_‚©‚çXVî•ñ‚ğæ“¾‚µ‚Äˆ—‚ğs‚¤
+	ãƒ˜ãƒƒãƒ€ã‹ã‚‰æ›´æ–°æƒ…å ±ã‚’å–å¾—ã—ã¦å‡¦ç†ã‚’è¡Œã†
 
 ******************************************************************************/
 
@@ -887,7 +887,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		return CHECK_ERROR;
 	}
 
-	//HTTP‚ÌƒXƒe[ƒ^ƒX‚ğæ“¾
+	//HTTPã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ã‚’å–å¾—
 	for(p = tpHTTP->buf; *p != ' ' && *p != '\0'; p++);
 	if(*p == '\0'){
 		SetErrorString(tpItemInfo, STR_ERROR_HEADER, FALSE);
@@ -904,15 +904,15 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 	}
 	Status = atoi(tmp);
 
-	//ƒc[ƒ‹
+	//ãƒ„ãƒ¼ãƒ«
 	switch(tpItemInfo->Param3){
 	case 1:
 	case 2:
-		//ƒwƒbƒ_Aƒ\[ƒX•\¦
+		//ãƒ˜ãƒƒãƒ€ã€ã‚½ãƒ¼ã‚¹è¡¨ç¤º
 		if(Status == 301 || Status == 302){
 			break;
 		}
-		//ƒ`ƒFƒbƒN‚ÌI—¹‚ğWWWC‚É’Ê’m
+		//ãƒã‚§ãƒƒã‚¯ã®çµ‚äº†ã‚’WWWCã«é€šçŸ¥
 		SendMessage(hWnd, WM_CHECK_RESULT, ST_DEFAULT, (LPARAM)tpItemInfo);
 		return CHECK_END;
 
@@ -920,7 +920,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		if(Status == 301 || Status == 302){
 			break;
 		}
-		//ƒ^ƒCƒgƒ‹æ“¾
+		//ã‚¿ã‚¤ãƒˆãƒ«å–å¾—
 		if(Status == 200){
 			if((titlebuf = GetTitle(tpHTTP->buf + HeaderSize(tpHTTP->buf))) != NULL){
 				if(tpItemInfo->Title != NULL){
@@ -937,26 +937,26 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 	}
 
 	if(Status == 304){
-		//XV‚ª–³‚©‚Á‚½ê‡
+		//æ›´æ–°ãŒç„¡ã‹ã£ãŸå ´åˆ
 		SendMessage(hWnd, WM_CHECK_RESULT, ST_DEFAULT, (LPARAM)tpItemInfo);
 		return CHECK_END;
 	}
 
-	//ƒ`ƒFƒbƒNİ’è
+	//ãƒã‚§ãƒƒã‚¯è¨­å®š
 	DateCheck = !GetOptionInt(tpItemInfo->Option1, OP1_NODATE);
 	SizeCheck = !GetOptionInt(tpItemInfo->Option1, OP1_NOSIZE);
 
 	switch(Status)
 	{
-	case 200:	/* ¬Œ÷‚Ìê‡ */
+	case 200:	/* æˆåŠŸã®å ´åˆ */
 		if(tpItemInfo->user2 == REQUEST_HEAD){
 			//HEAD
-			//XV“ú‚ğæ“¾
+			//æ›´æ–°æ—¥æ™‚ã‚’å–å¾—
 			CmpMsg |= Head_GetDate(tpItemInfo, DateCheck, &DateRet);
-			//ƒTƒCƒY‚ğæ“¾
+			//ã‚µã‚¤ã‚ºã‚’å–å¾—
 			CmpMsg |= Head_GetSize(tpItemInfo, SizeCheck, DateRet, &SizeRet);
 			if(SizeRet == 0 && DateRet == 0){
-				//GETƒŠƒNƒGƒXƒg‘—M‚Ì‚½‚ß‚Ìƒ`ƒFƒbƒN‘Ò‚¿ó‘Ô
+				//GETãƒªã‚¯ã‚¨ã‚¹ãƒˆé€ä¿¡ã®ãŸã‚ã®ãƒã‚§ãƒƒã‚¯å¾…ã¡çŠ¶æ…‹
 				if(tpItemInfo->Option1 == NULL || *tpItemInfo->Option1 == '\0'){
 					if(tpItemInfo->Option1 != NULL) GlobalFree(tpItemInfo->Option1);
 					tpItemInfo->Option1 = (char *)GlobalAlloc(GPTR, 2);
@@ -966,7 +966,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 				}
 				return CHECK_NO;
 			}else{
-				//ƒ`ƒFƒbƒN‚ÌI—¹‚ğWWWC‚É’Ê’m
+				//ãƒã‚§ãƒƒã‚¯ã®çµ‚äº†ã‚’WWWCã«é€šçŸ¥
 				SendMessage(hWnd, WM_CHECK_RESULT, CmpMsg, (LPARAM)tpItemInfo);
 			}
 			break;
@@ -974,11 +974,11 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 
 		//GET
 		if(GetOptionInt(tpItemInfo->Option1, OP1_META) == 1){
-			//METAƒ^ƒO‚ğæ“¾
+			//METAã‚¿ã‚°ã‚’å–å¾—
 			CmpMsg |= GetMetaString(tpItemInfo);
 			SetDate = 1;
 		}else{
-			//ƒwƒbƒ_‚©‚çXV“ú‚ğæ“¾
+			//ãƒ˜ãƒƒãƒ€ã‹ã‚‰æ›´æ–°æ—¥æ™‚ã‚’å–å¾—
 			CmpMsg |= Head_GetDate(tpItemInfo, DateCheck, &SetDate);
 		}
 		if(GetHeadContentSize(tpHTTP->buf, "Content-Length:") > 0 &&
@@ -986,13 +986,13 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			if(tpItemInfo->Option1 != NULL && *tpItemInfo->Option1 != '\0' && *tpItemInfo->Option1 != '2'){
 				*tpItemInfo->Option1 = '0';
 			}
-			//ƒwƒbƒ_‚©‚çƒTƒCƒY‚ğæ“¾
+			//ãƒ˜ãƒƒãƒ€ã‹ã‚‰ã‚µã‚¤ã‚ºã‚’å–å¾—
 			CmpMsg |= Head_GetSize(tpItemInfo, SizeCheck, SetDate, &SizeRet);
 		}
 		if(SizeRet == 0){
-			//ƒoƒCƒgî•ñ‚Ìœ‹
+			//ãƒã‚¤ãƒˆæƒ…å ±ã®é™¤å»
 			tpHTTP->Size = DeleteSizeInfo(tpHTTP->buf, tpHTTP->Size);
-			//ƒtƒBƒ‹ƒ^ˆ—
+			//ãƒ•ã‚£ãƒ«ã‚¿å‡¦ç†
 			if(tpHTTP->FilterFlag == TRUE &&
 				FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size) == FALSE){
 				tpHTTP->FilterFlag = FALSE;
@@ -1005,18 +1005,18 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 				}
 				SetDate = 1;
 			}
-			//HTML‚ÌƒTƒCƒY‚ğæ“¾
+			//HTMLã®ã‚µã‚¤ã‚ºã‚’å–å¾—
 			CmpMsg |= Get_GetSize(tpItemInfo, SizeCheck, SetDate);
 		}
 		if(GetOptionInt(tpItemInfo->Option1, OP1_MD5) == 1){
-			//MD5‚Ìƒ_ƒCƒWƒFƒXƒg’l‚Åƒ`ƒFƒbƒN
+			//MD5ã®ãƒ€ã‚¤ã‚¸ã‚§ã‚¹ãƒˆå€¤ã§ãƒã‚§ãƒƒã‚¯
 			CmpMsg |= Get_MD5Check(tpItemInfo, SetDate);
 		}
-		//ƒ`ƒFƒbƒN‚ÌI—¹‚ğWWWC‚É’Ê’m
+		//ãƒã‚§ãƒƒã‚¯ã®çµ‚äº†ã‚’WWWCã«é€šçŸ¥
 		SendMessage(hWnd, WM_CHECK_RESULT, CmpMsg, (LPARAM)tpItemInfo);
 		break;
 
-	case 301:	/* ˆÚ“®‚Ìê‡ */
+	case 301:	/* ç§»å‹•ã®å ´åˆ */
 		if(tpItemInfo->Param4 > 10){
 			tpItemInfo->Param4 = 0;
 			SetErrorString(tpItemInfo, STR_ERROR_MOVE, FALSE);
@@ -1033,7 +1033,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(headcontent) + 1);
 			if(tpItemInfo->Param2 != 0) lstrcpy((char*)tpItemInfo->Param2, headcontent);
 
-			//ƒ`ƒFƒbƒN‚·‚éURL‚ğ•ÏX
+			//ãƒã‚§ãƒƒã‚¯ã™ã‚‹URLã‚’å¤‰æ›´
 			if(tpItemInfo->CheckURL != NULL){
 				GlobalFree((HGLOBAL)tpItemInfo->CheckURL);
 			}
@@ -1041,7 +1041,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			if(tpItemInfo->CheckURL != NULL) lstrcpy(tpItemInfo->CheckURL, headcontent);
 			GlobalFree(headcontent);
 
-			//ƒŠƒNƒGƒXƒg‚Ì‰Šú‰»
+			//ãƒªã‚¯ã‚¨ã‚¹ãƒˆã®åˆæœŸåŒ–
 			return CHECK_NO;
 		}else{
 			if(headcontent != NULL) GlobalFree(headcontent);
@@ -1050,7 +1050,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		}
 		break;
 
-	case 302:	/* ˆÚ“®‚Ìê‡ */
+	case 302:	/* ç§»å‹•ã®å ´åˆ */
 	case 307:
 		if(tpItemInfo->Param4 > 10){
 			tpItemInfo->Param4 = 0;
@@ -1068,7 +1068,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			tpItemInfo->Param2 = (LONG_PTR)CreateMoveURL(tpHTTP->Path, headcontent);
 			GlobalFree(headcontent);
 
-			//ƒŠƒNƒGƒXƒg‚Ì‰Šú‰»
+			//ãƒªã‚¯ã‚¨ã‚¹ãƒˆã®åˆæœŸåŒ–
 			return CHECK_NO;
 		}else{
 			if(headcontent != NULL) GlobalFree(headcontent);
@@ -1077,12 +1077,12 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		}
 		break;
 
-	case 408:	/* ƒT[ƒoƒ^ƒCƒ€ƒAƒEƒg‚Ìê‡ */
+	case 408:	/* ã‚µãƒ¼ãƒã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆã®å ´åˆ */
 		SetErrorString(tpItemInfo, tpHTTP->buf, TRUE);
 		SendMessage(hWnd, WM_CHECK_RESULT, ST_TIMEOUT, (LPARAM)tpItemInfo);
 		break;
 
-	default:	/* ƒGƒ‰[‚Ìê‡ */
+	default:	/* ã‚¨ãƒ©ãƒ¼ã®å ´åˆ */
 		SetErrorString(tpItemInfo, tpHTTP->buf, TRUE);
 		SendMessage(hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
 		break;
@@ -1095,7 +1095,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 
 	SetSBText
 
-	WWWC‚ÌƒXƒe[ƒ^ƒXƒo[‚ÉƒeƒLƒXƒg‚ğ•\¦‚·‚é
+	WWWCã®ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ãƒãƒ¼ã«ãƒ†ã‚­ã‚¹ãƒˆã‚’è¡¨ç¤ºã™ã‚‹
 
 ******************************************************************************/
 
@@ -1103,7 +1103,7 @@ static void SetSBText(HWND hWnd, struct TPITEM *tpItemInfo, char *msg)
 {
 	char *buf, *p;
 
-	//ƒXƒe[ƒ^ƒXƒo[‚ÉƒeƒLƒXƒg‚ğ‘—‚éB
+	//ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹ãƒãƒ¼ã«ãƒ†ã‚­ã‚¹ãƒˆã‚’é€ã‚‹ã€‚
 	if (tpItemInfo->Param2 != 0) {
 		buf = (char *)HeapAlloc(GetProcessHeap(), 0, lstrlen(msg) + lstrlen((char *)tpItemInfo->Param2) + 4);
 		if (buf == NULL) {
@@ -1127,7 +1127,7 @@ static void SetSBText(HWND hWnd, struct TPITEM *tpItemInfo, char *msg)
 
 	CheckHead
 
-	óMÏ‚İƒf[ƒ^‚É•K—v‚Èî•ñ‚ğæ“¾‚µ‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
+	å—ä¿¡æ¸ˆã¿ãƒ‡ãƒ¼ã‚¿ã«å¿…è¦ãªæƒ…å ±ã‚’å–å¾—ã—ã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 
 ******************************************************************************/
 
@@ -1135,7 +1135,7 @@ static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 {
 	char *p;
 
-	//‚·‚×‚ÄóM‚·‚é•K—v‚ª‚ ‚éê‡
+	//ã™ã¹ã¦å—ä¿¡ã™ã‚‹å¿…è¦ãŒã‚ã‚‹å ´åˆ
 	if(tpItemInfo->Param3 >= 2 || tpHTTP->FilterFlag == TRUE ||
 		GetOptionInt(tpItemInfo->Option1, OP1_META) == 1 ||
 		GetOptionInt(tpItemInfo->Option1, OP1_MD5) == 1 ||
@@ -1144,7 +1144,7 @@ static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 		return FALSE;
 	}
 
-	//ƒwƒbƒ_‚ğ‚·‚×‚ÄóM‚µ‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
+	//ãƒ˜ãƒƒãƒ€ã‚’ã™ã¹ã¦å—ä¿¡ã—ã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 	p = tpHTTP->buf;
 	while(1){
 		p = StrNextContent(p);
@@ -1156,12 +1156,12 @@ static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 		}
 	}
 
-	//ƒwƒbƒ_•\¦‚Ìê‡‚ÍóM‚ğ‘Å‚¿Ø‚é
+	//ãƒ˜ãƒƒãƒ€è¡¨ç¤ºã®å ´åˆã¯å—ä¿¡ã‚’æ‰“ã¡åˆ‡ã‚‹
 	if(tpItemInfo->Param3 == 1){
 		return TRUE;
 	}
 
-	//ƒwƒbƒ_‚ÉƒTƒCƒY‚ªİ’è‚³‚ê‚Ä‚¢‚é‚©ƒ`ƒFƒbƒN
+	//ãƒ˜ãƒƒãƒ€ã«ã‚µã‚¤ã‚ºãŒè¨­å®šã•ã‚Œã¦ã„ã‚‹ã‹ãƒã‚§ãƒƒã‚¯
 	if(tpItemInfo->Param3 == 0 && GetHeadContentSize(tpHTTP->buf, "Content-Length:") <= 0){
 		tpHTTP->HeadCheckFlag = TRUE;
 		return FALSE;
@@ -1174,7 +1174,7 @@ static BOOL CheckHead(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 
 	HTTP_FreeItem
 
-	ƒAƒCƒeƒ€î•ñ‚Ì‰ğ•ú
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã®è§£æ”¾
 
 ******************************************************************************/
 
@@ -1201,7 +1201,7 @@ __declspec(dllexport) int CALLBACK HTTP_FreeItem(struct TPITEM *tpItemInfo)
 
 	HTTP_InitItem
 
-	ƒAƒCƒeƒ€‚Ì‰Šú‰»
+	ã‚¢ã‚¤ãƒ†ãƒ ã®åˆæœŸåŒ–
 
 ******************************************************************************/
 
@@ -1212,7 +1212,7 @@ __declspec(dllexport) int CALLBACK HTTP_InitItem(HWND hWnd, struct TPITEM *tpIte
 		tpItemInfo->ErrStatus = NULL;
 	}
 	if((tpItemInfo->Status & ST_UP) == 0){
-		/* XVƒ}[ƒN(*)‚ğœ‹‚·‚é */
+		/* æ›´æ–°ãƒãƒ¼ã‚¯(*)ã‚’é™¤å»ã™ã‚‹ */
 		if(tpItemInfo->Size != NULL && *tpItemInfo->Size != '\0' &&
 			*(tpItemInfo->Size + lstrlen(tpItemInfo->Size) - 1) == '*'){
 			*(tpItemInfo->Size + lstrlen(tpItemInfo->Size) - 1) = '\0';
@@ -1234,7 +1234,7 @@ __declspec(dllexport) int CALLBACK HTTP_InitItem(HWND hWnd, struct TPITEM *tpIte
 
 	HTTP_Initialize
 
-	ƒ`ƒFƒbƒNŠJn‚Ì‰Šú‰»
+	ãƒã‚§ãƒƒã‚¯é–‹å§‹ã®åˆæœŸåŒ–
 
 ******************************************************************************/
 
@@ -1251,7 +1251,7 @@ __declspec(dllexport) int CALLBACK HTTP_Initialize(HWND hWnd, struct TPITEM *tpI
 
 	HTTP_Cancel
 
-	ƒ`ƒFƒbƒN‚ÌƒLƒƒƒ“ƒZƒ‹
+	ãƒã‚§ãƒƒã‚¯ã®ã‚­ãƒ£ãƒ³ã‚»ãƒ«
 
 ******************************************************************************/
 
@@ -1268,13 +1268,13 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 	switch(tpItemInfo->Param3){
 	case 1:
 	case 2:
-		//ƒwƒbƒ_Aƒ\[ƒX•\¦
+		//ãƒ˜ãƒƒãƒ€ã€ã‚½ãƒ¼ã‚¹è¡¨ç¤º
 		vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 		ShowWindow(vWnd, SW_SHOW);
 		break;
 
 	case 3:
-		//ƒ^ƒCƒgƒ‹æ“¾
+		//ã‚¿ã‚¤ãƒˆãƒ«å–å¾—
 		if((titlebuf = GetTitle(tpHTTP->buf + HeaderSize(tpHTTP->buf))) != NULL){
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
@@ -1301,7 +1301,7 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 
 	HTTP_Timer
 
-	ƒ^ƒCƒ}[ (1•bŠÔŠu)
+	ã‚¿ã‚¤ãƒãƒ¼ (1ç§’é–“éš”)
 
 ******************************************************************************/
 
@@ -1335,7 +1335,7 @@ __declspec(dllexport) int CALLBACK HTTP_Timer(HWND hWnd, struct TPITEM *tpItemIn
 
 	FreeURLData
 
-	URLî•ñ‚Ì‰ğ•ú
+	URLæƒ…å ±ã®è§£æ”¾
 
 ******************************************************************************/
 
@@ -1353,7 +1353,7 @@ static void FreeURLData(struct TPHTTP *tpHTTP)
 
 	GetServerPort
 
-	Ú‘±‚·‚éƒT[ƒo‚Æƒ|[ƒg‚ğæ“¾‚·‚é
+	æ¥ç¶šã™ã‚‹ã‚µãƒ¼ãƒã¨ãƒãƒ¼ãƒˆã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -1367,7 +1367,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 
 	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
 	if(ProxyFlag == 0 && GetOptionInt(tpItemInfo->Option2, OP2_SETPROXY) == 1){
-		//ƒAƒCƒeƒ€‚Éİ’è‚³‚ê‚½ƒvƒƒLƒV‚ğg—p
+		//ã‚¢ã‚¤ãƒ†ãƒ ã«è¨­å®šã•ã‚ŒãŸãƒ—ãƒ­ã‚­ã‚·ã‚’ä½¿ç”¨
 		ProxyFlag = 2;
 		GetOptionString(tpItemInfo->Option2, ItemProxy, OP2_PROXY);
 		GetOptionString(tpItemInfo->Option2, ItemPort, OP2_PORT);
@@ -1381,7 +1381,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 	}
 
 	if((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2){
-		//Proxy‚ÌƒT[ƒo–¼‚Æƒ|[ƒg”Ô†‚ğæ“¾
+		//Proxyã®ã‚µãƒ¼ãƒåã¨ãƒãƒ¼ãƒˆç•ªå·ã‚’å–å¾—
 		tpHTTP->SvName = (char *)GlobalAlloc(GPTR, lstrlen(px) + 1);
 		if(tpHTTP->SvName == NULL){
 			if(tpItemInfo->Param3 == 1 || tpItemInfo->Param3 == 2){
@@ -1397,7 +1397,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 			tpHTTP->Port = pt;
 		}
 
-		//Proxy‚É“n‚·URL‚ğİ’è
+		//Proxyã«æ¸¡ã™URLã‚’è¨­å®š
 		tpHTTP->Path = (char *)GlobalAlloc(GPTR, lstrlen((char *)tpItemInfo->Param2) + 1);
 		if(tpHTTP->Path == NULL){
 			if(tpItemInfo->Param3 == 1 || tpItemInfo->Param3 == 2){
@@ -1409,7 +1409,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 		}
 		lstrcpy(tpHTTP->Path, (char *)tpItemInfo->Param2);
 
-		//æ“¾‚·‚éURL‚©‚çƒT[ƒo–¼‚Æƒ|[ƒg”Ô†‚ğæ“¾
+		//å–å¾—ã™ã‚‹URLã‹ã‚‰ã‚µãƒ¼ãƒåã¨ãƒãƒ¼ãƒˆç•ªå·ã‚’å–å¾—
 		tpHTTP->hSvName = (char *)GlobalAlloc(GPTR, lstrlen((char *)tpItemInfo->Param2) + 1);
 		if(tpHTTP->hSvName == NULL){
 			if(tpItemInfo->Param3 == 1 || tpItemInfo->Param3 == 2){
@@ -1449,7 +1449,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 		return TRUE;
 	}
 
-	/* URL‚©‚çƒT[ƒo–¼‚ÆƒpƒX‚ğæ“¾‚·‚é */
+	/* URLã‹ã‚‰ã‚µãƒ¼ãƒåã¨ãƒ‘ã‚¹ã‚’å–å¾—ã™ã‚‹ */
 	tpHTTP->SvName = (char *)GlobalAlloc(GPTR, lstrlen((char *)tpItemInfo->Param2) + 1);
 	if(tpHTTP->SvName == NULL){
 		if(tpItemInfo->Param3 == 1 || tpItemInfo->Param3 == 2){
@@ -1514,7 +1514,7 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 
 	CheckServer
 
-	Šù‚Éƒ`ƒFƒbƒN’†‚ÌƒT[ƒo‚©‚Ç‚¤‚©ƒ`ƒFƒbƒN‚·‚é
+	æ—¢ã«ãƒã‚§ãƒƒã‚¯ä¸­ã®ã‚µãƒ¼ãƒã‹ã©ã†ã‹ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 
 ******************************************************************************/
 
@@ -1552,7 +1552,7 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 
 	HTTP_Thread
 
-	HTTPˆ—ƒXƒŒƒbƒh
+	HTTPå‡¦ç†ã‚¹ãƒ¬ãƒƒãƒ‰
 
 ******************************************************************************/
 
@@ -1688,15 +1688,15 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 		GetOptionInt(tpItemInfo->Option1, OP1_META) == 0 &&
 		GetOptionInt(tpItemInfo->Option1, OP1_MD5) == 0 &&
 		GetOptionInt(tpItemInfo->Option1, OP1_NOTAGSIZE) == 0) {
-		//GET‚ÅXV“ú‚Åƒ`ƒFƒbƒN‚·‚éê‡‚Í‹­§“I‚ÉIMS‚ğ”­s
+		//GETã§æ›´æ–°æ—¥ã§ãƒã‚§ãƒƒã‚¯ã™ã‚‹å ´åˆã¯å¼·åˆ¶çš„ã«IMSã‚’ç™ºè¡Œ
 		s = iStrCpyW(s, "\r\nIf-Modified-Since: ");
 		s = iStrCpyW(s, tpItemInfo->DLLData1);
 	}
-	//ƒLƒƒƒbƒVƒ…§Œä
+	//ã‚­ãƒ£ãƒƒã‚·ãƒ¥åˆ¶å¾¡
 	if (Proxy == 1 && pNoCache == 1) {
 		s = iStrCpyW(s, "\r\nPragma: no-cache\r\nCache-Control: no-cache");
 	}
-	//ƒvƒƒLƒV”FØ
+	//ãƒ—ãƒ­ã‚­ã‚·èªè¨¼
 	if (Proxy == 1 && pUsePass == 1) {
 		wsprintf(BaseStr1, "%s:%s", pUser, pPass);
 		eBase(BaseStr1, BaseStr2);
@@ -1709,7 +1709,7 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 		s = iStrCpyW(s, "\r\nReferer: ");
 		s = iStrCpyW(s, referer);
 	}
-	//ƒy[ƒW”FØ
+	//ãƒšãƒ¼ã‚¸èªè¨¼
 	*BaseStr2 = '\0';
 	if (tpHTTP->user[0] != '\0') {
 		lstrcpy(user, tpHTTP->user);
@@ -1883,7 +1883,7 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 
 	Start_HTTP_Thread
 
-	HTTPƒXƒŒƒbƒh‚ÌŠJn
+	HTTPã‚¹ãƒ¬ãƒƒãƒ‰ã®é–‹å§‹
 
 ******************************************************************************/
 
@@ -1906,7 +1906,7 @@ static BOOL Start_HTTP_Thread(const HWND hWnd, struct TPITEM *tpItemInfo)
 
 	HTTP_Start
 
-	ƒ`ƒFƒbƒN‚ÌŠJn
+	ãƒã‚§ãƒƒã‚¯ã®é–‹å§‹
 
 ******************************************************************************/
 
@@ -1920,10 +1920,10 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	}
 	tpItemInfo->Param1 = (LONG_PTR)tpHTTP;
 
-	//ƒ^ƒCƒ}[‚Ì‰Šú‰»
+	//ã‚¿ã‚¤ãƒãƒ¼ã®åˆæœŸåŒ–
 	tpItemInfo->user1 = 0;
 
-	//ƒ`ƒFƒbƒNˆÈŠO‚Ìê‡‚É•\¦‚·‚éURL‚Ìî•ñ‚ğg—p‚·‚é
+	//ãƒã‚§ãƒƒã‚¯ä»¥å¤–ã®å ´åˆã«è¡¨ç¤ºã™ã‚‹URLã®æƒ…å ±ã‚’ä½¿ç”¨ã™ã‚‹
 	if(tpItemInfo->Param2 == 0){
 		if(tpItemInfo->Param3 == 3 && tpItemInfo->ViewURL != NULL && *tpItemInfo->ViewURL != '\0'){
 			if((tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(tpItemInfo->ViewURL) + 1)) == 0){
@@ -1940,11 +1940,11 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 		}
 	}
 
-	//ƒŠƒNƒGƒXƒgƒƒ\ƒbƒh‚Ì‘I‘ğ
+	//ãƒªã‚¯ã‚¨ã‚¹ãƒˆãƒ¡ã‚½ãƒƒãƒ‰ã®é¸æŠ
 	switch(tpItemInfo->Param3)
 	{
-	case 0:		//ƒ`ƒFƒbƒN
-	case 1:		//ƒwƒbƒ_•\¦
+	case 0:		//ãƒã‚§ãƒƒã‚¯
+	case 1:		//ãƒ˜ãƒƒãƒ€è¡¨ç¤º
 		tpItemInfo->user2 = GetOptionInt(tpItemInfo->Option1, OP1_REQTYPE);
 		if(CheckType == 1 || tpItemInfo->user2 == 2 ||
 			GetOptionInt(tpItemInfo->Option1, OP1_META) == 1 ||
@@ -1953,26 +1953,26 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 			tpItemInfo->user2 = REQUEST_GET;
 		}
 		if(tpItemInfo->user2 == REQUEST_GET){
-			//ƒtƒBƒ‹ƒ^
+			//ãƒ•ã‚£ãƒ«ã‚¿
 			tpHTTP->FilterFlag = FilterMatch(tpItemInfo->CheckURL);
 		}
 		break;
 
-	case 2:		//ƒ\[ƒX•\¦
-	case 3:		//ƒ^ƒCƒgƒ‹æ“¾
+	case 2:		//ã‚½ãƒ¼ã‚¹è¡¨ç¤º
+	case 3:		//ã‚¿ã‚¤ãƒˆãƒ«å–å¾—
 		tpItemInfo->user2 = REQUEST_GET;
 		tpHTTP->FilterFlag = (GetAsyncKeyState(VK_SHIFT) < 0) ? TRUE : FALSE;
 		break;
 	}
 
-	//Ú‘±ƒT[ƒo‚Æƒ|[ƒg”Ô†‚ğæ“¾
+	//æ¥ç¶šã‚µãƒ¼ãƒã¨ãƒãƒ¼ãƒˆç•ªå·ã‚’å–å¾—
 	tpHTTP->Port = 0;
 	if(GetServerPort(hWnd, tpItemInfo, tpHTTP) == FALSE){
 		HTTP_FreeItem(tpItemInfo);
 		return CHECK_ERROR;
 	}
 
-	/* Šù‚É“¯‚¶ƒT[ƒo‚Öƒ`ƒFƒbƒN‚ğs‚Á‚Ä‚¢‚éê‡‚Íƒ`ƒFƒbƒN‚ğ‚µ‚È‚¢ */
+	/* æ—¢ã«åŒã˜ã‚µãƒ¼ãƒã¸ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã£ã¦ã„ã‚‹å ´åˆã¯ãƒã‚§ãƒƒã‚¯ã‚’ã—ãªã„ */
 	if(CheckServer(hWnd, tpHTTP->hSvName) == TRUE){
 		FreeURLData(tpHTTP);
 		GlobalFree(tpHTTP);
@@ -1993,7 +1993,7 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 
 	HTTP_ItemCheckEnd
 
-	ƒAƒCƒeƒ€‚Ìƒ`ƒFƒbƒNI—¹’Ê’m
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒã‚§ãƒƒã‚¯çµ‚äº†é€šçŸ¥
 
 ******************************************************************************/
 
@@ -2010,7 +2010,7 @@ __declspec(dllexport) int CALLBACK HTTP_ItemCheckEnd(HWND hWnd, struct TPITEM *t
 				MessageBox(tpHTTP->hWnd, tpItemInfo->ErrStatus, tpItemInfo->CheckURL, MB_ICONERROR);
 				break;
 			}
-			//ƒwƒbƒ_Aƒ\[ƒX•\¦
+			//ãƒ˜ãƒƒãƒ€ã€ã‚½ãƒ¼ã‚¹è¡¨ç¤º
 			vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 			ShowWindow(vWnd, SW_SHOW);
 			SetFocus(GetDlgItem(vWnd, IDC_EDIT_VIEW));
@@ -2025,7 +2025,7 @@ __declspec(dllexport) int CALLBACK HTTP_ItemCheckEnd(HWND hWnd, struct TPITEM *t
 
 	HTTP_GetItemText
 
-	ƒNƒŠƒbƒvƒ{[ƒh—pƒAƒCƒeƒ€‚ÌƒeƒLƒXƒg‚Ìİ’è
+	ã‚¯ãƒªãƒƒãƒ—ãƒœãƒ¼ãƒ‰ç”¨ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ†ã‚­ã‚¹ãƒˆã®è¨­å®š
 
 ******************************************************************************/
 
@@ -2062,7 +2062,7 @@ __declspec(dllexport) HANDLE CALLBACK HTTP_GetItemText(struct TPITEM *tpItemInfo
 
 	WriteInternetShortcut
 
-	ƒCƒ“ƒ^[ƒlƒbƒgƒVƒ‡[ƒgƒJƒbƒg‚Ìì¬
+	ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒƒãƒˆã‚·ãƒ§ãƒ¼ãƒˆã‚«ãƒƒãƒˆã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -2083,17 +2083,17 @@ static BOOL WriteInternetShortcut(char *URL, char *path)
 	p = iStrCpy(p, URL);
 	p = iStrCpy(p, "\r\n");
 
-	/* ƒtƒ@ƒCƒ‹‚ğŠJ‚­ */
+	/* ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã */
 	hFile = CreateFile(path, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(hFile == NULL || hFile == (HANDLE)-1){
 		return FALSE;
 	}
-	/* ƒtƒ@ƒCƒ‹‚É‘‚«‚Ş */
+	/* ãƒ•ã‚¡ã‚¤ãƒ«ã«æ›¸ãè¾¼ã‚€ */
 	if(WriteFile(hFile, buf, len, &ret, NULL) == FALSE){
 		CloseHandle(hFile);
 		return FALSE;
 	}
-	/* ƒtƒ@ƒCƒ‹‚ğ•Â‚¶‚é */
+	/* ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‰ã˜ã‚‹ */
 	CloseHandle(hFile);
 	return TRUE;
 }
@@ -2103,7 +2103,7 @@ static BOOL WriteInternetShortcut(char *URL, char *path)
 
 	HTTP_CreateDropItem
 
-	ƒAƒCƒeƒ€‚Ìƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ìİ’è
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®è¨­å®š
 
 ******************************************************************************/
 
@@ -2156,7 +2156,7 @@ __declspec(dllexport) BOOL CALLBACK HTTP_CreateDropItem(struct TPITEM *tpItemInf
 
 	HTTP_DropFile
 
-	ƒhƒƒbƒv‚³‚ê‚½ƒtƒ@ƒCƒ‹‚É‘Î‚·‚éˆ—
+	ãƒ‰ãƒ­ãƒƒãƒ—ã•ã‚ŒãŸãƒ•ã‚¡ã‚¤ãƒ«ã«å¯¾ã™ã‚‹å‡¦ç†
 
 ******************************************************************************/
 
@@ -2205,7 +2205,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 
 	HTTP_ExecItem
 
-	ƒAƒCƒeƒ€‚ÌÀs
+	ã‚¢ã‚¤ãƒ†ãƒ ã®å®Ÿè¡Œ
 
 ******************************************************************************/
 
@@ -2215,7 +2215,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 	int rc = -1;
 
 	if(lstrcmp(Action, "open") == 0){
-		//ŠJ‚­
+		//é–‹ã
 		if(tpItemInfo->ViewURL != NULL){
 			p = tpItemInfo->ViewURL;
 		}
@@ -2229,7 +2229,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		rc = ExecItem(hWnd, p, NULL);
 
 	}else if(lstrcmp(Action, "checkopen") == 0){
-		//ƒ`ƒFƒbƒN‚·‚éURL‚ÅŠJ‚­
+		//ãƒã‚§ãƒƒã‚¯ã™ã‚‹URLã§é–‹ã
 		if(tpItemInfo->CheckURL != NULL){
 			p = tpItemInfo->CheckURL;
 		}
@@ -2240,21 +2240,21 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		rc = ExecItem(hWnd, p, NULL);
 
 	}else if(lstrcmp(Action, "header") == 0){
-		//ƒwƒbƒ_•\¦
+		//ãƒ˜ãƒƒãƒ€è¡¨ç¤º
 		tpItemInfo->Param3 = 1;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
 	}else if(lstrcmp(Action, "source") == 0){
-		//ƒ\[ƒX•\¦
+		//ã‚½ãƒ¼ã‚¹è¡¨ç¤º
 		tpItemInfo->Param3 = 2;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
 	}else if(lstrcmp(Action, "gettitle") == 0){
-		//ƒ^ƒCƒgƒ‹æ“¾
+		//ã‚¿ã‚¤ãƒˆãƒ«å–å¾—
 		tpItemInfo->Param3 = 3;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 	}
-	// 1 ‚ğ•Ô‚·‚ÆƒAƒCƒRƒ“‚ğ‰Šú‰»‚·‚éB
+	// 1 ã‚’è¿”ã™ã¨ã‚¢ã‚¤ã‚³ãƒ³ã‚’åˆæœŸåŒ–ã™ã‚‹ã€‚
 	return rc;
 }
 
@@ -2263,7 +2263,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 
 	HTTP_GetInfo
 
-	ƒvƒƒgƒRƒ‹î•ñ
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±
 
 ******************************************************************************/
 
@@ -2277,7 +2277,7 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 	lstrcpy(tpInfo->Scheme, "http://\thttps://");
 	lstrcpy(tpInfo->NewMenu, STR_GETINFO_HTTP_NEWMENU);
-	lstrcpy(tpInfo->FileType, "url");	//	•¡”‚ ‚éê‡‚Í \t ‚Å‹æØ‚é —á) "txt\tdoc\tdat"
+	lstrcpy(tpInfo->FileType, "url");	//	è¤‡æ•°ã‚ã‚‹å ´åˆã¯ \t ã§åŒºåˆ‡ã‚‹ ä¾‹) "txt\tdoc\tdat"
 
 	tpInfo->tpMenu = (struct TPPROTOCOLMENU *)GlobalAlloc(GPTR, sizeof(struct TPPROTOCOLMENU) * HTTP_MENU_CNT);
 	tpInfo->tpMenuCnt = HTTP_MENU_CNT;
@@ -2324,7 +2324,7 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 	HTTP_EndNotify
 
-	WWWC‚ÌI—¹‚Ì’Ê’m
+	WWWCã®çµ‚äº†ã®é€šçŸ¥
 
 ******************************************************************************/
 

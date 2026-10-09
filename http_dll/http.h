@@ -31,7 +31,7 @@
 
 #define BUFSIZE							256
 #define MAXSIZE							32768
-#define RECVSIZE						32768				/* 受信サイズ */
+#define RECVSIZE						32768				/* 蜿嶺ｿ｡繧ｵ繧､繧ｺ */
 
 #define OP1_REQTYPE						0
 #define OP1_NODATE						1
@@ -68,12 +68,12 @@ struct TPHTTP{
 	HWND hWnd;
 	HANDLE hThread;
 
-	char *SvName;						/* サーバ名 */
-	char *Path;							/* パス */
-	int Port;							/* ポート番号 */
+	char *SvName;						/* 繧ｵ繝ｼ繝仙錐 */
+	char *Path;							/* 繝代せ */
+	int Port;							/* 繝昴�ｼ繝育分蜿ｷ */
 
-	char *hSvName;						/* HOSTサーバ名 */
-	int hPort;							/* HOSTポート番号 */
+	char *hSvName;						/* HOST繧ｵ繝ｼ繝仙錐 */
+	int hPort;							/* HOST繝昴�ｼ繝育分蜿ｷ */
 
 	char *buf;
 	long Size;

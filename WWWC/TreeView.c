@@ -40,9 +40,9 @@ HTREEITEM HistoryItem[HISTORYCNT + 1];
 int HistoryIndex;
 BOOL HistoryFlag;
 
-//�O���Q��
-extern HINSTANCE g_hinst;			//�A�v���P�[�V�����̃C���X�^���X�n���h��
-extern HWND WWWCWnd;				//�{��
+//外部参照
+extern HINSTANCE g_hinst;			//アプリケーションのインスタンスハンドル
+extern HWND WWWCWnd;				//本体
 extern HTREEITEM DgdpItem;
 extern char CuDir[];
 extern int gCheckFlag;
@@ -98,7 +98,7 @@ static void TreeView_SetHistory(HTREEITEM NewItem);
 
 	CallTreeItem
 
-	���ׂẴc���r���[�̃A�C�e���Ɏw��֐������s
+	すべてのツリビューのアイテムに指定関数を実行
 
 ******************************************************************************/
 
@@ -106,12 +106,12 @@ void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param)
 {
 	HTREEITEM cItem;
 
-	//�֐��̌Ăяo��
+	//関数の呼び出し
 	Func(hWnd, hItem, Param);
 
 	cItem = TreeView_GetChild(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	while(cItem != NULL){
-		//�ċA
+		//再帰
 		CallTreeItem(hWnd, cItem, Func, Param);
 		cItem = TreeView_GetNextSibling(GetDlgItem(hWnd, WWWC_TREE), cItem);
 	}
@@ -122,7 +122,7 @@ void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param)
 
 	CreateTreeView
 
-	�c���[�r���[�̍쐬
+	ツリービューの作成
 
 ******************************************************************************/
 
@@ -138,7 +138,7 @@ HWND CreateTreeView(HWND hWnd)
 
 	TreeView_Initialize
 
-	�c���[�r���[�̏�����
+	ツリービューの初期化
 
 ******************************************************************************/
 
@@ -221,19 +221,19 @@ void TreeView_Initialize(HWND hWnd)
 
 	TreeView_SetImageList(GetDlgItem(hWnd, WWWC_TREE), IconList, TVSIL_NORMAL);
 
-	//���[�g�A�C�e��
+	//ルートアイテム
 	RootItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE), (HTREEITEM)TVI_ROOT,
 		(HTREEITEM)TVI_LAST, RootTitle, ICON_INET, ICON_INET);
 	GetDirInfo(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
 
-	//���ݔ�
+	//ごみ箱
 	RecyclerItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE), (HTREEITEM)RootItem,
 		(HTREEITEM)TVI_LAST, RecyclerTitle, ICON_DIR_RECYCLER, ICON_DIR_RECYCLER);
 
-	//���f�B���N�g���\������t�H���_�̍쐬
+	//実ディレクトリ構造からフォルダの作成
 	SetDirTree(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
 
-	//���ݔ��̏�Ԃ��X�V
+	//ごみ箱の状態を更新
 	TreeView_SetIconState(hWnd, RecyclerItem, 0);
 }
 
@@ -242,7 +242,7 @@ void TreeView_Initialize(HWND hWnd)
 
 	TreeView_SetNewItem
 
-	�c���[�r���[�A�C�e���̒ǉ�
+	ツリービューアイテムの追加
 
 ******************************************************************************/
 
@@ -274,7 +274,7 @@ static HTREEITEM TreeView_SetNewItem(HWND hTreeView, char *buf, HTREEITEM SetIte
 
 	TreeView_AllocItem
 
-	�c���[���̊m��
+	ツリー情報の確保
 
 ******************************************************************************/
 
@@ -299,7 +299,7 @@ HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, c
 
 	NewItem = TreeView_SetNewItem(hTreeView, Title, pItem, Icon, IconSel, (HTREEITEM)After);
 
-	//�c���[�r���[�A�C�e����lParam�Ƀc���[���̃A�h���X�������
+	//ツリービューアイテムのlParamにツリー情報のアドレスをいれる
 	TreeView_SetlParam(hTreeView, NewItem, (LPARAM)tpTreeInfo);
 
 	return NewItem;
@@ -310,7 +310,7 @@ HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, c
 
 	TreeView_NewFolderItem
 
-	�c���[�r���[�ɐV�����t�H���_��ǉ�����
+	ツリービューに新しいフォルダを追加する
 
 ******************************************************************************/
 
@@ -322,13 +322,13 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 	char path[BUFSIZE];
 	int i;
 
-	//�V�����t�H���_�̖��O���쐬���Ď��ۂɃt�H���_���쐬����
+	//新しいフォルダの名前を作成して実際にフォルダを作成する
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE),
 		TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), buf, CuDir);
 	lstrcpy(name, NEWFOLDER);
 	wsprintf(path, "%s\\%s", buf, name);
 
-	//���Ƀt�H���_�����݂��Ă���ꍇ�͔ԍ���t����
+	//既にフォルダが存在している場合は番号を付ける
 	i = 1;
 	while(CreateDirectory(path, NULL) == FALSE){
 		i++;
@@ -336,13 +336,13 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 		wsprintf(path, "%s\\%s", buf, name);
 	}
 
-	//�c���[�Ƀt�H���_��ǉ�����
+	//ツリーにフォルダを追加する
 	hItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE),
 		TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)),
 		(HTREEITEM)TVI_SORT, name, ICON_DIR_CLOSE, ICON_DIR_OPEN);
 
 	if(SucceedFromParent == 1){
-		//�e���̌p��
+		//親情報の継承
 		CopyAutoTime(hWnd, hItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE),
 			TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))));
 	}
@@ -355,17 +355,17 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 	UpdateWindow(GetDlgItem(hWnd, WWWC_TREE));
 
 	if(GetFocus() == GetDlgItem(hWnd, WWWC_TREE)){
-		//�c���[�Ƀt�H�[�J�X������ꍇ�́A�ǉ������A�C�e����I�����ă��x����ҏW���[�h�ɂ���
+		//ツリーにフォーカスがある場合は、追加したアイテムを選択してラベルを編集モードにする
 		TreeView_SelectItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		TreeView_EditLabel(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		return TRUE;
 	}
 	if(GetFocus() == GetDlgItem(hWnd, WWWC_LIST)){
-		//���X�g�r���[�Ƀt�H�[�J�X������ꍇ�́A���X�g�Ƀt�H���_��ǉ����ĕҏW���[�h�ɂ���
+		//リストビューにフォーカスがある場合は、リストにフォルダを追加して編集モードにする
 		ListView_RefreshFolder(hWnd);
 
 		if((i = TreeView_GetListIndex(GetDlgItem(hWnd, WWWC_TREE), hItem)) != -1){
-			//���X�g�r���[�A�C�e����ҏW���[�h�ɂ���
+			//リストビューアイテムを編集モードにする
 			ListView_EditLabel(GetDlgItem(hWnd, WWWC_LIST), i);
 		}
 	}
@@ -377,7 +377,7 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 
 	TreeView_FreeItem
 
-	�c���[�r���[�A�C�e���Ɋ֘A�t����ꂽ�A�C�e�����̉��
+	ツリービューアイテムに関連付けられたアイテム情報の解放
 
 ******************************************************************************/
 
@@ -388,17 +388,17 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	if(Param == 1){
 		WaitCursor(TRUE);
-		//�A�C�e�����̕ۑ�
+		//アイテム情報の保存
 		SaveTreeMem(hWnd, GetDlgItem(hWnd, WWWC_TREE), hItem);
 		WaitCursor(FALSE);
 	}
 
-	//���݊J���Ă���t�H���_�̏ꍇ�͊֐��𔲂���
+	//現在開いているフォルダの場合は関数を抜ける
 	if(Param != 2 && hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		return;
 	}
 
-	//�c���[���̎擾
+	//ツリー情報の取得
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
 		return;
@@ -407,13 +407,13 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		return;
 	}
 
-	//�t�H���_�̃v���p�e�B���J���Ă���Ȃǂ̏�
+	//フォルダのプロパティを開いているなどの状況
 	if(tpTreeInfo->MemFlag > 0){
 		return;
 	}
 	tpTreeInfo->MemFlag = 0;
 
-	//�`�F�b�N���̏ꍇ�͊֐��𔲂���
+	//チェック中の場合は関数を抜ける
 	for(i = 0;i < tpTreeInfo->ItemListCnt;i++){
 		if((*(tpTreeInfo->ItemList + i)) == NULL){
 			continue;
@@ -424,7 +424,7 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		}
 	}
 
-	//�A�C�e�����X�g�̉��
+	//アイテムリストの解放
 	FreeItemList(tpTreeInfo->ItemList, tpTreeInfo->ItemListCnt, TRUE);
 	GlobalFree(tpTreeInfo->ItemList);
 	tpTreeInfo->ItemList = NULL;
@@ -436,7 +436,7 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_FreeTreeItem
 
-	�c���[���̉��
+	ツリー情報の解放
 
 ******************************************************************************/
 
@@ -444,19 +444,19 @@ void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
-	//�c���[���̎擾
+	//ツリー情報の取得
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
 		return;
 	}
 	tpTreeInfo->MemFlag = 0;
 
-	//�c���[���̎擾
+	//ツリー情報の取得
 	if(Param == 0){
 		SaveTreeMem(hWnd, GetDlgItem(hWnd, WWWC_TREE), hItem);
 	}
 
-	//�A�C�e�����X�g�̉��
+	//アイテムリストの解放
 	if(tpTreeInfo->ItemList != NULL){
 		FreeItemList(tpTreeInfo->ItemList, tpTreeInfo->ItemListCnt, TRUE);
 		GlobalFree(tpTreeInfo->ItemList);
@@ -464,20 +464,20 @@ void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		tpTreeInfo->ItemListCnt = 0;
 	}
 
-	//�����`�F�b�N���̉��
+	//自動チェック情報の解放
 	if(tpTreeInfo->tpCheckTime != NULL){
 		GlobalFree(tpTreeInfo->tpCheckTime);
 		tpTreeInfo->tpCheckTime = NULL;
 		tpTreeInfo->tpCheckTimeCnt = 0;
 	}
 
-	//�t�H���_�̃R�����g�̉��
+	//フォルダのコメントの解放
 	if(tpTreeInfo->Comment != NULL){
 		GlobalFree(tpTreeInfo->Comment);
 		tpTreeInfo->Comment = NULL;
 	}
 
-	//�c���[���̉��
+	//ツリー情報の解放
 	GlobalFree(tpTreeInfo);
 	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem, (LPARAM)NULL);
 }
@@ -487,7 +487,7 @@ void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_DeleteTreeInfo
 
-	�c���[�r���[�A�C�e���̍폜
+	ツリービューアイテムの削除
 
 ******************************************************************************/
 
@@ -496,12 +496,12 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 	HTREEITEM pItem;
 	char buf[BUFSIZE];
 
-	//���f�B���N�g���̍폜
+	//実ディレクトリの削除
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, buf, CuDir);
 	DeleteDirTree(buf, FALSE);
 	RemoveDirectory(buf);
 
-	//�t�H���_�̍폜
+	//フォルダの削除
 	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeTreeItem, 1);
 	pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
@@ -513,7 +513,7 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 
 	TreeView_AllExpand
 
-	�A�C�e����W�J����
+	アイテムを展開する
 
 ******************************************************************************/
 
@@ -524,7 +524,7 @@ void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	if(Param == 1){
 		TreeView_Expand(GetDlgItem(hWnd, WWWC_TREE), hItem, TVE_EXPAND);
 	}else{
-		//�c���[���̎擾
+		//ツリー情報の取得
 		tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		if(tpTreeInfo == NULL){
 			return;
@@ -540,7 +540,7 @@ void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_FindItemPath
 
-	�p�X����A�C�e��������
+	パスからアイテムを検索
 
 ******************************************************************************/
 
@@ -556,7 +556,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 
 	p = path;
 
-	//���[�g�̏ꍇ
+	//ルートの場合
 	if((*p == '\\' && *(p + 1) == '\\') || (*p == '/' && *(p + 1) == '/')){
 		for(p = path + 2; *p != '\0'; p++){
 			if(IsDBCSLeadByte((BYTE)*p) == FALSE){
@@ -576,7 +576,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 		return hItem;
 	}
 
-	//�p�X��W�J
+	//パスを展開
 	for(r = buf; *p != '\0'; p++, r++){
 		if(IsDBCSLeadByte((BYTE)*p) == FALSE){
 			if(*p == '\\' || *p == '/'){
@@ -590,14 +590,14 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 	}
 	*r = '\0';
 
-	//���O����A�C�e�����擾
+	//名前からアイテムを取得
 	cItem = TreeView_CheckName(hTreeView, hItem, buf);
 	if(cItem == NULL){
 		return NULL;
 	}
 
 	if(*p != '\0'){
-		//�ċA
+		//再帰
 		return TreeView_FindItemPath(hTreeView, cItem, p);
 	}
 	return cItem;
@@ -608,7 +608,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 
 	FindTreeItem
 
-	�A�C�e�������݂��邩���ׂ�
+	アイテムか存在するか調べる
 
 ******************************************************************************/
 
@@ -639,7 +639,7 @@ BOOL IsTreeItem(HWND hWnd, HTREEITEM hItem)
 
 	TreeView_CheckName
 
-	�w��̖��O�̃c���[�r���[�A�C�e���̃n���h�����擾
+	指定の名前のツリービューアイテムのハンドルを取得
 
 ******************************************************************************/
 
@@ -664,7 +664,7 @@ HTREEITEM TreeView_CheckName(HWND hTreeView, HTREEITEM hItem, char *str)
 
 	TreeView_GetChildCount
 
-	�c���[�r���[�A�C�e���̎q�������擾
+	ツリービューアイテムの子供数を取得
 
 ******************************************************************************/
 
@@ -673,7 +673,7 @@ int TreeView_GetChildCount(HWND hTreeView, HTREEITEM hItem)
 	HTREEITEM cItem;
 	int ret = 0;
 
-	//�c���[�r���[�ɕ\������Ă���t�H���_�̐�
+	//ツリービューに表示されているフォルダの数
 	cItem = TreeView_GetChild(hTreeView, hItem);
 	while(cItem != NULL){
 		ret++;
@@ -687,7 +687,7 @@ int TreeView_GetChildCount(HWND hTreeView, HTREEITEM hItem)
 
 	TreeView_IsRecyclerItem
 
-	�c���[�r���[�A�C�e�������ݔ������ݔ��̒��̃A�C�e���Ȃ̂��`�F�b�N����
+	ツリービューアイテムがごみ箱かごみ箱の中のアイテムなのかチェックする
 
 ******************************************************************************/
 
@@ -698,7 +698,7 @@ BOOL TreeView_IsRecyclerItem(HWND hTreeView, HTREEITEM hItem)
 	cItem = hItem;
 	while(cItem != RootItem){
 		if(cItem == RecyclerItem){
-			//���ݔ��̏ꍇ
+			//ごみ箱の場合
 			return TRUE;
 		}
 		cItem = TreeView_GetParent(hTreeView, cItem);
@@ -711,7 +711,7 @@ BOOL TreeView_IsRecyclerItem(HWND hTreeView, HTREEITEM hItem)
 
 	TreeView_GetPath
 
-	�c���[�r���[�A�C�e���̃p�X���擾����
+	ツリービューアイテムのパスを取得する
 
 ******************************************************************************/
 
@@ -722,7 +722,7 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 	char tvName[BUFSIZE];
 	char work[BUFSIZE];
 
-	//���[�g�A�C�e���̏ꍇ�͂��̂܂܃p�X��Ԃ�
+	//ルートアイテムの場合はそのままパスを返す
 	if(hItem == RootItem){
 		lstrcpy(ret, RootString);
 		return;
@@ -740,7 +740,7 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 
 		pItem = TreeView_GetParent(hTreeView, pItem);
 	}
-	//�w��̕�����ƌ���
+	//指定の文字列と結合
 	wsprintf(ret, "%s\\%s", RootString, buf);
 }
 
@@ -749,7 +749,7 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 
 	TreeView_SetItemText
 
-	�A�C�e���̃^�C�g����ݒ�
+	アイテムのタイトルを設定
 
 ******************************************************************************/
 
@@ -770,7 +770,7 @@ static BOOL TreeView_SetItemText(HWND hTreeView, HTREEITEM hItem, char *buf)
 
 	TreeView_SetName
 
-	�f�B���N�g�����ƃc���[�r���[�A�C�e���̖��O��ݒ肷��
+	ディレクトリ名とツリービューアイテムの名前を設定する
 
 ******************************************************************************/
 
@@ -781,35 +781,35 @@ BOOL TreeView_SetName(HWND hWnd, HTREEITEM hItem, char *NewName)
 	char OldFileName[BUFSIZE];
 	char NewFileName[BUFSIZE];
 
-	//�s���ȃt�@�C�����̏ꍇ�̓G���[���o��
+	//不正なファイル名の場合はエラーを出す
 	if(FileNameCheck(NewName) == FALSE){
 		MessageBox(hWnd, EMSG_CHANGEFILENAME, EMSG_CHANGEFILENAME_TITLE, MB_ICONSTOP);
 		return FALSE;
 	}
 
-	//�p�X���擾����
+	//パスを取得する
 	*buf = '\0';
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE),
 		TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem), buf, CuDir);
 
-	//�Â��p�X�ƐV�����p�X���쐬����
+	//古いパスと新しいパスを作成する
 	TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), hItem, Tmpbuf);
 	wsprintf(OldFileName, "%s\\%s", buf, Tmpbuf);
 	wsprintf(NewFileName, "%s\\%s", buf, NewName);
 
-	//�t�@�C������ύX����
+	//ファイル名を変更する
 	if(MoveFile(OldFileName, NewFileName) == FALSE){
-		//���s�����ꍇ�̓G���[���o�͂���
+		//失敗した場合はエラーを出力する
 		ErrMsg(hWnd, GetLastError(), EMSG_CHANGEFILENAME_TITLE);
 		return FALSE;
 	}
 
-	//�c���[�̃^�C�g����ύX���ă\�[�g����
+	//ツリーのタイトルを変更してソートする
 	TreeView_SetItemText(GetDlgItem(hWnd, WWWC_TREE), hItem, NewName);
 	TreeView_SortChildren(GetDlgItem(hWnd, WWWC_TREE),
 		TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem), 0);
 
-	//Undo�o�b�t�@�ɃZ�b�g
+	//Undoバッファにセット
 	SetTVTitleToUndo(hItem, Tmpbuf);
 	return TRUE;
 }
@@ -819,7 +819,7 @@ BOOL TreeView_SetName(HWND hWnd, HTREEITEM hItem, char *NewName)
 
 	TreeView_GetItemInfo
 
-	�A�C�e���̃^�C�g���ƃA�C�R�����擾
+	アイテムのタイトルとアイコンを取得
 
 ******************************************************************************/
 
@@ -845,7 +845,7 @@ int TreeView_GetItemInfo(HWND hTreeView, HTREEITEM hItem, char *buf)
 
 	TreeView_GetListIndex
 
-	�A�C�e���̈ʒu���擾
+	アイテムの位置を取得
 
 ******************************************************************************/
 
@@ -872,7 +872,7 @@ int TreeView_GetListIndex(HWND hTreeView, HTREEITEM hItem)
 
 	TreeView_GetIndexToItem
 
-	�w��ʒu�̃A�C�e�����擾
+	指定位置のアイテムを取得
 
 ******************************************************************************/
 
@@ -898,7 +898,7 @@ HTREEITEM TreeView_GetIndexToItem(HWND hTreeView, HTREEITEM hItem, int Index)
 
 	TreeView_GetHiTestItem
 
-	�}�E�X�̉��̃A�C�e�����擾
+	マウスの下のアイテムを取得
 
 ******************************************************************************/
 
@@ -912,7 +912,7 @@ HTREEITEM TreeView_GetHiTestItem(HWND hTreeView)
 		return NULL;
 	}
 
-	//�}�E�X�̈ʒu���擾
+	//マウスの位置を取得
 	GetCursorPos((LPPOINT)&apos);
 	GetWindowRect(hTreeView, (LPRECT)&TvRect);
 	apos.x = apos.x - TvRect.left;
@@ -929,7 +929,7 @@ HTREEITEM TreeView_GetHiTestItem(HWND hTreeView)
 
 	TreeView_SetlParam
 
-	�A�C�e���ɏ����֘A����
+	アイテムに情報を関連つける
 
 ******************************************************************************/
 
@@ -948,7 +948,7 @@ BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, LPARAM lParam)
 
 	TreeView_GetlParam
 
-	�A�C�e���Ɋ֘A�t����ꂽ���̎擾
+	アイテムに関連付けられた情報の取得
 
 ******************************************************************************/
 
@@ -974,7 +974,7 @@ void *TreeView_GetlParam(HWND hTreeView, HTREEITEM hItem)
 
 	TreeView_SetState
 
-	�A�C�e���̏�Ԃ̐ݒ�
+	アイテムの状態の設定
 
 ******************************************************************************/
 
@@ -994,7 +994,7 @@ BOOL TreeView_SetState(HWND hTreeView, HTREEITEM hItem, int State, int mask)
 
 	TreeView_GetState
 
-	�A�C�e���̏�Ԃ̎擾
+	アイテムの状態の取得
 
 ******************************************************************************/
 
@@ -1016,7 +1016,7 @@ int TreeView_GetState(HWND hTreeView, HTREEITEM hItem, int mask)
 
 	TreeView_SetIcon
 
-	�A�C�e���̃A�C�R����ݒ�
+	アイテムのアイコンを設定
 
 ******************************************************************************/
 
@@ -1037,7 +1037,7 @@ static BOOL TreeView_SetIcon(HWND hTreeView, HTREEITEM hItem, int Icon, int SelI
 
 	TreeView_UpdateList
 
-	�c���[�r���[�̃A�C�e���ɑΉ��������X�g�r���[�A�C�e�����X�V
+	ツリービューのアイテムに対応したリストビューアイテムを更新
 
 ******************************************************************************/
 
@@ -1045,12 +1045,12 @@ BOOL TreeView_UpdateList(HWND hWnd, HTREEITEM hItem)
 {
 	int ListIndex;
 
-	//�e�E�B���h�E���I���t�H���_�ł͂Ȃ��ꍇ�͊֐��𔲂���
+	//親ウィンドウが選択フォルダではない場合は関数を抜ける
 	if(TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem) !=
 		TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		return FALSE;
 	}
-	//���X�g�r���[�̃C���f�b�N�X���擾
+	//リストビューのインデックスを取得
 	ListIndex = TreeView_GetListIndex(GetDlgItem(hWnd, WWWC_TREE), hItem);
 
 	ListView_SetItemText(GetDlgItem(hWnd, WWWC_LIST), ListIndex, 0, LPSTR_TEXTCALLBACK);
@@ -1064,7 +1064,7 @@ BOOL TreeView_UpdateList(HWND hWnd, HTREEITEM hItem)
 
 	SetItemIcon
 
-	�A�C�e���̏�Ԃɉ����ăA�C�R����ݒ肷��
+	アイテムの状態に応じてアイコンを設定する
 
 ******************************************************************************/
 
@@ -1082,10 +1082,10 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 		return FALSE;
 	}
 
-	//���݂̃A�C�R�����擾
+	//現在のアイコンを取得
 	Icon = TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), hItem, buf);
 
-	//�`�F�b�N��
+	//チェック中
 	if(tpTreeInfo->Icon & TREEICON_CH){
 		if(Icon == ICON_DIR_CLOSE_CH){
 			return FALSE;
@@ -1095,7 +1095,7 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 		TreeView_UpdateList(hWnd, hItem);
 		return TRUE;
 	}
-	//�q�����`�F�b�N��
+	//子供がチェック中
 	if(tpTreeInfo->Icon & TREEICON_CHECKCHILD){
 		if(Icon == ICON_DIR_CLOSE_CHECKCHILD){
 			return FALSE;
@@ -1105,7 +1105,7 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 		TreeView_UpdateList(hWnd, hItem);
 		return TRUE;
 	}
-	//UP�A�C�R������
+	//UPアイコンあり
 	if(tpTreeInfo->Icon & TREEICON_UP){
 		if(Icon == ICON_DIR_CLOSE_UP){
 			return FALSE;
@@ -1115,7 +1115,7 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 		TreeView_UpdateList(hWnd, hItem);
 		return TRUE;
 	}
-	//�q����UP�A�C�R������
+	//子供がUPアイコンあり
 	if(tpTreeInfo->Icon & TREEICON_UPCHILD){
 		if(Icon == ICON_DIR_CLOSE_UPCHILD){
 			return FALSE;
@@ -1126,7 +1126,7 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 		return TRUE;
 	}
 
-	//�W���A�C�R��
+	//標準アイコン
 	if(Icon != ICON_DIR_CLOSE){
 		TreeView_SetIcon(GetDlgItem(hWnd, WWWC_TREE), hItem,
 			ICON_DIR_CLOSE, ICON_DIR_OPEN);
@@ -1141,7 +1141,7 @@ BOOL SetItemIcon(HWND hWnd, HTREEITEM hItem)
 
 	TreeView_SetParentIcon
 
-	�e�A�C�e���̏�Ԃ�ݒ肷��
+	親アイテムの状態を設定する
 
 ******************************************************************************/
 
@@ -1157,7 +1157,7 @@ static void TreeView_SetParentIcon(HWND hWnd, HTREEITEM hItem, int Icon)
 			if((TmptpTreeInfo->Icon & Icon) != 0){
 				break;
 			}
-			//��Ԃ�ݒ�
+			//状態を設定
 			TmptpTreeInfo->Icon |= Icon;
 			SetItemIcon(hWnd, pItem);
 		}
@@ -1170,7 +1170,7 @@ static void TreeView_SetParentIcon(HWND hWnd, HTREEITEM hItem, int Icon)
 
 	TreeView_DeleteParentIcon
 
-	�e�A�C�e���̏�Ԃ��폜����
+	親アイテムの状態を削除する
 
 ******************************************************************************/
 
@@ -1197,7 +1197,7 @@ static void TreeView_DeleteParentIcon(HWND hWnd, HTREEITEM hItem, int Icon1, int
 
 		TmptpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), pItem);
 		if(TmptpTreeInfo != NULL && TmptpTreeInfo->Icon & Icon2){
-			//��Ԃ��폜
+			//状態を削除
 			TmptpTreeInfo->Icon ^= Icon2;
 			SetItemIcon(hWnd, pItem);
 		}
@@ -1210,7 +1210,7 @@ static void TreeView_DeleteParentIcon(HWND hWnd, HTREEITEM hItem, int Icon1, int
 
 	TreeView_SetIconState
 
-	�c���r���[�A�C�e���̃A�C�R����Ԃ�ݒ肷��
+	ツリビューアイテムのアイコン状態を設定する
 
 ******************************************************************************/
 
@@ -1221,12 +1221,12 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	int UPFlag = 0;
 	char buf[BUFSIZE];
 
-	//���[�g�A�C�e���̏ꍇ�͊֐��𔲂���
+	//ルートアイテムの場合は関数を抜ける
 	if(hItem == RootItem){
 		return;
 	}
 
-	//���ݔ��̏ꍇ�͂��ݔ��̒��g�ɂ���ăA�C�R����ω�������
+	//ごみ箱の場合はごみ箱の中身によってアイコンを変化させる
 	if(hItem == RecyclerItem){
 		Icon = TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), hItem, buf);
 		if(CheckRecycler(hWnd) == FALSE){
@@ -1250,14 +1250,14 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		return;
 	}
 
-	//�c���[�A�C�e�����̎擾
+	//ツリーアイテム情報の取得
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
 		TreeView_SetIcon(GetDlgItem(hWnd, WWWC_TREE), hItem, ICON_DIR_CLOSE, ICON_DIR_OPEN);
 		return;
 	}
 
-	//�A�C�e����񂪓ǂݍ��܂�Ă��Ȃ��ꍇ�͓ǂݍ���
+	//アイテム情報が読み込まれていない場合は読み込む
 	if(tpTreeInfo->ItemList == NULL){
 		if(ReadTreeMem(hWnd, hItem) == FALSE){
 			TreeView_SetIcon(GetDlgItem(hWnd, WWWC_TREE), hItem, ICON_DIR_CLOSE, ICON_DIR_OPEN);
@@ -1265,7 +1265,7 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 		}
 	}
 
-	//�c���[�̃A�C�e���̏����擾
+	//ツリーのアイテムの情報を取得
 	Icon = TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), hItem, buf);
 
 	ItemCnt = tpTreeInfo->ItemListCnt;
@@ -1274,30 +1274,30 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 			continue;
 		}
 
-		//�`�F�b�N���̃A�C�e��
+		//チェック中のアイテム
 		if((*(tpTreeInfo->ItemList + i))->IconStatus == ST_CHECK){
 			tpTreeInfo->Icon |= TREEICON_CH;
 			SetItemIcon(hWnd, hItem);
 
-			//�e���`�F�b�N����A�C�R���ɂ���
+			//親をチェックありアイコンにする
 			TreeView_SetParentIcon(hWnd, hItem, TREEICON_CHECKCHILD);
 			return;
 		}
 
-		//UP�A�C�e��
+		//UPアイテム
 		if((*(tpTreeInfo->ItemList + i))->Status == ST_UP){
-			//UP�A�C�e�����݃t���O���Z�b�g
+			//UPアイテム存在フラグをセット
 			UPFlag = 1;
-			//�`�F�b�N���ł͂Ȃ��ꍇ�̓��[�v�𔲂���
+			//チェック中ではない場合はループを抜ける
 			if(gCheckFlag == 0){
 				break;
 			}
 		}
 	}
 
-	//�`�F�b�N���t���O
+	//チェック中フラグ
 	if(tpTreeInfo->Icon & TREEICON_CH){
-		//�`�F�b�N���t���O�𖳂���
+		//チェック中フラグを無くす
 		tpTreeInfo->Icon ^= TREEICON_CH;
 
 		TreeView_DeleteParentIcon(hWnd,
@@ -1305,31 +1305,31 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 			TREEICON_CH, TREEICON_CHECKCHILD);
 	}
 
-	//UP�A�C�e�������݂���ꍇ
+	//UPアイテムが存在する場合
 	if(UPFlag == 1){
-		//UP�A�C�R���ɕύX
+		//UPアイコンに変更
 		tpTreeInfo->Icon |= TREEICON_UP;
 		SetItemIcon(hWnd, hItem);
 
-		//�e��UP����A�C�R���ɂ���
+		//親をUPありアイコンにする
 		TreeView_SetParentIcon(hWnd, hItem, TREEICON_UPCHILD);
 		return;
 	}
 
 	if(tpTreeInfo->Icon & TREEICON_UP){
-		//UP�A�C�R���̏���
+		//UPアイコンの除去
 		tpTreeInfo->Icon ^= TREEICON_UP;
-		//�e�̃A�C�R����ύX
+		//親のアイコンを変更
 		TreeView_DeleteParentIcon(hWnd,
 			TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem),
 			TREEICON_UP, TREEICON_UPCHILD);
 
 	}else if(tpTreeInfo->Icon & TREEICON_UPCHILD){
-		//�q���̊m�F
+		//子供の確認
 		TreeView_DeleteParentIcon(hWnd, hItem, TREEICON_UP, TREEICON_UPCHILD);
 	}
 
-	//�A�C�R���̕ύX
+	//アイコンの変更
 	SetItemIcon(hWnd, hItem);
 }
 
@@ -1338,7 +1338,7 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_NoFileDelete
 
-	�Ή�����t�H���_�����݂��Ȃ��A�C�e�����폜����
+	対応するフォルダが存在しないアイテムを削除する
 
 ******************************************************************************/
 
@@ -1356,7 +1356,7 @@ void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	cItem = TreeView_GetChild(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	while(cItem != NULL){
-		//�ċA
+		//再帰
 		TmpItem = TreeView_GetNextSibling(GetDlgItem(hWnd, WWWC_TREE), cItem);
 		TreeView_NoFileDelete(hWnd, cItem, Param);
 		cItem = TmpItem;
@@ -1369,7 +1369,7 @@ void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_StartDragItem
 
-	�c���r���[�A�C�e���̃h���b�O���h���b�v�J�n
+	ツリビューアイテムのドラッグ＆ドロップ開始
 
 ******************************************************************************/
 
@@ -1388,10 +1388,10 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 		return;
 	}
 
-	//Alt�L�[��������Ă���ꍇ�̓t�@�C��������Ȃ�
+	//Altキーが押されている場合はファイルを扱わない
 	NoFileFlag = (GetAsyncKeyState(VK_MENU) < 0) ? TRUE : FALSE;
 
-	//�t�H���_���̕ۑ�
+	//フォルダ情報の保存
 	SaveTreeMem(hWnd, GetDlgItem(hWnd, WWWC_TREE), DgdpItem);
 
 	Effect = DROPEFFECT_COPY;
@@ -1442,7 +1442,7 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 
 	TreeView_SelItemChanging
 
-	�c���[�r���[�A�C�e���̑I��ύX�`�F�b�N
+	ツリービューアイテムの選択変更チェック
 
 ******************************************************************************/
 
@@ -1453,7 +1453,7 @@ BOOL TreeView_SelItemChanging(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem)
 	}
 	WaitCursor(TRUE);
 
-	//�t�@�C�����烊�X�g�̏����������ɓǂݍ���
+	//ファイルからリストの情報をメモリに読み込む
 	if(ReadTreeMem(hWnd, NewItem) == FALSE){
 		WaitCursor(FALSE);
 		MessageBox(hWnd, EMSG_DIRMOVE, EMSG_DIRMOVE_TITLE, MB_ICONSTOP);
@@ -1471,13 +1471,13 @@ BOOL TreeView_SelItemChanging(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem)
 
 	TreeView_SelItemChanged
 
-	�c���[�r���[�A�C�e���̑I��ύX
+	ツリービューアイテムの選択変更
 
 ******************************************************************************/
 
 BOOL TreeView_SelItemChanged(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem)
 {
-	//���X�g�r���[�̃A�C�e�������ׂč폜����
+	//リストビューのアイテムをすべて削除する
 	if(NewItem == NULL){
 		ListView_DeleteAllItems(GetDlgItem(hWnd, WWWC_LIST));
 		return FALSE;
@@ -1485,14 +1485,14 @@ BOOL TreeView_SelItemChanged(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem)
 
 	WaitCursor(TRUE);
 
-	//���X�g�r���[�ɃA�C�e����\������
+	//リストビューにアイテムを表示する
 	ListView_ShowItem(hWnd, NewItem);
 	ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), 0, LVIS_FOCUSED, LVIS_FOCUSED);
 
-	//�c���[�̃A�C�R����ݒ肷��
+	//ツリーのアイコンを設定する
 	TreeView_SetIconState(hWnd, NewItem, 0);
 
-	//�O��I������Ă����A�C�e���̃��������������i�ۑ����[�h�j
+	//前回選択されていたアイテムのメモリを解放する（保存モード）
 	if(OldItem != NULL){
 		TreeView_FreeItem(hWnd, OldItem, 1);
 	}
@@ -1510,7 +1510,7 @@ BOOL TreeView_SelItemChanged(HWND hWnd, HTREEITEM NewItem, HTREEITEM OldItem)
 
 	TreeView_SetHistory
 
-	TreeView�A�C�e���𗚗��ɒǉ�
+	TreeViewアイテムを履歴に追加
 
 ******************************************************************************/
 
@@ -1538,7 +1538,7 @@ static void TreeView_SetHistory(HTREEITEM NewItem)
 
 	TreeView_CheckHistory
 
-	�ړ��\���`�F�b�N
+	移動可能かチェック
 
 ******************************************************************************/
 
@@ -1569,7 +1569,7 @@ BOOL TreeView_CheckHistory(HWND hWnd, BOOL NextFlag)
 
 	TreeView_PrevHistory
 
-	�O�ɖ߂�
+	前に戻る
 
 ******************************************************************************/
 
@@ -1601,7 +1601,7 @@ BOOL TreeView_PrevHistory(HWND hWnd)
 
 	TreeView_NextHistory
 
-	���ɐi��
+	次に進む
 
 ******************************************************************************/
 
@@ -1633,7 +1633,7 @@ BOOL TreeView_NextHistory(HWND hWnd)
 
 	TreeView_NotifyProc
 
-	�c���[�r���[�C�x���g
+	ツリービューイベント
 
 ******************************************************************************/
 

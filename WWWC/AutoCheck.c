@@ -27,7 +27,7 @@
 	Define
 **************************************************************************/
 
-#define HOU							60		//�ꎞ��
+#define HOU							60		//一時間
 
 #define UD_DAY						MAKELONG((short)31, (short)1)
 #define UD_HOU						MAKELONG((short)23, (short)0)
@@ -45,9 +45,9 @@
 struct TPCHECKTIME *tpCheckTime;
 int tpCheckTimeCnt = 0;
 
-//�O���Q��
-extern HINSTANCE g_hinst;				//�A�v���P�[�V�����̃C���X�^���X�n���h��
-extern HWND WWWCWnd;					//�{��
+//外部参照
+extern HINSTANCE g_hinst;				//アプリケーションのインスタンスハンドル
+extern HWND WWWCWnd;					//本体
 extern HTREEITEM PropItem;
 extern int AutoCheck;
 extern int StartCheck;
@@ -75,7 +75,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg);
 
 	CheckTime
 
-	�����`�F�b�N���s�����`�F�b�N���s��
+	自動チェックを行うかチェックを行う
 
 ******************************************************************************/
 
@@ -87,14 +87,14 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 		return 0;
 	}
 
-	//���[�J���^�C���擾
+	//ローカルタイム取得
 	GetLocalTime(&SysTime);
 
 	switch(tpTimeInfo->type)
 	{
-	//����
+	//分毎
 	case AUTOTIME_MIN:
-		//���J�E���^
+		//分カウンタ
 		tpTimeInfo->mCnt++;
 		if(tpTimeInfo->mCnt >= tpTimeInfo->m){
 			tpTimeInfo->mCnt = 0;
@@ -102,13 +102,13 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 		}
 		break;
 
-	//���Ԗ�
+	//時間毎
 	case AUTOTIME_HOU:
-		//���J�E���^
+		//分カウンタ
 		tpTimeInfo->mCnt++;
 		if(tpTimeInfo->mCnt >= HOU){
 			tpTimeInfo->mCnt = 0;
-			//���J�E���^
+			//時カウンタ
 			tpTimeInfo->hCnt++;
 			if(tpTimeInfo->hCnt >= tpTimeInfo->h){
 				tpTimeInfo->hCnt = 0;
@@ -117,14 +117,14 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 		}
 		break;
 
-	//���Ԏw��
+	//時間指定
 	case AUTOTIME_DAY:
 		if((tpTimeInfo->h == SysTime.wHour) && (tpTimeInfo->m == SysTime.wMinute)){
 			return 1;
 		}
 		break;
 
-	//�j���w��
+	//曜日指定
 	case AUTOTIME_WEEK:
 		if((tpTimeInfo->week == SysTime.wDayOfWeek) &&
 			(tpTimeInfo->h == SysTime.wHour) &&
@@ -133,7 +133,7 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 		}
 		break;
 
-	//���t�w��
+	//日付指定
 	case AUTOTIME_MON:
 		if((tpTimeInfo->day == SysTime.wDay) &&
 			(tpTimeInfo->h == SysTime.wHour) &&
@@ -152,7 +152,7 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 
 	CheckAutoTime
 
-	�����`�F�b�N�̏����`�F�b�N
+	自動チェックの条件チェック
 
 ******************************************************************************/
 
@@ -160,7 +160,7 @@ BOOL CheckAutoTime(HWND hWnd)
 {
 	int i;
 
-	//�����`�F�b�N�ݒ���`�F�b�N����
+	//自動チェック設定をチェックする
 	for(i = 0;i < tpCheckTimeCnt;i++){
 		if((tpCheckTime + i) == NULL || (tpCheckTime + i)->type == AUTOTIME_NON){
 			continue;
@@ -180,7 +180,7 @@ BOOL CheckAutoTime(HWND hWnd)
 
 	TreeCheckAutoTime
 
-	�t�H���_���̎����`�F�b�N�̏����`�F�b�N
+	フォルダ毎の自動チェックの条件チェック
 
 ******************************************************************************/
 
@@ -191,7 +191,7 @@ void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	int i;
 
 	if(TreeView_IsRecyclerItem(GetDlgItem(hWnd, WWWC_TREE), hItem) == TRUE){
-		//���ݔ������ݔ����̃t�H���_�̏ꍇ
+		//ごみ箱かごみ箱内のフォルダの場合
 		return;
 	}
 
@@ -204,14 +204,14 @@ void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TimeSize = tpTreeInfo->tpCheckTimeCnt;
 
-	//�����`�F�b�N�ݒ���`�F�b�N����
+	//自動チェック設定をチェックする
 	for(i = 0;i < TimeSize;i++){
 		if((tpTreeInfo->tpCheckTime + i) == NULL ||
 			(tpTreeInfo->tpCheckTime + i)->type == AUTOTIME_NON){
 			continue;
 		}
 		if(CheckTime(tpTreeInfo->tpCheckTime + i) == 1){
-			//�`�F�b�N�J�n
+			//チェック開始
 			CheckIniProc(hWnd, hItem, CHECKINI_AUTOCHECK, CHECKTYPE_AUTO | CHECKTYPE_ITEM);
 		}
 	}
@@ -222,7 +222,7 @@ void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	CopyAutoTime
 
-	�����`�F�b�N���̃R�s�[
+	自動チェック情報のコピー
 
 ******************************************************************************/
 
@@ -283,7 +283,7 @@ void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	GetAutoCheckString
 
-	�����`�F�b�N��񂩂�\����������쐬
+	自動チェック情報から表示文字列を作成
 
 ******************************************************************************/
 
@@ -330,7 +330,7 @@ static int GetAutoCheckString(struct TPCHECKTIME *tpTimeInfo, char *ret)
 
 	EnableWeekContorol
 
-	�T�I���R���g���[���̐ݒ�
+	週選択コントロールの設定
 
 ******************************************************************************/
 
@@ -350,7 +350,7 @@ static void EnableWeekContorol(HWND hDlg, BOOL eFlag)
 
 	EnableCheckContorol
 
-	�`�F�b�N���@�I���R���g���[���̐ݒ�
+	チェック方法選択コントロールの設定
 
 ******************************************************************************/
 
@@ -372,7 +372,7 @@ static void EnableCheckContorol(HWND hDlg, BOOL eFlag)
 
 	EnableAutoTimeList
 
-	�����`�F�b�N���X�g�̐ݒ�
+	自動チェックリストの設定
 
 ******************************************************************************/
 
@@ -389,7 +389,7 @@ static void EnableAutoTimeList(HWND hDlg, BOOL eFlag)
 
 	EnableAutoTimeContorol
 
-	�����`�F�b�N�ݒ��ʂ̐ݒ�
+	自動チェック設定画面の設定
 
 ******************************************************************************/
 
@@ -453,7 +453,7 @@ static void EnableAutoTimeContorol(HWND hDlg)
 
 	SetAutoCheckInfo
 
-	�����`�F�b�N���ڂ̐ݒ�̔��f
+	自動チェック項目の設定の反映
 
 ******************************************************************************/
 
@@ -464,7 +464,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 	LONG_PTR wndParam;
 	HWND pWnd;
 
-	//�� �̎擾
+	//日 の取得
 	if(IsWindowEnabled(GetDlgItem(hDlg, IDC_EDIT_DAY)) != 0){
 		SendDlgItemMessage(hDlg, IDC_EDIT_DAY, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		if(*buf == '\0'){
@@ -473,7 +473,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		}
 	}
 
-	//�� �̎擾
+	//時 の取得
 	if(IsWindowEnabled(GetDlgItem(hDlg, IDC_EDIT_HOU)) != 0){
 		SendDlgItemMessage(hDlg, IDC_EDIT_HOU, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		if(*buf == '\0'){
@@ -482,7 +482,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		}
 	}
 
-	//�� �̎擾
+	//分 の取得
 	if(IsWindowEnabled(GetDlgItem(hDlg, IDC_EDIT_MIN)) != 0){
 		SendDlgItemMessage(hDlg, IDC_EDIT_MIN, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		if(*buf == '\0'){
@@ -491,10 +491,10 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		}
 	}
 
-	//�����`�F�b�N���̎擾
+	//自動チェック情報の取得
 	wndParam = GetWindowLongPtr(hDlg, GWLP_USERDATA);
 	if(wndParam == 0){
-		//�V�K�ǉ��̏ꍇ�͊m��
+		//新規追加の場合は確保
 		tpCheckTimeItem = (struct TPCHECKTIME *)GlobalAlloc(GPTR, sizeof(struct TPCHECKTIME));
 		if(tpCheckTimeItem == NULL){
 			ErrMsg(hDlg, GetLastError(), NULL);
@@ -506,7 +506,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 	tpCheckTimeItem->flag = IsDlgButtonChecked(hDlg, IDC_CHECK_NO);
 
 	if(IsDlgButtonChecked(hDlg, IDC_RADIO1) == 1){
-		//����
+		//分毎
 		tpCheckTimeItem->type = AUTOTIME_MIN;
 		SendDlgItemMessage(hDlg, IDC_EDIT_MIN, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		tpCheckTimeItem->m = atoi(buf);
@@ -516,7 +516,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		tpCheckTimeItem->week = 0;
 
 	}else if(IsDlgButtonChecked(hDlg, IDC_RADIO2) == 1){
-		//���Ԗ�
+		//時間毎
 		tpCheckTimeItem->type = AUTOTIME_HOU;
 		SendDlgItemMessage(hDlg, IDC_EDIT_HOU, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		tpCheckTimeItem->h = atoi(buf);
@@ -526,7 +526,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		tpCheckTimeItem->week = 0;
 
 	}else if(IsDlgButtonChecked(hDlg, IDC_RADIO3) == 1){
-		//���Ԏw��
+		//時間指定
 		tpCheckTimeItem->type = AUTOTIME_DAY;
 		SendDlgItemMessage(hDlg, IDC_EDIT_HOU, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		tpCheckTimeItem->h = atoi(buf);
@@ -537,23 +537,23 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		tpCheckTimeItem->week = 0;
 
 	}else if(IsDlgButtonChecked(hDlg, IDC_RADIO4) == 1){
-		//�j���w��
+		//曜日指定
 		tpCheckTimeItem->type = AUTOTIME_WEEK;
 
 		if(IsDlgButtonChecked(hDlg, IDC_RADIO6) == 1){
-			tpCheckTimeItem->week = 0;		//��
+			tpCheckTimeItem->week = 0;		//日
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO7) == 1){
-			tpCheckTimeItem->week = 1;		//��
+			tpCheckTimeItem->week = 1;		//月
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO8) == 1){
-			tpCheckTimeItem->week = 2;		//��
+			tpCheckTimeItem->week = 2;		//火
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO9) == 1){
-			tpCheckTimeItem->week = 3;		//��
+			tpCheckTimeItem->week = 3;		//水
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO10) == 1){
-			tpCheckTimeItem->week = 4;		//��
+			tpCheckTimeItem->week = 4;		//木
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO11) == 1){
-			tpCheckTimeItem->week = 5;		//��
+			tpCheckTimeItem->week = 5;		//金
 		}else if(IsDlgButtonChecked(hDlg, IDC_RADIO12) == 1){
-			tpCheckTimeItem->week = 6;		//�y
+			tpCheckTimeItem->week = 6;		//土
 		}
 		SendDlgItemMessage(hDlg, IDC_EDIT_HOU, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		tpCheckTimeItem->h = atoi(buf);
@@ -563,7 +563,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 		tpCheckTimeItem->day = 0;
 
 	}else if(IsDlgButtonChecked(hDlg, IDC_RADIO5) == 1){
-		//���t�w��
+		//日付指定
 		tpCheckTimeItem->type = AUTOTIME_MON;
 		SendDlgItemMessage(hDlg, IDC_EDIT_DAY, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 		tpCheckTimeItem->day = atoi(buf);
@@ -578,7 +578,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 	tpCheckTimeItem->mCnt = 0;
 	tpCheckTimeItem->hCnt = 0;
 
-	//�e�E�B���h�E�̃��X�g�r���[�ɒǉ�
+	//親ウィンドウのリストビューに追加
 	pWnd = PropSheet_GetCurrentPageHwnd(GetParent(hDlg));
 	if(GetAutoCheckString(tpCheckTimeItem, buf) == 1){
 		if(wndParam == 0){
@@ -600,7 +600,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 
 	SetAutoCheckProc
 
-	�����`�F�b�N���ڂ̐ݒ���
+	自動チェック項目の設定画面
 
 ******************************************************************************/
 
@@ -612,11 +612,11 @@ static INT_PTR CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		//�X�s���R���g���[���̐ݒ�
+		//スピンコントロールの設定
 		SendDlgItemMessage(hDlg, IDC_SPIN_DAY, UDM_SETRANGE, 0, (LPARAM)UD_DAY);
 
 		if(lParam == 0){
-			//�V�K�ǉ�
+			//新規追加
 			CheckDlgButton(hDlg, IDC_RADIO3, 1);
 			CheckDlgButton(hDlg, IDC_RADIO6, 1);
 			EnableAutoTimeContorol(hDlg);
@@ -624,7 +624,7 @@ static INT_PTR CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			break;
 		}
 
-		//�����`�F�b�N�����E�B���h�E�ɐݒ�
+		//自動チェック情報をウィンドウに設定
 		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 
 		tpCheckTimeItem = (struct TPCHECKTIME *)lParam;
@@ -685,7 +685,7 @@ static INT_PTR CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 	InitializeAutoCheckListWindow
 
-	�����`�F�b�N���X�g��ʂ̏�����
+	自動チェックリスト画面の初期化
 
 ******************************************************************************/
 
@@ -700,7 +700,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 	int tpTmpTimeItemCnt;
 	int i;
 
-	//���X�g�r���[�̃J�����̐ݒ�
+	//リストビューのカラムの設定
 	lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
 	lvc.fmt = LVCFMT_LEFT;
 	lvc.cx = LISTCOL_SIZE;
@@ -708,14 +708,14 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 	lvc.iSubItem = 0;
 	ListView_InsertColumn(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), 0, &lvc);
 
-	//�C���[�W���X�g�̐ݒ�
+	//イメージリストの設定
 	IconList = ImageList_Create(SICONSIZE, SICONSIZE, ILC_COLOR16 | ILC_MASK, 0, 0);
 	ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
 	ImageListIconAdd(IconList, IDI_ICON_TIMEOUT, SICONSIZE, "", 0);
 	ImageListIconAdd(IconList, IDI_ICON_NOAUTOTIME, SICONSIZE, "", 0);
 	ListView_SetImageList(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), IconList, LVSIL_SMALL);
 
-	//�X�^�C���̐ݒ�
+	//スタイルの設定
 	SetWindowLong(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), GWL_STYLE,
 		GetWindowLong(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), GWL_STYLE) | LVS_SHOWSELALWAYS);
 	SendDlgItemMessage(hDlg, IDC_LIST_AUTOTIME, LVM_SETEXTENDEDLISTVIEWSTYLE, 0,
@@ -725,7 +725,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 	SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)PropItem);
 
 	if(PropItem == NULL){
-		//�I�v�V������ʂ���̌Ăяo��
+		//オプション画面からの呼び出し
 		ShowWindow(GetDlgItem(hDlg, IDC_CHECK_FOLDER_NOCHECK), SW_HIDE);
 		ShowWindow(GetDlgItem(hDlg, IDC_CHECK_FOLDER_DEF), SW_HIDE);
 		ShowWindow(GetDlgItem(hDlg, IDC_BUTTON_TREESET), SW_HIDE);
@@ -739,7 +739,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 		tpTmpTimeItem = tpCheckTime;
 		tpTmpTimeItemCnt = tpCheckTimeCnt;
 	}else{
-		//�t�H���_�ݒ��ʂ���̌Ăяo��
+		//フォルダ設定画面からの呼び出し
 		ShowWindow(GetDlgItem(hDlg, IDC_CHECK_NOCHECK), SW_HIDE);
 		ShowWindow(GetDlgItem(hDlg, IDC_CHECK_STARTCHECK), SW_HIDE);
 
@@ -749,13 +749,13 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 		}
 
 		if(tpTreeInfo->CheckSt == 1){
-			//�`�F�b�N���Ȃ�
+			//チェックしない
 			CheckDlgButton(hDlg, IDC_CHECK_FOLDER_NOCHECK, 1);
 			EnableAutoTimeList(hDlg, FALSE);
 			EnableWindow(GetDlgItem(hDlg, IDC_CHECK_FOLDER_DEF), FALSE);
 		}
 		if(tpTreeInfo->AutoCheckSt == 1){
-			//�f�t�H���g�̃`�F�b�N�ݒ���g�p
+			//デフォルトのチェック設定を使用
 			CheckDlgButton(hDlg, IDC_CHECK_FOLDER_DEF, 1);
 			EnableAutoTimeList(hDlg, FALSE);
 		}
@@ -773,7 +773,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 	}
 
 	ListView_SetRedraw(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), LDF_NODRAW);
-	//�����`�F�b�N���̕\��
+	//自動チェック情報の表示
 	for(i = 0;i < tpTmpTimeItemCnt;i++){
 		if((tpTmpTimeItem + i) == NULL || (tpTmpTimeItem + i)->type == AUTOTIME_NON){
 			continue;
@@ -798,7 +798,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 
 	SetAutoCheckList
 
-	�I�v�V�����܂��́A�t�H���_�Ɏ����`�F�b�N���X�g��ݒ肷��
+	オプションまたは、フォルダに自動チェックリストを設定する
 
 ******************************************************************************/
 
@@ -809,7 +809,7 @@ static void SetAutoCheckList(HWND hDlg)
 	int i, TimeSize;
 
 	if(GetWindowLongPtr(hDlg, GWLP_USERDATA) == 0){
-		//�I�v�V������ʂ���̌Ăяo���̏ꍇ
+		//オプション画面からの呼び出しの場合
 		if(tpCheckTime != NULL){
 			GlobalFree(tpCheckTime);
 			tpCheckTimeCnt = 0;
@@ -837,7 +837,7 @@ static void SetAutoCheckList(HWND hDlg)
 		return;
 	}
 
-	//�t�H���_�ݒ��ʂ���̌Ăяo���̏ꍇ
+	//フォルダ設定画面からの呼び出しの場合
 	hItem = (HTREEITEM)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(WWWCWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
@@ -868,7 +868,7 @@ static void SetAutoCheckList(HWND hDlg)
 		}
 	}
 
-	//�`�F�b�N����^���Ȃ�
+	//チェックする／しない
 	tpTreeInfo->CheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_NOCHECK);
 	if(tpTreeInfo->CheckSt == 0){
 		TreeView_SetState(GetDlgItem(WWWCWnd, WWWC_TREE), hItem, 0, TVIS_OVERLAYMASK);
@@ -885,7 +885,7 @@ static void SetAutoCheckList(HWND hDlg)
 		}
 	}
 
-	//�f�t�H���g�̃`�F�b�N�ݒ���g�p����^���Ȃ�
+	//デフォルトのチェック設定を使用する／しない
 	tpTreeInfo->AutoCheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_DEF);
 }
 
@@ -894,7 +894,7 @@ static void SetAutoCheckList(HWND hDlg)
 
 	TreeCopyAutoCheckInfo
 
-	���ʂ̃t�H���_�Ɏ����`�F�b�N�ݒ���R�s�[����
+	下位のフォルダに自動チェック設定をコピーする
 
 ******************************************************************************/
 
@@ -935,7 +935,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 	tpTreeInfo->CheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_NOCHECK);
 	tpTreeInfo->AutoCheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_DEF);
 
-	//�����`�F�b�N�ݒ�̃R�s�[
+	//自動チェック設定のコピー
 	CallTreeItem(WWWCWnd, hItem, (FARPROC)CopyAutoTime, (LPARAM)tpTreeInfo);
 
 	if(tpTreeInfo->tpCheckTime != NULL){
@@ -949,7 +949,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 
 	AutoCheckListProc
 
-	�����`�F�b�N���X�g�E�B���h�E�̃v���V�[�W��
+	自動チェックリストウィンドウのプロシージャ
 
 ******************************************************************************/
 
@@ -1006,7 +1006,7 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			DestroyWindow(GetDlgItem(hDlg, IDC_LIST_AUTOTIME));
 			break;
 
-		//�`�F�b�N���s���^�s��Ȃ�
+		//チェックを行う／行わない
 		case IDC_CHECK_NOCHECK:
 			if(IsWindowVisible(GetDlgItem(hDlg, IDC_CHECK_NOCHECK)) == FALSE) break;
 			if(IsDlgButtonChecked(hDlg, IDC_CHECK_NOCHECK) == 1){
@@ -1017,7 +1017,7 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 			break;
 
-		//����`�F�b�N�̑ΏۊO�ɂ���
+		//巡回チェックの対象外にする
 		case IDC_CHECK_FOLDER_NOCHECK:
 			if(IsWindowVisible(GetDlgItem(hDlg, IDC_CHECK_FOLDER_NOCHECK)) == FALSE) break;
 			if(IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_NOCHECK) == 1){
@@ -1034,14 +1034,14 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			}
 			break;
 
-		//�f�t�H���g�̃`�F�b�N���g�p����^���Ȃ�
+		//デフォルトのチェックを使用する／しない
 		case IDC_CHECK_FOLDER_DEF:
 			if(IsWindowVisible(GetDlgItem(hDlg, IDC_CHECK_FOLDER_DEF)) == FALSE) break;
 			EnableAutoTimeList(hDlg, (IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_DEF) == 1) ? FALSE : TRUE);
 			SendMessage(hDlg, WM_LV_EVENT, LVN_ITEMCHANGED, 0);
 			break;
 
-		//���̊K�w�ɔ��f (�t�H���_�ݒ��ʂ���̌Ăяo���̂�)
+		//下の階層に反映 (フォルダ設定画面からの呼び出しのみ)
 		case IDC_BUTTON_TREESET:
 			if(IsWindowVisible(GetDlgItem(hDlg, IDC_BUTTON_TREESET)) == FALSE) break;
 			if(GetDlgItem(hDlg, IDC_LIST_AUTOTIME) == NULL){
@@ -1050,7 +1050,7 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			TreeCopyAutoCheckInfo(hDlg);
 			break;
 
-		//�����`�F�b�N���̒ǉ�
+		//自動チェック情報の追加
 		case IDC_BUTTON_ADD:
 			if(GetDlgItem(hDlg, IDC_LIST_AUTOTIME) == NULL){
 				break;
@@ -1058,7 +1058,7 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 			DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SETAUTOTIME), hDlg, SetAutoCheckProc, 0);
 			break;
 
-		//�����`�F�b�N���̕ҏW
+		//自動チェック情報の編集
 		case IDC_BUTTON_EDIT:
 			if(GetDlgItem(hDlg, IDC_LIST_AUTOTIME) == NULL){
 				break;
@@ -1070,7 +1070,7 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 				SetAutoCheckProc, ListView_GetlParam(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), SelectItem));
 			break;
 
-		//�����`�F�b�N���̍폜
+		//自動チェック情報の削除
 		case IDC_BUTTON_DELETE:
 			if(GetDlgItem(hDlg, IDC_LIST_AUTOTIME) == NULL){
 				break;

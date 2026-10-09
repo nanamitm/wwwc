@@ -16,5 +16,6 @@ docs/           オリジナルの readme / マニュアル / サンプル
 
 ## 注意
 
-- ソースファイルの文字コードは **Shift_JIS (CP932)**、改行は CRLF です。
+- ソースファイル (`.c` `.h` `.rc`) の文字コードは **UTF-8 (BOM なし)**、改行は CRLF です。コンパイラには `/source-charset:utf-8 /execution-charset:.932` を指定しているため、文字列リテラルは従来どおり Shift_JIS (CP932) で埋め込まれます。
+- `docs/` 以下のファイルはオリジナルのまま Shift_JIS です (サンプルはそのまま設定ファイルとして使われるため)。
 - ライセンス条件は `docs/readme.txt` を参照してください (MD5 部分は RSA Data Security, Inc. のライセンス)。

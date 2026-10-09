@@ -54,13 +54,13 @@ int ExecItem(HWND hWnd, char *buf, char *cmdline);
 
 	FILE_InitItem
 
-	ƒAƒCƒeƒ€‚Ì‰Šú‰»
+	ã‚¢ã‚¤ãƒ†ãƒ ã®åˆæœŸåŒ–
 
 ******************************************************************************/
 
 __declspec(dllexport) int CALLBACK FILE_InitItem(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-	/* XVƒ}[ƒN(*)‚ðœ‹Ž‚·‚é */
+	/* æ›´æ–°ãƒžãƒ¼ã‚¯(*)ã‚’é™¤åŽ»ã™ã‚‹ */
 	if(tpItemInfo->Size != NULL && tpItemInfo->Size[0] != '\0' && tpItemInfo->Size[lstrlen(tpItemInfo->Size) - 1] == '*'){
 		tpItemInfo->Size[lstrlen(tpItemInfo->Size) - 1] = '\0';
 	}
@@ -75,7 +75,7 @@ __declspec(dllexport) int CALLBACK FILE_InitItem(HWND hWnd, struct TPITEM *tpIte
 
 	FILE_Initialize
 
-	ƒ`ƒFƒbƒNŠJŽn‚Ì‰Šú‰»
+	ãƒã‚§ãƒƒã‚¯é–‹å§‹ã®åˆæœŸåŒ–
 
 ******************************************************************************/
 
@@ -89,7 +89,7 @@ __declspec(dllexport) int CALLBACK FILE_Initialize(HWND hWnd, struct TPITEM *tpI
 
 	FILE_Cancel
 
-	ƒ`ƒFƒbƒN‚ÌƒLƒƒƒ“ƒZƒ‹
+	ãƒã‚§ãƒƒã‚¯ã®ã‚­ãƒ£ãƒ³ã‚»ãƒ«
 
 ******************************************************************************/
 
@@ -103,7 +103,7 @@ __declspec(dllexport) int CALLBACK FILE_Cancel(HWND hWnd, struct TPITEM *tpItemI
 
 	FILE_Timer
 
-	ƒ^ƒCƒ}[ (1•bŠÔŠu)
+	ã‚¿ã‚¤ãƒžãƒ¼ (1ç§’é–“éš”)
 
 ******************************************************************************/
 
@@ -117,7 +117,7 @@ __declspec(dllexport) int CALLBACK FILE_Timer(HWND hWnd, struct TPITEM *tpItemIn
 
 	FILE_Start
 
-	ƒ`ƒFƒbƒN‚ÌŠJŽn
+	ãƒã‚§ãƒƒã‚¯ã®é–‹å§‹
 
 ******************************************************************************/
 
@@ -139,20 +139,20 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 	if((hFindFile = FindFirstFile(FileName, &FindData)) != INVALID_HANDLE_VALUE){
 		FindClose(hFindFile);
 
-		//ƒTƒCƒY‚Ì”äŠr
+		//ã‚µã‚¤ã‚ºã®æ¯”è¼ƒ
 		wsprintf(buf, "%ld", (long)FindData.nFileSizeLow);
-		/* ‘O‰ñƒ`ƒFƒbƒNŽž‚Ì‚à‚Ì‚Æ”äŠr‚·‚é */
+		/* å‰å›žãƒã‚§ãƒƒã‚¯æ™‚ã®ã‚‚ã®ã¨æ¯”è¼ƒã™ã‚‹ */
 		if(GetOptionInt(tpItemInfo->Option1, 1) == 0 && LresultCmp(tpItemInfo->Size, buf) != 0){
 			CmpMsg = ST_UP;
 		}
-		/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ðƒZƒbƒg‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›žã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 		if(tpItemInfo->Size != NULL){
 			GlobalFree(tpItemInfo->Size);
 		}
 		tpItemInfo->Size = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(buf) + 1);
 		lstrcpy(tpItemInfo->Size, buf);
 
-		//XV“ú‚Ì”äŠr
+		//æ›´æ–°æ—¥ã®æ¯”è¼ƒ
 		FileTimeToLocalFileTime(&(FindData.ftLastWriteTime), &lFileTime);
 		FileTimeToSystemTime(&lFileTime, &fSysTime);
 
@@ -176,11 +176,11 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 		}
 		wsprintf(buf, "%s %s", fDay, fTime);
 
-		/* ‘O‰ñƒ`ƒFƒbƒNŽž‚Ì‚à‚Ì‚Æ”äŠr‚·‚é */
+		/* å‰å›žãƒã‚§ãƒƒã‚¯æ™‚ã®ã‚‚ã®ã¨æ¯”è¼ƒã™ã‚‹ */
 		if(GetOptionInt(tpItemInfo->Option1, 0) == 0 && LresultCmp(tpItemInfo->Date, buf) != 0){
 			CmpMsg = ST_UP;
 		}
-		/* ƒAƒCƒeƒ€‚É¡‰ñ‚Ìƒ`ƒFƒbƒN“à—e‚ðƒZƒbƒg‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã«ä»Šå›žã®ãƒã‚§ãƒƒã‚¯å†…å®¹ã‚’ã‚»ãƒƒãƒˆã™ã‚‹ */
 		if(tpItemInfo->Date != NULL){
 			GlobalFree(tpItemInfo->Date);
 		}
@@ -198,7 +198,7 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 
 	FILE_GetItemText
 
-	ƒNƒŠƒbƒvƒ{[ƒh—pƒAƒCƒeƒ€‚ÌƒeƒLƒXƒg‚ÌÝ’è
+	ã‚¯ãƒªãƒƒãƒ—ãƒœãƒ¼ãƒ‰ç”¨ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ†ã‚­ã‚¹ãƒˆã®è¨­å®š
 
 ******************************************************************************/
 
@@ -227,7 +227,7 @@ __declspec(dllexport) HANDLE CALLBACK FILE_GetItemText(struct TPITEM *tpItemInfo
 
 	FILE_CreateDropItem
 
-	ƒAƒCƒeƒ€‚Ìƒhƒƒbƒvƒtƒ@ƒCƒ‹‚ÌÝ’è
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®è¨­å®š
 
 ******************************************************************************/
 
@@ -245,7 +245,7 @@ __declspec(dllexport) BOOL CALLBACK FILE_CreateDropItem(struct TPITEM *tpItemInf
 
 	FILE_ExecItem
 
-	ƒAƒCƒeƒ€‚ÌŽÀs
+	ã‚¢ã‚¤ãƒ†ãƒ ã®å®Ÿè¡Œ
 
 ******************************************************************************/
 
@@ -265,7 +265,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 			return -1;
 		}
 	}
-	// 1 ‚ð•Ô‚·‚ÆƒAƒCƒRƒ“‚ð‰Šú‰»‚·‚éB
+	// 1 ã‚’è¿”ã™ã¨ã‚¢ã‚¤ã‚³ãƒ³ã‚’åˆæœŸåŒ–ã™ã‚‹ã€‚
 	return rc;
 }
 
@@ -274,7 +274,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 
 	FilePropertyProc
 
-	ƒAƒCƒeƒ€‚ÌƒvƒƒpƒeƒBÝ’èƒ_ƒCƒAƒƒO
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£è¨­å®šãƒ€ã‚¤ã‚¢ãƒ­ã‚°
 
 ******************************************************************************/
 
@@ -288,12 +288,12 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		/* ƒEƒBƒ“ƒhƒE‚ÉƒAƒCƒeƒ€î•ñ‚ð‘Ò”ð‚·‚é */
+		/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã«ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’å¾…é¿ã™ã‚‹ */
 		SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
 
 		tpItemInfo = (struct TPITEM *)lParam;
 		
-		/* ƒAƒCƒeƒ€‚Ìî•ñ‚ª‹ó‚Å‚È‚¢ê‡‚ÍƒAƒCƒeƒ€‚Ì“à—e‚ð•\Ž¦‚·‚é */
+		/* ã‚¢ã‚¤ãƒ†ãƒ ã®æƒ…å ±ãŒç©ºã§ãªã„å ´åˆã¯ã‚¢ã‚¤ãƒ†ãƒ ã®å†…å®¹ã‚’è¡¨ç¤ºã™ã‚‹ */
 		if(tpItemInfo->Title != NULL){
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_SETTEXT, 0, (LPARAM)tpItemInfo->Title);
 		}else{
@@ -339,10 +339,10 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			break;
 
 		case IDOK:
-			/* ƒEƒBƒ“ƒhƒE‚©‚çƒAƒCƒeƒ€‚Ìî•ñ‚ðŽæ“¾‚·‚é */
+			/* ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã®æƒ…å ±ã‚’å–å¾—ã™ã‚‹ */
 			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, DWLP_USER);
 			
-			/* ƒ^ƒCƒgƒ‹ */
+			/* ã‚¿ã‚¤ãƒˆãƒ« */
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
 			}
@@ -358,7 +358,7 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT,
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->CheckURL);
 
-			/* ƒRƒƒ“ƒg */
+			/* ã‚³ãƒ¡ãƒ³ãƒˆ */
 			if(tpItemInfo->Comment != NULL){
 				GlobalFree(tpItemInfo->Comment);
 			}
@@ -366,7 +366,7 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT,
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->Comment);
 
-			/* ƒ`ƒFƒbƒNƒIƒvƒVƒ‡ƒ“ */
+			/* ãƒã‚§ãƒƒã‚¯ã‚ªãƒ—ã‚·ãƒ§ãƒ³ */
 			if(tpItemInfo->Option1 != NULL){
 				GlobalFree(tpItemInfo->Option1);
 			}
@@ -395,13 +395,13 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 	FILE_Property
 
-	ƒAƒCƒeƒ€‚ÌƒvƒƒpƒeƒB
+	ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
 
 ******************************************************************************/
 
 __declspec(dllexport) int CALLBACK FILE_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-	/* ƒvƒƒpƒeƒB‚Ìƒ_ƒCƒAƒƒO‚ð•\Ž¦‚·‚é */
+	/* ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã®ãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã‚’è¡¨ç¤ºã™ã‚‹ */
 	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_FILEPROP), hWnd, FilePropertyProc, (LPARAM)tpItemInfo) == FALSE){
 		return -1;
 	}
@@ -413,7 +413,7 @@ __declspec(dllexport) int CALLBACK FILE_Property(HWND hWnd, struct TPITEM *tpIte
 
 	FILE_ProtocolProperty
 
-	ƒvƒƒgƒRƒ‹‚ÌƒvƒƒpƒeƒB
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
 
 ******************************************************************************/
 
@@ -427,7 +427,7 @@ __declspec(dllexport) int CALLBACK FILE_ProtocolProperty(HWND hWnd)
 
 	FILE_GetInfo
 
-	ƒvƒƒgƒRƒ‹î•ñ
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±
 
 ******************************************************************************/
 
@@ -454,7 +454,7 @@ __declspec(dllexport) int CALLBACK FILE_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 	FILE_EndNotify
 
-	WWWC‚ÌI—¹‚Ì’Ê’m
+	WWWCã®çµ‚äº†ã®é€šçŸ¥
 
 ******************************************************************************/
 
