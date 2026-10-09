@@ -27,6 +27,7 @@
 #define IDC_EDIT_PROXY                  1000
 #define IDC_EDIT_URL                    1001
 #define IDC_EDIT_REFERER                1001
+#define IDC_CHECK_IGNORECERT            1048
 #define IDC_EDIT_PSERVER                1002
 #define IDC_EDIT_VIEWURL                1002
 #define IDC_EDIT_PPORT                  1003
@@ -74,7 +75,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        117
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1048
+#define _APS_NEXT_CONTROL_VALUE         1049
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
