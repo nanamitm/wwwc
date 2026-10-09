@@ -30,9 +30,9 @@
 	Global Variables
 **************************************************************************/
 
-//ŠO•”QÆ
-extern HINSTANCE g_hinst;				//ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒCƒ“ƒXƒ^ƒ“ƒXƒnƒ“ƒhƒ‹
-extern HWND WWWCWnd;					//–{‘Ì
+//å¤–éƒ¨å‚ç…§
+extern HINSTANCE g_hinst;				//ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«
+extern HWND WWWCWnd;					//æœ¬ä½“
 
 extern HWND ProtocolWnd;
 extern HWND ToolWnd;
@@ -59,7 +59,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 	AddProtocol
 
-	ƒvƒƒgƒRƒ‹‚Ì’Ç‰Á
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®è¿½åŠ 
 
 ******************************************************************************/
 
@@ -91,7 +91,7 @@ static BOOL AddProtocol(struct TP_PROTOCOL *NewProtocol)
 
 	AddTool
 
-	ƒvƒƒgƒRƒ‹‚Ì’Ç‰Á
+	ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®è¿½åŠ 
 
 ******************************************************************************/
 
@@ -123,7 +123,7 @@ static BOOL AddTool(struct TP_TOOLS *NewTool)
 
 	SelectDllProc
 
-	DLL“àƒvƒƒgƒRƒ‹Aƒc[ƒ‹‘I‘ğƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
+	DLLå†…ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã€ãƒ„ãƒ¼ãƒ«é¸æŠã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
 
 ******************************************************************************/
 
@@ -134,8 +134,8 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	struct TP_TOOLS tpSetTool;
 	struct TP_GETTOOL GetTool;
 	HINSTANCE hLib;
-	FARPROC Func_GetProtocolList;
-	FARPROC Func_GetToolList;
+	GETPROTOCOLLIST_FUNC Func_GetProtocolList;
+	GETTOOLLIST_FUNC Func_GetToolList;
 	static char DLLPath[BUFSIZE];
 	int cnt = 0;
 	int ret, i;
@@ -157,10 +157,10 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 		}
 
-		//ƒvƒƒgƒRƒ‹î•ñæ“¾ŠÖ”‚ÌƒAƒhƒŒƒX‚ğæ“¾
-		Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+		//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±å–å¾—é–¢æ•°ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
+		Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 		if(Func_GetProtocolList != NULL){
-			//ƒvƒƒgƒRƒ‹î•ñ‚ğæ“¾
+			//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±ã‚’å–å¾—
 			while(1){
 				ZeroMemory(&tpProtocolSet, sizeof(struct TPPROTOCOLSET));
 				tpProtocolSet.iSize = sizeof(struct TPPROTOCOLSET);
@@ -172,10 +172,10 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 		}
 
-		//ƒc[ƒ‹æ“¾ŠÖ”‚ÌƒAƒhƒŒƒX‚ğæ“¾
-		Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+		//ãƒ„ãƒ¼ãƒ«å–å¾—é–¢æ•°ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
+		Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 		if(Func_GetToolList != NULL){
-			//ƒc[ƒ‹î•ñ‚ğæ“¾
+			//ãƒ„ãƒ¼ãƒ«æƒ…å ±ã‚’å–å¾—
 			cnt = 0;
 			while(1){
 				ZeroMemory(&GetTool, sizeof(struct TP_GETTOOL));
@@ -233,10 +233,10 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 				break;
 			}
 
-			//ƒvƒƒgƒRƒ‹î•ñæ“¾ŠÖ”‚ÌƒAƒhƒŒƒX‚ğæ“¾
-			Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+			//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±å–å¾—é–¢æ•°ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
+			Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 			if(Func_GetProtocolList != NULL){
-				//ƒvƒƒgƒRƒ‹‚Ì’Ç‰Á
+				//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ã®è¿½åŠ 
 				for(i = 0; i < SendDlgItemMessage(hDlg, IDC_LIST_PROTOCOL, LB_GETCOUNT, 0, 0); i++){
 					if(SendDlgItemMessage(hDlg, IDC_LIST_PROTOCOL, LB_GETSEL, i, 0) == 0){
 						continue;
@@ -245,7 +245,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 					tpProtocolSet.iSize = sizeof(struct TPPROTOCOLSET);
 					tpProtocolSet.UpIconIndex = -1;
 
-					//ƒvƒƒgƒRƒ‹î•ñ‚ğæ“¾
+					//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±ã‚’å–å¾—
 					ret = Func_GetProtocolList(i, &tpProtocolSet);
 					if(ret <= -1){
 						break;
@@ -271,10 +271,10 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			//ƒc[ƒ‹æ“¾ŠÖ”‚ÌƒAƒhƒŒƒX‚ğæ“¾
-			Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+			//ãƒ„ãƒ¼ãƒ«å–å¾—é–¢æ•°ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
+			Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 			if(Func_GetToolList != NULL){
-				//ƒc[ƒ‹‚Ì’Ç‰Á
+				//ãƒ„ãƒ¼ãƒ«ã®è¿½åŠ 
 				for(i = 0; i < SendDlgItemMessage(hDlg, IDC_LIST_TOOL, LB_GETCOUNT, 0, 0); i++){
 					if(SendDlgItemMessage(hDlg, IDC_LIST_TOOL, LB_GETSEL, i, 0) == 0){
 						continue;
@@ -300,7 +300,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 				}
 			}
 
-			//ƒCƒ[ƒWƒŠƒXƒg‚ÌXV
+			//ã‚¤ãƒ¡ãƒ¼ã‚¸ãƒªã‚¹ãƒˆã®æ›´æ–°
 			ListView_SetItemImage(GetDlgItem(WWWCWnd, WWWC_LIST), LvLIconSize, LVSIL_NORMAL);
 			ListView_SetItemImage(GetDlgItem(WWWCWnd, WWWC_LIST), LvSIconSize, LVSIL_SMALL);
 			SetProtocolImage(WWWCWnd);
@@ -327,13 +327,13 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 	SelectDll
 
-	DLL‘I‘ğƒEƒBƒ“ƒhƒE‚Ì•\¦
+	DLLé¸æŠã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¡¨ç¤º
 
 ******************************************************************************/
 
 BOOL SelectDll(HWND hWnd, char *DLLPath)
 {
-	return DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTDLL), hWnd, SelectDllProc, (LPARAM)DLLPath);
+	return (BOOL)DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTDLL), hWnd, SelectDllProc, (LPARAM)DLLPath);
 }
 
 /* End of source */

@@ -185,7 +185,7 @@ int AllInitMsg;
 int SaveDriveCheck;
 int DefNoCheck;
 
-//ŠO•”QÆ
+//å¤–éƒ¨å‚ç…§
 extern int gCheckFlag;
 extern char CuDir[];
 extern struct TPLVCOLUMN *ColumnInfo;
@@ -203,7 +203,7 @@ extern int tpCheckTimeCnt;
 
 	GetINI
 
-	INIƒtƒ@ƒCƒ‹‚©‚çİ’èî•ñ‚ğ“Ç‚İ‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰è¨­å®šæƒ…å ±ã‚’èª­ã¿ã“ã‚€
 
 ******************************************************************************/
 
@@ -264,7 +264,7 @@ void GetINI(void)
 	PartInfo3 = profile_get_int("STATUSBAR", "PartInfo3", 3, app_path);
 
 	profile_get_string("TREEVIEW", "RootTitle", "Internet", RootTitle, BUFSIZE - 1, app_path);
-	profile_get_string("TREEVIEW", "RecyclerTitle", "‚²‚İ” ", RecyclerTitle, BUFSIZE - 1, app_path);
+	profile_get_string("TREEVIEW", "RecyclerTitle", "ã”ã¿ç®±", RecyclerTitle, BUFSIZE - 1, app_path);
 	StartExpand = profile_get_int("TREEVIEW", "StartExpand", 0, app_path);
 	StartDirOpen = profile_get_int("TREEVIEW", "StartDirOpen", 0, app_path);
 	profile_get_string("TREEVIEW", "StartDirPath", "", StartDirPath, BUFSIZE - 1, app_path);
@@ -465,7 +465,7 @@ void GetINI(void)
 
 	PutINI
 
-	INIƒtƒ@ƒCƒ‹‚Öİ’èî•ñ‚ğ‘‚«o‚·
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã¸è¨­å®šæƒ…å ±ã‚’æ›¸ãå‡ºã™
 
 ******************************************************************************/
 
@@ -681,7 +681,7 @@ void PutINI(void)
 
 	GetProtocolInfo
 
-	INIƒtƒ@ƒCƒ‹‚©‚çƒvƒƒgƒRƒ‹î•ñ‚ğ“Ç‚İ‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±ã‚’èª­ã¿ã“ã‚€
 
 ******************************************************************************/
 
@@ -747,7 +747,7 @@ void GetProtocolInfo(void)
 
 	PutProtocolInfo
 
-	INIƒtƒ@ƒCƒ‹‚ÖƒvƒƒgƒRƒ‹î•ñ‚ğ‘‚«o‚·
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã¸ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±ã‚’æ›¸ãå‡ºã™
 
 ******************************************************************************/
 
@@ -791,7 +791,7 @@ void PutProtocolInfo(void)
 
 	GetAutoTime
 
-	INIƒtƒ@ƒCƒ‹‚©‚ç©“®ƒ`ƒFƒbƒNî•ñ‚ğ“Ç‚İ‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰è‡ªå‹•ãƒã‚§ãƒƒã‚¯æƒ…å ±ã‚’èª­ã¿ã“ã‚€
 
 ******************************************************************************/
 
@@ -843,7 +843,7 @@ void GetAutoTime(void)
 
 	PutAutoTime
 
-	INIƒtƒ@ƒCƒ‹‚Ö©“®ƒ`ƒFƒbƒNî•ñ‚ğ‘‚«o‚·
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã¸è‡ªå‹•ãƒã‚§ãƒƒã‚¯æƒ…å ±ã‚’æ›¸ãå‡ºã™
 
 ******************************************************************************/
 
@@ -900,7 +900,7 @@ void PutAutoTime(void)
 
 	GetToolList
 
-	INIƒtƒ@ƒCƒ‹‚©‚çƒc[ƒ‹î•ñ‚ğ“Ç‚İ‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ„ãƒ¼ãƒ«æƒ…å ±ã‚’èª­ã¿ã“ã‚€
 
 ******************************************************************************/
 
@@ -964,7 +964,7 @@ void GetToolList(void)
 
 	PutToolList
 
-	INIƒtƒ@ƒCƒ‹‚Öƒc[ƒ‹î•ñ‚ğ‘‚«‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã¸ãƒ„ãƒ¼ãƒ«æƒ…å ±ã‚’æ›¸ãã“ã‚€
 
 ******************************************************************************/
 
@@ -1016,7 +1016,7 @@ void PutToolList(void)
 
 	GetDirInfo
 
-	INIƒtƒ@ƒCƒ‹‚©‚çƒtƒHƒ‹ƒ_î•ñ‚ğ“Ç‚İ‚±‚Ş
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ãƒ•ã‚©ãƒ«ãƒ€æƒ…å ±ã‚’èª­ã¿ã“ã‚€
 
 ******************************************************************************/
 
@@ -1101,7 +1101,7 @@ void GetDirInfo(HWND hTreeView, char *path, HTREEITEM hItem)
 
 	PutDirInfo
 
-	INIƒtƒ@ƒCƒ‹‚ÖƒtƒHƒ‹ƒ_î•ñ‚ğ‘‚«o‚·
+	INIãƒ•ã‚¡ã‚¤ãƒ«ã¸ãƒ•ã‚©ãƒ«ãƒ€æƒ…å ±ã‚’æ›¸ãå‡ºã™
 
 ******************************************************************************/
 

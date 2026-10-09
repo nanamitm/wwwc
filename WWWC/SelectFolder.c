@@ -33,9 +33,9 @@
 
 static HWND folWnd;
 
-//ŠO•”QÆ
-extern HINSTANCE g_hinst;				//ƒAƒvƒŠƒP[ƒVƒ‡ƒ“‚ÌƒCƒ“ƒXƒ^ƒ“ƒXƒnƒ“ƒhƒ‹
-extern HWND WWWCWnd;					//–{‘Ì
+//å¤–éƒ¨å‚ç…§
+extern HINSTANCE g_hinst;				//ã‚¢ãƒ—ãƒªã‚±ãƒ¼ã‚·ãƒ§ãƒ³ã®ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãƒãƒ³ãƒ‰ãƒ«
+extern HWND WWWCWnd;					//æœ¬ä½“
 extern HTREEITEM RootItem;
 
 
@@ -53,7 +53,7 @@ static INT_PTR CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 	FindTreeItem
 
-	–{‘Ì‚ÌƒAƒCƒeƒ€‚©‚ç‘I‘ğƒcƒŠ[‚ÌƒAƒCƒeƒ€‚ğŒŸõ
+	æœ¬ä½“ã®ã‚¢ã‚¤ãƒ†ãƒ ã‹ã‚‰é¸æŠãƒ„ãƒªãƒ¼ã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’æ¤œç´¢
 
 ******************************************************************************/
 
@@ -69,7 +69,7 @@ static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	CreateTreeItem
 
-	–{‘Ì‚ÌƒcƒŠ[ƒAƒCƒeƒ€‚ğ‘I‘ğƒcƒŠ[‚É’Ç‰Á
+	æœ¬ä½“ã®ãƒ„ãƒªãƒ¼ã‚¢ã‚¤ãƒ†ãƒ ã‚’é¸æŠãƒ„ãƒªãƒ¼ã«è¿½åŠ 
 
 ******************************************************************************/
 
@@ -109,7 +109,7 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	}else{
 		pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		l = pItem;
-		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), (FARPROC)FindTreeItem, (LPARAM)&l);
+		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), FindTreeItem, (LPARAM)&l);
 		if(l == pItem){
 			return;
 		}
@@ -129,13 +129,13 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	CreateTree
 
-	–{‘Ì‚ÌƒcƒŠ[‚ğ‘I‘ğƒcƒŠ[‚ÉƒRƒs[
+	æœ¬ä½“ã®ãƒ„ãƒªãƒ¼ã‚’é¸æŠãƒ„ãƒªãƒ¼ã«ã‚³ãƒ”ãƒ¼
 
 ******************************************************************************/
 
 static void CreateTree(HWND hDlg, HTREEITEM hItem)
 {
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)CreateTreeItem, (LPARAM)hItem);
+	CallTreeItem(WWWCWnd, RootItem, CreateTreeItem, (LPARAM)hItem);
 	TreeView_Expand(GetDlgItem(hDlg, WWWC_TREE), TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), TVE_EXPAND);
 }
 
@@ -144,7 +144,7 @@ static void CreateTree(HWND hDlg, HTREEITEM hItem)
 
 	SelectFolderProc
 
-	ƒtƒHƒ‹ƒ_‘I‘ğƒEƒBƒ“ƒhƒEƒvƒƒV[ƒWƒƒ
+	ãƒ•ã‚©ãƒ«ãƒ€é¸æŠã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ãƒ—ãƒ­ã‚·ãƒ¼ã‚¸ãƒ£
 
 ******************************************************************************/
 
@@ -217,20 +217,20 @@ static INT_PTR CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 	SelectFolder
 
-	ƒtƒHƒ‹ƒ_‘I‘ğƒEƒBƒ“ƒhƒE‚Ì•\¦
+	ãƒ•ã‚©ãƒ«ãƒ€é¸æŠã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¡¨ç¤º
 
 ******************************************************************************/
 
 BOOL SelectFolder(HWND hWnd, char *ret)
 {
-	return DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTFOLDER), hWnd, SelectFolderProc, (LPARAM)ret);
+	return (BOOL)DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTFOLDER), hWnd, SelectFolderProc, (LPARAM)ret);
 }
 
 /******************************************************************************
 
 	SelectFolderItem
 
-	ƒtƒHƒ‹ƒ_‘I‘ğƒEƒBƒ“ƒhƒE‚Ì•\¦
+	ãƒ•ã‚©ãƒ«ãƒ€é¸æŠã‚¦ã‚£ãƒ³ãƒ‰ã‚¦ã®è¡¨ç¤º
 
 ******************************************************************************/
 

@@ -27,8 +27,8 @@
 	Define
 **************************************************************************/
 
-#define BUFSIZE						256					// ƒoƒbƒtƒ@ƒTƒCƒY
-#define MAXSIZE						32768				// ƒoƒbƒtƒ@ƒTƒCƒY
+#define BUFSIZE						256					// ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
+#define MAXSIZE						32768				// ãƒãƒƒãƒ•ã‚¡ã‚µã‚¤ã‚º
 
 #define APP_NAME					"WWWC"
 #define APP_VERSION					"1.1.3"
@@ -45,15 +45,15 @@
 
 #define SIDEBYSIDE_COMMONCONTROLS	1					//Windows XP Visual Style
 
-#define WM_WSOCK_GETHOST			(WM_USER + 1)		//ƒ\ƒPƒbƒgƒƒbƒZ[ƒW
+#define WM_WSOCK_GETHOST			(WM_USER + 1)		//ã‚½ã‚±ãƒƒãƒˆãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define WM_WSOCK_SELECT				(WM_USER + 2)
 
-#define WM_CHECK_RESULT				(WM_USER + 3)		//ƒ`ƒFƒbƒNˆ—ƒƒbƒZ[ƒW
+#define WM_CHECK_RESULT				(WM_USER + 3)		//ãƒã‚§ãƒƒã‚¯å‡¦ç†ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define WM_ITEMCHECK				(WM_USER + 4)
-#define WM_NEXTCHECK				(WM_USER + 9)		//ŽŸ‚Ìƒ`ƒFƒbƒN
+#define WM_NEXTCHECK				(WM_USER + 9)		//æ¬¡ã®ãƒã‚§ãƒƒã‚¯
 #define WM_CHECK_END				(WM_USER + 60)
 
-#define WM_GETVERSION				(WM_USER + 5)		//ƒf[ƒ^—v‹ƒƒbƒZ[ƒW
+#define WM_GETVERSION				(WM_USER + 5)		//ãƒ‡ãƒ¼ã‚¿è¦æ±‚ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define WM_GETCHECKLIST				(WM_USER + 6)
 #define WM_GETCHECKLISTCNT			(WM_USER + 7)
 #define WM_SETITEMLIST				(WM_USER + 8)
@@ -64,11 +64,11 @@
 #define WM_GETUPWINDOW				(WM_USER + 14)
 #define WM_GETFINDWINDOW			(WM_USER + 15)
 
-#define WM_WWWC_GETINI				(WM_USER + 20)		//INIƒtƒ@ƒCƒ‹ˆ—ƒƒbƒZ[ƒW
+#define WM_WWWC_GETINI				(WM_USER + 20)		//INIãƒ•ã‚¡ã‚¤ãƒ«å‡¦ç†ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define WM_WWWC_PUTINI				(WM_USER + 21)
 #define WM_WWWC_GETINIPATH			(WM_USER + 22)
 
-#define WM_FOLDER_SAVE				(WM_USER + 31)		//ƒtƒHƒ‹ƒ_‘€ìƒƒbƒZ[ƒW
+#define WM_FOLDER_SAVE				(WM_USER + 31)		//ãƒ•ã‚©ãƒ«ãƒ€æ“ä½œãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define WM_FOLDER_LOAD				(WM_USER + 32)
 #define WM_FOLDER_GETPATH			(WM_USER + 33)
 #define WM_FOLDER_GETWWWCPATH		(WM_USER + 34)
@@ -86,28 +86,28 @@
 #endif
 
 
-#define Clip_DirName				"~WWWC_Clip_Files"	//ƒNƒŠƒbƒvƒ{[ƒh—pì‹ÆƒfƒBƒŒƒNƒgƒŠ
-#define DnD_DirName					"~WWWC_DnD_Files"	//ƒhƒ‰ƒbƒO•ƒhƒƒbƒv—pì‹ÆƒfƒBƒŒƒNƒgƒŠ
+#define Clip_DirName				"~WWWC_Clip_Files"	//ã‚¯ãƒªãƒƒãƒ—ãƒœãƒ¼ãƒ‰ç”¨ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª
+#define DnD_DirName					"~WWWC_DnD_Files"	//ãƒ‰ãƒ©ãƒƒã‚°ï¼†ãƒ‰ãƒ­ãƒƒãƒ—ç”¨ä½œæ¥­ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒª
 
-#define IDPCANCEL					(WM_USER + 203)		//ƒvƒƒpƒeƒBƒV[ƒg‚ÌƒLƒƒƒ“ƒZƒ‹ƒƒbƒZ[ƒW
+#define IDPCANCEL					(WM_USER + 203)		//ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£ã‚·ãƒ¼ãƒˆã®ã‚­ãƒ£ãƒ³ã‚»ãƒ«ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 
-#define TBDEFBUTTON					"0,,1,2,5,6,,7,8,,9,10,11,,12,,13,14,,15,16,17,18,"		//ƒfƒtƒHƒ‹ƒgƒc[ƒ‹ƒo[
+#define TBDEFBUTTON					"0,,1,2,5,6,,7,8,,9,10,11,,12,,13,14,,15,16,17,18,"		//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆãƒ„ãƒ¼ãƒ«ãƒãƒ¼
 #define TBSTYLE_FLAT				0x0800
 
-#define LICONSIZE					32					//‘å‚«‚¢ƒAƒCƒRƒ“‚ÌƒTƒCƒY
-#define SICONSIZE					16					//¬‚³‚¢ƒAƒCƒRƒ“‚ÌƒTƒCƒY
+#define LICONSIZE					32					//å¤§ãã„ã‚¢ã‚¤ã‚³ãƒ³ã®ã‚µã‚¤ã‚º
+#define SICONSIZE					16					//å°ã•ã„ã‚¢ã‚¤ã‚³ãƒ³ã®ã‚µã‚¤ã‚º
 
-#define TRAY_ID						100					//ƒ^ƒXƒNƒgƒŒƒCID
-#define FRAME_CNT					2					//‹«ŠEƒtƒŒ[ƒ€”
-#define STEPSIZE					22					//ƒAƒjƒ[ƒVƒ‡ƒ“ƒrƒbƒgƒ}ƒbƒv‚ÌƒTƒCƒY
-#define CLIPFORMAT_CNT				3					//ƒNƒŠƒbƒvƒ{[ƒhƒtƒH[ƒ}ƒbƒg”
+#define TRAY_ID						100					//ã‚¿ã‚¹ã‚¯ãƒˆãƒ¬ã‚¤ID
+#define FRAME_CNT					2					//å¢ƒç•Œãƒ•ãƒ¬ãƒ¼ãƒ æ•°
+#define STEPSIZE					22					//ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ“ãƒƒãƒˆãƒžãƒƒãƒ—ã®ã‚µã‚¤ã‚º
+#define CLIPFORMAT_CNT				3					//ã‚¯ãƒªãƒƒãƒ—ãƒœãƒ¼ãƒ‰ãƒ•ã‚©ãƒ¼ãƒžãƒƒãƒˆæ•°
 
-#define CHECK_MAX					30					//Å‘åƒ`ƒFƒbƒN”
-#define NEXTCHECK_INTERVAL			1					//ŽŸƒ`ƒFƒbƒNƒAƒCƒeƒ€ŒŸõƒ^ƒCƒ}[
-#define TIMEOUT_INTERVAL			1000				//ƒ^ƒCƒ€ƒAƒEƒg—pƒ^ƒCƒ}[
-#define CHECKANI_INTERVAL			150					//ƒAƒjƒ[ƒVƒ‡ƒ“ƒ^ƒCƒ}[
+#define CHECK_MAX					30					//æœ€å¤§ãƒã‚§ãƒƒã‚¯æ•°
+#define NEXTCHECK_INTERVAL			1					//æ¬¡ãƒã‚§ãƒƒã‚¯ã‚¢ã‚¤ãƒ†ãƒ æ¤œç´¢ã‚¿ã‚¤ãƒžãƒ¼
+#define TIMEOUT_INTERVAL			1000				//ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆç”¨ã‚¿ã‚¤ãƒžãƒ¼
+#define CHECKANI_INTERVAL			150					//ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒžãƒ¼
 
-#define CHECKINI_CHECK				0					//ƒ`ƒFƒbƒN‚Ì‰Šú‰»
+#define CHECKINI_CHECK				0					//ãƒã‚§ãƒƒã‚¯ã®åˆæœŸåŒ–
 #define CHECKINI_AUTOALLCHECK		1
 #define CHECKINI_AUTOCHECK			2
 #define CHECKINI_ALLCHECK			3
@@ -115,7 +115,7 @@
 #define CHECKINI_DLLCHECK			5
 
 
-#define AUTOTIME_NON				0					//Ž©“®ƒ`ƒFƒbƒNƒ^ƒCƒv
+#define AUTOTIME_NON				0					//è‡ªå‹•ãƒã‚§ãƒƒã‚¯ã‚¿ã‚¤ãƒ—
 #define AUTOTIME_MIN				1
 #define AUTOTIME_HOU				2
 #define AUTOTIME_DAY				3
@@ -123,7 +123,7 @@
 #define AUTOTIME_MON				5
 
 
-#define ID_MENU_NEWITEM				51000				//“®“Iƒƒjƒ…[ID
+#define ID_MENU_NEWITEM				51000				//å‹•çš„ãƒ¡ãƒ‹ãƒ¥ãƒ¼ID
 #define ID_MENU_ACTION_OPEM			52000
 #define ID_MENU_ACTION_RECY			52001
 #define ID_MENU_ACTION				52002
@@ -132,7 +132,7 @@
 #define ID_ACCEL_TOOL_ACTION		56000
 
 
-#define TIMER_SEP					1					//ƒ^ƒCƒ}[ID
+#define TIMER_SEP					1					//ã‚¿ã‚¤ãƒžãƒ¼ID
 #define TIMER_CHECKTIMEOUT			2
 #define TIMER_CHECK					3
 #define TIMER_AUTOCHECK				4
@@ -142,14 +142,14 @@
 #define TIMER_NEXTFOCUS				8
 
 
-//#define WWWC_TREE					100					//ƒRƒ“ƒgƒ[ƒ‹ID
+//#define WWWC_TREE					100					//ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ID
 //#define WWWC_LIST					101
 #define WWWC_TB						102
 #define WWWC_SB						103
 
 
 //General Icon
-#define ICON_CHECK					0					//ƒAƒCƒRƒ“ƒCƒ“ƒfƒbƒNƒX
+#define ICON_CHECK					0					//ã‚¢ã‚¤ã‚³ãƒ³ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 #define ICON_NOCHECK				1
 #define ICON_DIRUP					2
 #define ICON_DIR_CLOSE				3
@@ -181,17 +181,17 @@
 #define ICON_ST_NOCHECK				1
 
 
-#define ST_DEFAULT					0					//ƒAƒCƒeƒ€‚Ìó‘Ô
+#define ST_DEFAULT					0					//ã‚¢ã‚¤ãƒ†ãƒ ã®çŠ¶æ…‹
 #define ST_UP						1
 #define ST_ERROR					2
 #define ST_TIMEOUT					4
 
-#define ST_NOCHECK					1					//ƒAƒCƒeƒ€‚Ìƒ`ƒFƒbƒNó‘Ô
+#define ST_NOCHECK					1					//ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒã‚§ãƒƒã‚¯çŠ¶æ…‹
 #define ST_CHECK					2
 
 
 //update flag
-#define UF_NOMSG					0					//ã‘‚«ƒƒbƒZ[ƒW
+#define UF_NOMSG					0					//ä¸Šæ›¸ããƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 #define UF_COPY						1
 #define UF_ALLCOPY					2
 #define UF_NOCOPY					3
@@ -199,7 +199,7 @@
 #define UF_CANCEL					-1
 
 //ListView draw flag
-#define LDF_NODRAW					0					//ƒŠƒXƒgƒrƒ…[•`‰æƒtƒ‰ƒO
+#define LDF_NODRAW					0					//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼æç”»ãƒ•ãƒ©ã‚°
 #define LDF_REDRAW					1
 
 //TreeView item status
@@ -213,24 +213,24 @@
 #define WM_UP_CLOSE					(WM_USER + 102)
 #define WM_UP_WININI				(WM_USER + 103)
 
-#define WM_LV_EVENT					(WM_USER + 300)		//ƒŠƒXƒgƒrƒ…[ƒCƒxƒ“ƒg
+#define WM_LV_EVENT					(WM_USER + 300)		//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã‚¤ãƒ™ãƒ³ãƒˆ
 #define WM_LV_INITICON				(WM_USER + 302)
 
-#define WM_TV_EVENT					(WM_USER + 310)		//ƒcƒŠ[ƒrƒ…[ƒCƒxƒ“ƒg
+#define WM_TV_EVENT					(WM_USER + 310)		//ãƒ„ãƒªãƒ¼ãƒ“ãƒ¥ãƒ¼ã‚¤ãƒ™ãƒ³ãƒˆ
 
-#define WM_TB_REFRESH				(WM_USER + 320)		//ƒc[ƒ‹ƒo[XV
+#define WM_TB_REFRESH				(WM_USER + 320)		//ãƒ„ãƒ¼ãƒ«ãƒãƒ¼æ›´æ–°
 
-#define WM_DRAGMSG					(WM_USER + 500)		//ƒhƒ‰ƒbƒO•ƒhƒƒbƒv
-#define WM_DATAOBJECT_GETDATA		(WM_USER + 501)		//ƒhƒƒbƒvƒf[ƒ^—v‹ƒCƒxƒ“ƒg
+#define WM_DRAGMSG					(WM_USER + 500)		//ãƒ‰ãƒ©ãƒƒã‚°ï¼†ãƒ‰ãƒ­ãƒƒãƒ—
+#define WM_DATAOBJECT_GETDATA		(WM_USER + 501)		//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿è¦æ±‚ã‚¤ãƒ™ãƒ³ãƒˆ
 
 
-#define CHECK_ERROR					-1					//ƒ`ƒFƒbƒNŒ‹‰Ê
+#define CHECK_ERROR					-1					//ãƒã‚§ãƒƒã‚¯çµæžœ
 #define CHECK_SUCCEED				0
 #define CHECK_NO					1
 #define CHECK_END					2
 
 
-#define MENU_HWND_FILE				0					//ƒƒjƒ…[ƒCƒ“ƒfƒbƒNƒX
+#define MENU_HWND_FILE				0					//ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 #define MENU_HWND_EDIT				1
 #define MENU_HWND_VIEW				2
 #define MENU_HWND_CHECK				3
@@ -245,23 +245,23 @@
 #define MENU_POP_UPMSG				6
 
 
-#define FLAG_COPY					1					//ƒNƒŠƒbƒvƒ{[ƒh‘€ìƒtƒ‰ƒO
+#define FLAG_COPY					1					//ã‚¯ãƒªãƒƒãƒ—ãƒœãƒ¼ãƒ‰æ“ä½œãƒ•ãƒ©ã‚°
 #define FLAG_CUT					2
 #define FLAG_FOLDER					3
 
-#define DND_MOVE					0					//ƒhƒ‰ƒbƒO•ƒhƒƒbƒv‘€ìƒtƒ‰ƒO
+#define DND_MOVE					0					//ãƒ‰ãƒ©ãƒƒã‚°ï¼†ãƒ‰ãƒ­ãƒƒãƒ—æ“ä½œãƒ•ãƒ©ã‚°
 #define DND_COPY					1
 #define DND_RECY					2
 
-#define UNDO_ITEM					1					//UndoŽí•Ê
+#define UNDO_ITEM					1					//Undoç¨®åˆ¥
 #define UNDO_ITEM_COPY				2
 #define UNDO_ITEM_DELETE			3
 #define UNDO_LV_TITLE				4
 #define UNDO_TV_TITLE				5
 
 
-#define TOOL_EXEC_PORP				0					//ƒvƒƒpƒeƒB
-#define TOOL_EXEC_ITEMMENU			1					//ƒc[ƒ‹ŽÀsƒtƒ‰ƒO
+#define TOOL_EXEC_PORP				0					//ãƒ—ãƒ­ãƒ‘ãƒ†ã‚£
+#define TOOL_EXEC_ITEMMENU			1					//ãƒ„ãƒ¼ãƒ«å®Ÿè¡Œãƒ•ãƒ©ã‚°
 #define TOOL_EXEC_WINDOWMENU		2
 #define TOOL_EXEC_START				4
 #define TOOL_EXEC_END				8
@@ -275,7 +275,7 @@
 #define TOOL_EXEC_NOTCHECK			2048
 #define TOOL_EXEC_SAVEFOLDER		4096
 
-#define TOOL_HIDE_ITEMMENU			1					//ƒc[ƒ‹”ñ•\Ž¦ƒtƒ‰ƒO
+#define TOOL_HIDE_ITEMMENU			1					//ãƒ„ãƒ¼ãƒ«éžè¡¨ç¤ºãƒ•ãƒ©ã‚°
 #define TOOL_HIDE_WINDOWMENU		2
 #define TOOL_HIDE_START				4
 #define TOOL_HIDE_END				8
@@ -300,92 +300,92 @@
 #define CHECKTYPE_AUTO				16
 
 
-#define ABS(n)						((n < 0) ? (n * -1) : n)	//â‘Î’l
+#define ABS(n)						((n < 0) ? (n * -1) : n)	//çµ¶å¯¾å€¤
 
 
 /**************************************************************************
 	Struct
 **************************************************************************/
 
-//Ž©“®ƒ`ƒFƒbƒN
+//è‡ªå‹•ãƒã‚§ãƒƒã‚¯
 struct TPCHECKTIME{
-	int type;											//Ž©“®ƒ`ƒFƒbƒN‚ÌŽí•Ê
-	int flag;											//ƒ`ƒFƒbƒN‚·‚é^‚µ‚È‚¢ ƒtƒ‰ƒO
+	int type;											//è‡ªå‹•ãƒã‚§ãƒƒã‚¯ã®ç¨®åˆ¥
+	int flag;											//ãƒã‚§ãƒƒã‚¯ã™ã‚‹ï¼ã—ãªã„ ãƒ•ãƒ©ã‚°
 
-	int day;											//Ž©“®ƒ`ƒFƒbƒNŠJŽn“úŽž
+	int day;											//è‡ªå‹•ãƒã‚§ãƒƒã‚¯é–‹å§‹æ—¥æ™‚
 	int week;
 	int h;
 	int m;
 
-	int mCnt;											//•ª–ˆ
-	int hCnt;											//ŽžŠÔ–ˆ
+	int mCnt;											//åˆ†æ¯Ž
+	int hCnt;											//æ™‚é–“æ¯Ž
 };
 
-//ƒAƒCƒeƒ€î•ñ
+//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±
 struct TPITEM{
-	long iSize;											//\‘¢‘Ì‚ÌƒTƒCƒY
+	long iSize;											//æ§‹é€ ä½“ã®ã‚µã‚¤ã‚º
 
-	HTREEITEM hItem;									//‚±‚ÌƒAƒCƒeƒ€‚ª“ü‚Á‚Ä‚éƒtƒHƒ‹ƒ_
+	HTREEITEM hItem;									//ã“ã®ã‚¢ã‚¤ãƒ†ãƒ ãŒå…¥ã£ã¦ã‚‹ãƒ•ã‚©ãƒ«ãƒ€
 
-	char *Title;										//ƒ^ƒCƒgƒ‹
-	char *CheckURL;										//ƒ`ƒFƒbƒN‚ðs‚¤URL
-	char *Size;											//ƒTƒCƒY
-	char *Date;											//XV“úŽž
-	int Status;											//ƒAƒCƒeƒ€‚Ìó‘Ô (ST_)
+	char *Title;										//ã‚¿ã‚¤ãƒˆãƒ«
+	char *CheckURL;										//ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã†URL
+	char *Size;											//ã‚µã‚¤ã‚º
+	char *Date;											//æ›´æ–°æ—¥æ™‚
+	int Status;											//ã‚¢ã‚¤ãƒ†ãƒ ã®çŠ¶æ…‹ (ST_)
 
-	char *CheckDate;									//ƒ`ƒFƒbƒN‚µ‚½“úŽž
-	char *OldSize;										//‹ŒXV“ú
-	char *OldDate;										//‹ŒƒTƒCƒY
+	char *CheckDate;									//ãƒã‚§ãƒƒã‚¯ã—ãŸæ—¥æ™‚
+	char *OldSize;										//æ—§æ›´æ–°æ—¥
+	char *OldDate;										//æ—§ã‚µã‚¤ã‚º
 
-	char *ViewURL;										//•\Ž¦‚·‚éURL
-	char *Option1;										//ƒIƒvƒVƒ‡ƒ“ 1
-	char *Option2;										//ƒIƒvƒVƒ‡ƒ“ 2
-	char *Comment;										//ƒRƒƒ“ƒg
+	char *ViewURL;										//è¡¨ç¤ºã™ã‚‹URL
+	char *Option1;										//ã‚ªãƒ—ã‚·ãƒ§ãƒ³ 1
+	char *Option2;										//ã‚ªãƒ—ã‚·ãƒ§ãƒ³ 2
+	char *Comment;										//ã‚³ãƒ¡ãƒ³ãƒˆ
 
-	int CheckSt;										//ƒ`ƒFƒbƒNƒtƒ‰ƒO
+	int CheckSt;										//ãƒã‚§ãƒƒã‚¯ãƒ•ãƒ©ã‚°
 
-	char *ErrStatus;									//ƒGƒ‰[ó‘Ô
-	char *DLLData1;										//DLL—pƒf[ƒ^
-	char *DLLData2;										//DLL—pƒf[ƒ^
+	char *ErrStatus;									//ã‚¨ãƒ©ãƒ¼çŠ¶æ…‹
+	char *DLLData1;										//DLLç”¨ãƒ‡ãƒ¼ã‚¿
+	char *DLLData2;										//DLLç”¨ãƒ‡ãƒ¼ã‚¿
 
-	//ˆÈ‰º•Û‘¶‚³‚ê‚È‚¢î•ñ
-	int IconStatus;										//ƒAƒCƒRƒ“‚Ìó‘Ô (ICON_ST_)
+	//ä»¥ä¸‹ä¿å­˜ã•ã‚Œãªã„æƒ…å ±
+	int IconStatus;										//ã‚¢ã‚¤ã‚³ãƒ³ã®çŠ¶æ…‹ (ICON_ST_)
 
-	int Soc1;											//ƒ\ƒPƒbƒg1
-	int Soc2;											//ƒ\ƒPƒbƒg2
-	HANDLE hGetHost1;									//ƒzƒXƒgî•ñ‚Ìƒnƒ“ƒhƒ‹1
-	HANDLE hGetHost2;									//ƒzƒXƒgî•ñ‚Ìƒnƒ“ƒhƒ‹1
-	LONG_PTR Param1;										//DLL—plong’l1
-	LONG_PTR Param2;										//DLL—plong’l2
-	LONG_PTR Param3;										//DLL—plong’l3
-	LONG_PTR Param4;										//DLL—plong’l4
-	int user1;											//DLL—pint’l1
-	int user2;											//DLL—pint’l2
+	UINT_PTR Soc1;										//ã‚½ã‚±ãƒƒãƒˆ1 (SOCKET)
+	UINT_PTR Soc2;										//ã‚½ã‚±ãƒƒãƒˆ2 (SOCKET)
+	HANDLE hGetHost1;									//ãƒ›ã‚¹ãƒˆæƒ…å ±ã®ãƒãƒ³ãƒ‰ãƒ«1
+	HANDLE hGetHost2;									//ãƒ›ã‚¹ãƒˆæƒ…å ±ã®ãƒãƒ³ãƒ‰ãƒ«1
+	LONG_PTR Param1;										//DLLç”¨longå€¤1
+	LONG_PTR Param2;										//DLLç”¨longå€¤2
+	LONG_PTR Param3;										//DLLç”¨longå€¤3
+	LONG_PTR Param4;										//DLLç”¨longå€¤4
+	int user1;											//DLLç”¨intå€¤1
+	int user2;											//DLLç”¨intå€¤2
 
 	BOOL RefreshFlag;
 //	BOOL DeleteFlag;
 };
 
-//ƒtƒHƒ‹ƒ_î•ñ
+//ãƒ•ã‚©ãƒ«ãƒ€æƒ…å ±
 struct TPTREE{
-	int CheckFlag;										//ƒ`ƒFƒbƒNƒtƒ‰ƒO
-	int MemFlag;										//‰ð•ú–hŽ~ƒJƒEƒ“ƒ^
-	int Icon;											//ó‘ÔƒAƒCƒRƒ“
+	int CheckFlag;										//ãƒã‚§ãƒƒã‚¯ãƒ•ãƒ©ã‚°
+	int MemFlag;										//è§£æ”¾é˜²æ­¢ã‚«ã‚¦ãƒ³ã‚¿
+	int Icon;											//çŠ¶æ…‹ã‚¢ã‚¤ã‚³ãƒ³
 	int Expand;
 
-	int CheckSt;										//ƒ`ƒFƒbƒN‚·‚é^‚µ‚È‚¢
-	int AutoCheckSt;									//ƒfƒtƒHƒ‹ƒg‚Ìƒ`ƒFƒbƒN‚ðŽg—p‚·‚é^‚µ‚È‚¢
-	int CheckMax;										//ƒtƒHƒ‹ƒ_–ˆƒ`ƒFƒbƒN”
+	int CheckSt;										//ãƒã‚§ãƒƒã‚¯ã™ã‚‹ï¼ã—ãªã„
+	int AutoCheckSt;									//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ãƒã‚§ãƒƒã‚¯ã‚’ä½¿ç”¨ã™ã‚‹ï¼ã—ãªã„
+	int CheckMax;										//ãƒ•ã‚©ãƒ«ãƒ€æ¯Žãƒã‚§ãƒƒã‚¯æ•°
 
-	char *Comment;										//ƒRƒƒ“ƒg
+	char *Comment;										//ã‚³ãƒ¡ãƒ³ãƒˆ
 
-	struct TPCHECKTIME *tpCheckTime;					//Ž©“®ƒ`ƒFƒbƒNÝ’è
+	struct TPCHECKTIME *tpCheckTime;					//è‡ªå‹•ãƒã‚§ãƒƒã‚¯è¨­å®š
 	int tpCheckTimeCnt;
-	struct TPITEM **ItemList;							//ƒAƒCƒeƒ€ƒŠƒXƒg
+	struct TPITEM **ItemList;							//ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆ
 	int ItemListCnt;
 };
 
-//ƒvƒƒgƒRƒ‹ƒƒjƒ…[
+//ãƒ—ãƒ­ãƒˆã‚³ãƒ«ãƒ¡ãƒ‹ãƒ¥ãƒ¼
 struct TPPROTOCOLMENU{
 	char name[BUFSIZE];
 	char Action[BUFSIZE];
@@ -393,9 +393,9 @@ struct TPPROTOCOLMENU{
 	int Flag;
 };
 
-//ƒvƒƒgƒRƒ‹Ý’èŽæ“¾—p
+//ãƒ—ãƒ­ãƒˆã‚³ãƒ«è¨­å®šå–å¾—ç”¨
 struct TPPROTOCOLSET{
-	long iSize;							/* \‘¢‘Ì‚ÌƒTƒCƒY */
+	long iSize;							/* æ§‹é€ ä½“ã®ã‚µã‚¤ã‚º */
 
 	char Title[BUFSIZE];
 	char FuncHeader[BUFSIZE];
@@ -405,9 +405,9 @@ struct TPPROTOCOLSET{
 	int UpIconIndex;
 };
 
-//ƒvƒƒgƒRƒ‹î•ñŽæ“¾—p
+//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±å–å¾—ç”¨
 struct TPPROTOCOLINFO{
-	long iSize;							/* \‘¢‘Ì‚ÌƒTƒCƒY */
+	long iSize;							/* æ§‹é€ ä½“ã®ã‚µã‚¤ã‚º */
 
 	char scheme[BUFSIZE];
 	char NewMenu[BUFSIZE];
@@ -416,7 +416,30 @@ struct TPPROTOCOLINFO{
 	int tpMenuCnt;
 };
 
-//ƒvƒƒgƒRƒ‹î•ñ
+struct TP_GETTOOL;
+
+//ãƒ—ãƒ­ãƒˆã‚³ãƒ«DLLã®é–¢æ•° (http_dll/wwwcdll.h ã¨åŒã˜ã‚·ã‚°ãƒãƒãƒ£)
+typedef int (CALLBACK *PROTOCOL_ITEM_FUNC)(HWND hWnd, struct TPITEM *tpItemInfo);		//Initialize, Start, Timer, Cancel, ItemCheckEnd, InitItem, Property
+typedef int (CALLBACK *PROTOCOL_SOCKET_FUNC)(HWND hWnd, WPARAM wParam, LPARAM lParam, struct TPITEM *tpItemInfo);	//Gethost, Select
+typedef BOOL (CALLBACK *PROTOCOL_CREATEDROPITEM_FUNC)(struct TPITEM *tpItemInfo, char *fPath, char *iPath, char *ret);
+typedef int (CALLBACK *PROTOCOL_DROPFILE_FUNC)(HWND hWnd, char *FileType, char *FilePath, struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_EXECITEM_FUNC)(HWND hWnd, char *Action, struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_FREEITEM_FUNC)(struct TPITEM *tpItemInfo);
+typedef HANDLE (CALLBACK *PROTOCOL_GETITEMTEXT_FUNC)(struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_GETINFO_FUNC)(struct TPPROTOCOLINFO *tpInfo);
+typedef int (CALLBACK *PROTOCOL_ENDNOTIFY_FUNC)(void);
+typedef int (CALLBACK *PROTOCOL_PROTOCOLPROPERTY_FUNC)(HWND hWnd);
+typedef int (CALLBACK *GETPROTOCOLLIST_FUNC)(int cnt, struct TPPROTOCOLSET *tpProtocolSet);
+
+//ãƒ„ãƒ¼ãƒ«DLLã®é–¢æ•°
+typedef int (CALLBACK *GETTOOLLIST_FUNC)(int cnt, struct TP_GETTOOL *tpToolInfo);
+typedef int (CALLBACK *GETTOOLHIDEOPTION_FUNC)(char *FuncName);
+typedef int (CALLBACK *TOOL_FUNC)(HWND hWnd, struct TPITEM **ToolItemList, int ToolItemListCnt, int type, int CheckType);
+
+//CallTreeItem ã‹ã‚‰å‘¼ã°ã‚Œã‚‹é–¢æ•°
+typedef void (CALLBACK *TREEITEM_FUNC)(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+
+//ãƒ—ãƒ­ãƒˆã‚³ãƒ«æƒ…å ±
 struct TP_PROTOCOL{
 	char scheme[BUFSIZE];
 	char NewMenu[BUFSIZE];
@@ -434,30 +457,30 @@ struct TP_PROTOCOL{
 	int Icon;
 
 	HANDLE lib;
-	FARPROC Func_Initialize;
-	FARPROC Func_Start;
-	FARPROC Func_Gethost;
-	FARPROC Func_Select;
-	FARPROC Func_Timer;
-	FARPROC Func_Cancel;
-	FARPROC Func_ItemCheckEnd;
-	FARPROC Func_CreateDropFile;
-	FARPROC Func_DropFile;
-	FARPROC Func_ExecItem;
-	FARPROC Func_InitItem;
-	FARPROC Func_FreeItem;
+	PROTOCOL_ITEM_FUNC Func_Initialize;
+	PROTOCOL_ITEM_FUNC Func_Start;
+	PROTOCOL_SOCKET_FUNC Func_Gethost;
+	PROTOCOL_SOCKET_FUNC Func_Select;
+	PROTOCOL_ITEM_FUNC Func_Timer;
+	PROTOCOL_ITEM_FUNC Func_Cancel;
+	PROTOCOL_ITEM_FUNC Func_ItemCheckEnd;
+	PROTOCOL_CREATEDROPITEM_FUNC Func_CreateDropFile;
+	PROTOCOL_DROPFILE_FUNC Func_DropFile;
+	PROTOCOL_EXECITEM_FUNC Func_ExecItem;
+	PROTOCOL_ITEM_FUNC Func_InitItem;
+	PROTOCOL_FREEITEM_FUNC Func_FreeItem;
 };
 
-//ƒŠƒXƒgƒrƒ…[ƒJƒ‰ƒ€
+//ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã‚«ãƒ©ãƒ 
 struct TPLVCOLUMN{
 	char Title[BUFSIZE];
 	int fmt;
 	long p;
 };
 
-//ƒc[ƒ‹Žæ“¾—p
+//ãƒ„ãƒ¼ãƒ«å–å¾—ç”¨
 struct TP_GETTOOL{
-	long iSize;				/* \‘¢‘Ì‚ÌƒTƒCƒY */
+	long iSize;				/* æ§‹é€ ä½“ã®ã‚µã‚¤ã‚º */
 
 	char title[BUFSIZE];
 	char func[BUFSIZE];
@@ -466,9 +489,9 @@ struct TP_GETTOOL{
 	int Action;
 };
 
-//ƒc[ƒ‹
+//ãƒ„ãƒ¼ãƒ«
 struct TP_TOOLS{
-	long iSize;				/* \‘¢‘Ì‚ÌƒTƒCƒY */
+	long iSize;				/* æ§‹é€ ä½“ã®ã‚µã‚¤ã‚º */
 
 	char title[BUFSIZE];
 	char func[BUFSIZE];
@@ -483,7 +506,7 @@ struct TP_TOOLS{
 	char CommandLine[BUFSIZE];
 
 	HANDLE lib;
-	FARPROC Func_Tool;
+	TOOL_FUNC Func_Tool;
 };
 
 
@@ -590,7 +613,7 @@ int ImageListFileIconAdd(HIMAGELIST IconList, char *FileName, UINT uFlags, int I
 //--------------------------
 //	TreeView
 //--------------------------
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param);
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, TREEITEM_FUNC Func, LPARAM Param);
 HWND CreateTreeView(HWND hWnd);
 void TreeView_Initialize(HWND hWnd);
 HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, char *Title, int Icon, int IconSel);

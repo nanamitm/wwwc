@@ -35,10 +35,10 @@
 #define FMT_TEXT				2
 #define FMT_HDROP				3
 
-#define NEWITEMNAME				"V‚µ‚¢ƒAƒCƒeƒ€"
+#define NEWITEMNAME				"æ–°ã—ã„ã‚¢ã‚¤ãƒ†ãƒ "
 
-#define EMSG_ITEMREAD_TITLE		"ƒAƒCƒeƒ€‚Ì“Ç‚İ‚İ"
-#define EMSG_ITEMREAD			"ƒAƒCƒeƒ€î•ñƒtƒ@ƒCƒ‹‚ªŠJ‚¯‚Ü‚¹‚ñ‚Å‚µ‚½B"
+#define EMSG_ITEMREAD_TITLE		"ã‚¢ã‚¤ãƒ†ãƒ ã®èª­ã¿è¾¼ã¿"
+#define EMSG_ITEMREAD			"ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ãƒ•ã‚¡ã‚¤ãƒ«ãŒé–‹ã‘ã¾ã›ã‚“ã§ã—ãŸã€‚"
 
 
 /**************************************************************************
@@ -49,7 +49,7 @@ char **DropFileNameList;
 int DropFileCnt;
 UINT MenuEffect;
 
-//ŠO•”QÆ
+//å¤–éƒ¨å‚ç…§
 extern char CuDir[];
 extern char TempDir[];
 extern struct TP_PROTOCOL *tpProtocol;
@@ -78,7 +78,7 @@ static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag);
 
 	DragDrop_SetDropFileMem
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ìì¬
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -87,7 +87,7 @@ HDROP DragDrop_SetDropFileMem(HWND hWnd)
 	if(DropFileNameList == NULL){
 		return NULL;
 	}
-	//ƒhƒƒbƒvƒtƒ@ƒCƒ‹ƒŠƒXƒg‚Ìì¬
+	//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ãƒªã‚¹ãƒˆã®ä½œæˆ
 	return CreateDropFileMem(DropFileNameList, DropFileCnt);
 }
 
@@ -96,7 +96,7 @@ HDROP DragDrop_SetDropFileMem(HWND hWnd)
 
 	CreateDropFile
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹—p•¶š—ñ‚Ìì¬
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ç”¨æ–‡å­—åˆ—ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -114,7 +114,7 @@ static BOOL CreateDropFile(struct TPITEM *tpItemInfo, char *fPath, char *iPath, 
 	}
 	if((tpProtocol + ProtocolIndex)->Func_CreateDropFile == NULL){
 		wsprintf(buf, "%sCreateDropItem", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_CreateDropFile = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_CreateDropFile = (PROTOCOL_CREATEDROPITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_CreateDropFile == NULL){
 		return FALSE;
@@ -127,7 +127,7 @@ static BOOL CreateDropFile(struct TPITEM *tpItemInfo, char *fPath, char *iPath, 
 
 	CreateTreeDropFiles
 
-	ŠK‘w“I‚Éƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ì•¶š—ñ‚ğì¬
+	éšå±¤çš„ã«ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®æ–‡å­—åˆ—ã‚’ä½œæˆ
 
 ******************************************************************************/
 
@@ -148,7 +148,7 @@ static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *i
 	}
 	ItemCnt = tpTreeInfo->ItemListCnt;
 
-	//ƒAƒCƒeƒ€‚Ìƒhƒƒbƒvƒtƒ@ƒCƒ‹•¶š—ñ‚ğì¬
+	//ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«æ–‡å­—åˆ—ã‚’ä½œæˆ
 	for(i = 0;i < ItemCnt;i++){
 		if((*(tpTreeInfo->ItemList + i)) == NULL){
 			continue;
@@ -156,7 +156,7 @@ static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *i
 		CreateDropFile((*(tpTreeInfo->ItemList + i)), fPath, iPath, ItemPath);
 	}
 
-	//ƒhƒƒbƒvƒtƒ@ƒCƒ‹—pˆêƒfƒBƒŒƒNƒgƒŠ‚Ìì¬
+	//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ç”¨ä¸€æ™‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ä½œæˆ
 	cItem = TreeView_GetChild(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	while(cItem != NULL){
 		TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), cItem, buf);
@@ -175,7 +175,7 @@ static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *i
 
 	DragDrop_CreateTreeDropFiles
 
-	ƒcƒŠ[ƒrƒ…[ƒAƒCƒeƒ€‚æ‚èƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ì•¶š—ñ‚ğì¬
+	ãƒ„ãƒªãƒ¼ãƒ“ãƒ¥ãƒ¼ã‚¢ã‚¤ãƒ†ãƒ ã‚ˆã‚Šãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®æ–‡å­—åˆ—ã‚’ä½œæˆ
 
 ******************************************************************************/
 
@@ -189,20 +189,20 @@ BOOL DragDrop_CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *TempDirName)
 
 	DropFileCnt = 0;
 
-	//ƒtƒ@ƒCƒ‹–¼‚Ì”z—ñ‚ğì¬‚·‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«åã®é…åˆ—ã‚’ä½œæˆã™ã‚‹
 	if((DropFileNameList = (char **)GlobalAlloc(GPTR, sizeof(char *))) == NULL){
 		ErrMsg(hWnd, GetLastError(), NULL);
 		return FALSE;
 	}
 
-	//ƒhƒƒbƒvƒtƒ@ƒCƒ‹—pˆêƒfƒBƒŒƒNƒgƒŠ‚Ìì¬
+	//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ç”¨ä¸€æ™‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ä½œæˆ
 	wsprintf(DndPath, "%s\\%s", TempDir, TempDirName);
 	if(GetDirSerch(DndPath) == TRUE){
 		DeleteDirTree(DndPath, TRUE);
 	}
 	CreateDirectory(DndPath, NULL);
 
-	//ƒhƒƒbƒvƒtƒ@ƒCƒ‹—p•¶š—ñ‚Ìì¬
+	//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ç”¨æ–‡å­—åˆ—ã®ä½œæˆ
 	TreeView_GetItemInfo(GetDlgItem(hWnd, WWWC_TREE), hItem, buf);
 	wsprintf(ItemPath, "%s\\%s", DndPath, buf);
 	CreateDirectory(ItemPath, NULL);
@@ -218,10 +218,10 @@ BOOL DragDrop_CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *TempDirName)
 	lstrcpy(*DropFileNameList, ItemPath);
 	DropFileCnt = 1;
 
-	//ŠK‘w“I‚Éƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ìì¬
+	//éšå±¤çš„ã«ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®ä½œæˆ
 	CreateTreeDropFiles(hWnd, hItem, DndPath, buf);
 
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeItem, 1);
 	WaitCursor(FALSE);
 	return TRUE;
 }
@@ -231,7 +231,7 @@ BOOL DragDrop_CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *TempDirName)
 
 	DragDrop_CreateDropFiles
 
-	ƒŠƒXƒgƒrƒ…[‚Ì‘I‘ğƒAƒCƒeƒ€‚æ‚èƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ì•¶š—ñ‚Ìì¬
+	ãƒªã‚¹ãƒˆãƒ“ãƒ¥ãƒ¼ã®é¸æŠã‚¢ã‚¤ãƒ†ãƒ ã‚ˆã‚Šãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®æ–‡å­—åˆ—ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -246,7 +246,7 @@ BOOL DragDrop_CreateDropFiles(HWND hWnd, char *TempDirName)
 
 	WaitCursor(TRUE);
 
-	//ƒtƒ@ƒCƒ‹–¼‚Ì”z—ñ‚ğì¬‚·‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«åã®é…åˆ—ã‚’ä½œæˆã™ã‚‹
 	DropFileNameList = (char **)GlobalAlloc(GPTR, sizeof(char *) *
 		ListView_GetSelectedCount(GetDlgItem(hWnd, WWWC_LIST)));
 	if(DropFileNameList == NULL){
@@ -307,7 +307,7 @@ BOOL DragDrop_CreateDropFiles(HWND hWnd, char *TempDirName)
 		}
 	}
 
-	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), TreeView_FreeItem, 1);
 	if(DropFileCnt == 0){
 		GlobalFree(DropFileNameList);
 		DropFileNameList = NULL;
@@ -321,7 +321,7 @@ BOOL DragDrop_CreateDropFiles(HWND hWnd, char *TempDirName)
 
 	FreeDropFiles
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ì•¶š—ñ‚ğ‰ğ•ú
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®æ–‡å­—åˆ—ã‚’è§£æ”¾
 
 ******************************************************************************/
 
@@ -329,7 +329,7 @@ void FreeDropFiles(void)
 {
 	int i;
 
-	//ƒtƒ@ƒCƒ‹–¼‚Ì”z—ñ‚ğ‰ğ•ú‚·‚é
+	//ãƒ•ã‚¡ã‚¤ãƒ«åã®é…åˆ—ã‚’è§£æ”¾ã™ã‚‹
 	for(i = 0;i < DropFileCnt;i++){
 		GlobalFree(*(DropFileNameList + i));
 	}
@@ -343,7 +343,7 @@ void FreeDropFiles(void)
 
 	DeleteTmpDropFiles
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹—p‚ÌˆêƒfƒBƒŒƒNƒgƒŠ‚Ìíœ
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ç”¨ã®ä¸€æ™‚ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®å‰Šé™¤
 
 ******************************************************************************/
 
@@ -363,8 +363,8 @@ void DeleteTmpDropFiles(char *TempDirName)
 
 	DragDrop_MouseMove
 
-	ƒEƒBƒ“ƒhƒE“à‚Åƒ}ƒEƒX‚ªˆÚ“®‚µ‚½‚Æ‚«‚Éƒ}ƒEƒX‚Ì‰º‚ÌƒAƒCƒeƒ€‚ğ
-	ƒnƒCƒ‰ƒCƒg•\¦‚É‚·‚é
+	ã‚¦ã‚£ãƒ³ãƒ‰ã‚¦å†…ã§ãƒã‚¦ã‚¹ãŒç§»å‹•ã—ãŸã¨ãã«ãƒã‚¦ã‚¹ã®ä¸‹ã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’
+	ãƒã‚¤ãƒ©ã‚¤ãƒˆè¡¨ç¤ºã«ã™ã‚‹
 
 ******************************************************************************/
 
@@ -382,7 +382,7 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 	if(hPointWnd == GetDlgItem(hWnd, WWWC_TREE)){			//TreeView
 		ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_DROPHILITED);
 
-		//ƒ}ƒEƒX‚Ì‰º‚ÌTreeViewƒAƒCƒeƒ€‚Ìƒnƒ“ƒhƒ‹‚ğæ“¾
+		//ãƒã‚¦ã‚¹ã®ä¸‹ã®TreeViewã‚¢ã‚¤ãƒ†ãƒ ã®ãƒãƒ³ãƒ‰ãƒ«ã‚’å–å¾—
 		hItem = TreeView_GetHiTestItem(GetDlgItem(hWnd, WWWC_TREE));
 		if(hItem == NULL){
 			KillTimer(hWnd, TIMER_TREEEXPAND);
@@ -394,10 +394,10 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 			return TRUE;
 		}
 
-		//ƒ}ƒEƒX‚Ì‰º‚ÌƒAƒCƒeƒ€‚ğƒnƒCƒ‰ƒCƒgó‘Ô‚É‚·‚é
+		//ãƒã‚¦ã‚¹ã®ä¸‹ã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’ãƒã‚¤ãƒ©ã‚¤ãƒˆçŠ¶æ…‹ã«ã™ã‚‹
 		TreeView_SelectDropTarget(GetDlgItem(hWnd, WWWC_TREE), hItem);
 
-		//ƒAƒCƒeƒ€‚ğ‰æ–Êã‚É•\¦‚³‚¹‚é
+		//ã‚¢ã‚¤ãƒ†ãƒ ã‚’ç”»é¢ä¸Šã«è¡¨ç¤ºã•ã›ã‚‹
 		if(TreeView_GetFirstVisible(GetDlgItem(hWnd, WWWC_TREE)) == hItem){
 			TreeView_EnsureVisible(GetDlgItem(hWnd, WWWC_TREE),
 				TreeView_GetPrevVisible(GetDlgItem(hWnd, WWWC_TREE), hItem));
@@ -405,7 +405,7 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 			TreeView_EnsureVisible(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		}
 
-		//ˆê’èŠÔ“¯‚¶ƒAƒCƒeƒ€‚Ìê‡‚Í“WŠJ‚ğs‚¤
+		//ä¸€å®šæ™‚é–“åŒã˜ã‚¢ã‚¤ãƒ†ãƒ ã®å ´åˆã¯å±•é–‹ã‚’è¡Œã†
 		KillTimer(hWnd, TIMER_TREEEXPAND);
 		SetTimer(hWnd, TIMER_TREEEXPAND, 700, NULL);
 		return TRUE;
@@ -414,7 +414,7 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 		KillTimer(hWnd, TIMER_TREEEXPAND);
 		TreeView_SelectDropTarget(GetDlgItem(hWnd, WWWC_TREE), NULL);
 
-		//ƒ}ƒEƒX‚Ì‰º‚ÌListViewƒAƒCƒeƒ€‚ÌƒCƒ“ƒfƒbƒNƒX‚ğæ“¾
+		//ãƒã‚¦ã‚¹ã®ä¸‹ã®ListViewã‚¢ã‚¤ãƒ†ãƒ ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’å–å¾—
 		iItem = ListView_GetHiTestItem(GetDlgItem(hWnd, WWWC_LIST));
 		if(iItem == -1){
 			ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_DROPHILITED);
@@ -428,27 +428,27 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 			}
 		}
 
-		//Šù‚ÉƒnƒCƒ‰ƒCƒg‚³‚ê‚Ä‚¢‚éê‡
+		//æ—¢ã«ãƒã‚¤ãƒ©ã‚¤ãƒˆã•ã‚Œã¦ã„ã‚‹å ´åˆ
 		if(ListView_GetItemState(GetDlgItem(hWnd, WWWC_LIST), iItem, LVIS_DROPHILITED) == LVIS_DROPHILITED){
 			return TRUE;
 		}
 
 		tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), iItem);
 		if(tpItemInfo != NULL){
-			//ƒtƒHƒ‹ƒ_‚Å‚Í‚È‚¢ê‡‚ÍƒnƒCƒ‰ƒCƒg‚ğs‚í‚È‚¢
+			//ãƒ•ã‚©ãƒ«ãƒ€ã§ã¯ãªã„å ´åˆã¯ãƒã‚¤ãƒ©ã‚¤ãƒˆã‚’è¡Œã‚ãªã„
 			ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_DROPHILITED);
 
-			//ƒAƒCƒeƒ€‚ğ‰æ–Êã‚É•\¦‚³‚¹‚é
+			//ã‚¢ã‚¤ãƒ†ãƒ ã‚’ç”»é¢ä¸Šã«è¡¨ç¤ºã•ã›ã‚‹
 			ListView_EnsureVisible(GetDlgItem(hWnd, WWWC_LIST), iItem - 1, TRUE);
 			ListView_EnsureVisible(GetDlgItem(hWnd, WWWC_LIST), iItem + 1, TRUE);
 			return TRUE;
 		}
 
-		//ƒ}ƒEƒX‚Ì‰º‚ÌƒAƒCƒeƒ€‚ğƒnƒCƒ‰ƒCƒgó‘Ô‚É‚·‚é
+		//ãƒã‚¦ã‚¹ã®ä¸‹ã®ã‚¢ã‚¤ãƒ†ãƒ ã‚’ãƒã‚¤ãƒ©ã‚¤ãƒˆçŠ¶æ…‹ã«ã™ã‚‹
 		ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_DROPHILITED);
 		ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), iItem, LVIS_DROPHILITED, LVIS_DROPHILITED);
 
-		//ƒAƒCƒeƒ€‚ğ‰æ–Êã‚É•\¦‚³‚¹‚é
+		//ã‚¢ã‚¤ãƒ†ãƒ ã‚’ç”»é¢ä¸Šã«è¡¨ç¤ºã•ã›ã‚‹
 		ListView_EnsureVisible(GetDlgItem(hWnd, WWWC_LIST), iItem - 1, TRUE);
 		ListView_EnsureVisible(GetDlgItem(hWnd, WWWC_LIST), iItem + 1, TRUE);
 		return TRUE;
@@ -467,7 +467,7 @@ static BOOL DragDrop_MouseMove(HWND hWnd)
 
 	DragDrop_GetHitestFolder
 
-	ƒ}ƒEƒX‚Ì‰º‚ÌƒtƒHƒ‹ƒ_ƒAƒCƒeƒ€‚Ìƒnƒ“ƒhƒ‹‚ğæ“¾‚·‚é
+	ãƒã‚¦ã‚¹ã®ä¸‹ã®ãƒ•ã‚©ãƒ«ãƒ€ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒãƒ³ãƒ‰ãƒ«ã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -495,7 +495,7 @@ static HTREEITEM DragDrop_GetHitestFolder(HWND hWnd)
 		}
 
 		tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), iItem);
-		//ƒtƒHƒ‹ƒ_‚Å‚Í‚È‚¢ê‡‚Í NULL ‚ğ•Ô‚·
+		//ãƒ•ã‚©ãƒ«ãƒ€ã§ã¯ãªã„å ´åˆã¯ NULL ã‚’è¿”ã™
 		if(tpItemInfo != NULL){
 			return TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE));
 		}
@@ -513,7 +513,7 @@ static HTREEITEM DragDrop_GetHitestFolder(HWND hWnd)
 
 	DragDrop_ShowMenu
 
-	ƒhƒ‰ƒbƒO•ƒhƒƒbƒv—p‚Ìƒƒjƒ…[‚ğ•\¦‚·‚é
+	ãƒ‰ãƒ©ãƒƒã‚°ï¼†ãƒ‰ãƒ­ãƒƒãƒ—ç”¨ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‚’è¡¨ç¤ºã™ã‚‹
 
 ******************************************************************************/
 
@@ -522,7 +522,7 @@ static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag)
 	UINT ret;
 	UINT MenuEffect;
 
-	//ƒfƒtƒHƒ‹ƒg‚Ìƒƒjƒ…[€–Ú‚ğİ’è
+	//ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼é …ç›®ã‚’è¨­å®š
 	if(defFlag == TRUE){
 		SetMenuDefaultItem(GetSubMenu(hPOPUP, MENU_POP_DGDP), ID_MENU_DGDP_COPY, 0);
 	}else{
@@ -552,7 +552,7 @@ static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag)
 
 	DragDrop_GetDropItem
 
-	ƒhƒƒbƒvƒAƒCƒeƒ€î•ñ•¶š—ñ‚æ‚èƒAƒCƒeƒ€‚ğì¬
+	ãƒ‰ãƒ­ãƒƒãƒ—ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±æ–‡å­—åˆ—ã‚ˆã‚Šã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆ
 
 ******************************************************************************/
 
@@ -588,7 +588,7 @@ BOOL DragDrop_GetDropItem(HWND hWnd, HGLOBAL hMem, int dwEffect, HTREEITEM hItem
 		WaitCursor(FALSE);
 		return FALSE;
 	}
-	//ƒAƒCƒeƒ€î•ñ‚ğ“Ç‚İ‚Ş
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’èª­ã¿è¾¼ã‚€
 	if(tpTreeInfo->ItemList == NULL){
 		if(ReadTreeMem(hWnd, hItem) == FALSE){
 			MessageBox(hWnd, EMSG_ITEMREAD, EMSG_ITEMREAD_TITLE, MB_ICONSTOP);
@@ -597,7 +597,7 @@ BOOL DragDrop_GetDropItem(HWND hWnd, HGLOBAL hMem, int dwEffect, HTREEITEM hItem
 		}
 	}
 
-	//ƒAƒCƒeƒ€î•ñ•¶š—ñ‚©‚çƒAƒCƒeƒ€‚ğì¬
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±æ–‡å­—åˆ—ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆ
 	if((buf = GlobalLock(hMem)) == NULL){
 		WaitCursor(FALSE);
 		return FALSE;
@@ -617,7 +617,7 @@ BOOL DragDrop_GetDropItem(HWND hWnd, HGLOBAL hMem, int dwEffect, HTREEITEM hItem
 
 	DragDrop_GetDropItemFiles
 
-	ƒhƒƒbƒv‚³‚ê‚½ƒtƒ@ƒCƒ‹‚ğƒvƒƒgƒRƒ‹DLL‚Éˆ—‚³‚¹‚é
+	ãƒ‰ãƒ­ãƒƒãƒ—ã•ã‚ŒãŸãƒ•ã‚¡ã‚¤ãƒ«ã‚’ãƒ—ãƒ­ãƒˆã‚³ãƒ«DLLã«å‡¦ç†ã•ã›ã‚‹
 
 ******************************************************************************/
 
@@ -630,7 +630,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 	int pIndex;
 	int ret;
 
-	//Šg’£q‚ğ’Šo
+	//æ‹¡å¼µå­ã‚’æŠ½å‡º
 	p = buf;
 	r = NULL;
 	while(*p != '\0'){
@@ -645,7 +645,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 		return;
 	}
 	r++;
-	//Šg’£q‚É‘Î‰‚µ‚½ƒvƒƒgƒRƒ‹‚ğæ“¾
+	//æ‹¡å¼µå­ã«å¯¾å¿œã—ãŸãƒ—ãƒ­ãƒˆã‚³ãƒ«ã‚’å–å¾—
 	ProtocolIndex = -1;
 	for(pIndex = 0;pIndex < ProtocolCnt;pIndex++){
 		if(*(tpProtocol[pIndex].FileType) != '\0' && strlistcmp(r, tpProtocol[pIndex].FileType, '\t') == TRUE){
@@ -666,23 +666,23 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 			return;
 		}
 
-		//“]‘—Œ³‚Ìƒtƒ@ƒCƒ‹‚©‚çƒAƒCƒeƒ€ƒŠƒXƒg‚ğæ“¾‚·‚é
+		//è»¢é€å…ƒã®ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã‚’å–å¾—ã™ã‚‹
 		tpFromItemInfo = ReadItemList(buf, &FromCnt, NULL);
 		if(tpFromItemInfo == NULL){
 			return;
 		}
 		UpdateItemFlag = UF_COPY;
-		//“]‘—æ‚ÉƒAƒCƒeƒ€‚ğ’Ç‰Á‚·‚é
+		//è»¢é€å…ˆã«ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¿½åŠ ã™ã‚‹
 		for(i = 0;i < FromCnt;i++){
 			if(*(tpFromItemInfo + i) == NULL){
 				continue;
 			}
 
-			//ƒAƒCƒeƒ€‚Ì’Ç‰Á
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®è¿½åŠ 
 			if(Item_Add(hWnd, hItem, *(tpFromItemInfo + i)) != -1){
 				*(tpFromItemInfo + i) = NULL;
 			}
-			//ƒRƒs[‚ªƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ä‚¢‚éê‡
+			//ã‚³ãƒ”ãƒ¼ãŒã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¦ã„ã‚‹å ´åˆ
 			if(UpdateItemFlag == UF_CANCEL){
 				break;
 			}
@@ -694,10 +694,10 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 		TreeView_FreeItem(hWnd, hItem, 1);
 		return;
 	}
-	//ƒhƒƒbƒvƒtƒ@ƒCƒ‹‚ğˆ—‚·‚éŠÖ”‚ğŒÄ‚Ô
+	//ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã‚’å‡¦ç†ã™ã‚‹é–¢æ•°ã‚’å‘¼ã¶
 	if((tpProtocol + ProtocolIndex)->Func_DropFile == NULL){
 		wsprintf(funcName, "%sDropFile", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_DropFile = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, funcName);
+		(tpProtocol + ProtocolIndex)->Func_DropFile = (PROTOCOL_DROPFILE_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, funcName);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_DropFile == NULL){
 		return;
@@ -713,7 +713,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 
 	switch(ret)
 	{
-	case DROPFILE_NEWITEM:		//ƒAƒCƒeƒ€‚Ì’Ç‰Á
+	case DROPFILE_NEWITEM:		//ã‚¢ã‚¤ãƒ†ãƒ ã®è¿½åŠ 
 		if(Item_Add(hWnd, hItem, tpItemInfo) == -1){
 			FreeItemInfo(tpItemInfo, FALSE);
 			GlobalFree(tpItemInfo);
@@ -733,7 +733,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 
 	DragDrop_GetDropTree
 
-	ƒhƒƒbƒv‚³‚ê‚½ƒfƒBƒŒƒNƒgƒŠ‚ğŠK‘w“I‚Éˆ—‚·‚é
+	ãƒ‰ãƒ­ãƒƒãƒ—ã•ã‚ŒãŸãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‚’éšå±¤çš„ã«å‡¦ç†ã™ã‚‹
 
 ******************************************************************************/
 
@@ -750,9 +750,9 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 		return;
 	}
 
-	//ƒtƒHƒ‹ƒ_–¼‚©‚çTreeViewƒAƒCƒeƒ€‚ğæ“¾
+	//ãƒ•ã‚©ãƒ«ãƒ€åã‹ã‚‰TreeViewã‚¢ã‚¤ãƒ†ãƒ ã‚’å–å¾—
 	if((cItem = TreeView_CheckName(GetDlgItem(hWnd, WWWC_TREE), hItem, fName)) == NULL){
-		//’Ç‰Áæ‚ÌƒtƒHƒ‹ƒ_‚ğŠÜ‚ŞƒpƒX‚Ìê‡‚ÍƒGƒ‰[
+		//è¿½åŠ å…ˆã®ãƒ•ã‚©ãƒ«ãƒ€ã‚’å«ã‚€ãƒ‘ã‚¹ã®å ´åˆã¯ã‚¨ãƒ©ãƒ¼
 		TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, buf, CuDir);
 		if(lstrcmpni(Path, buf, lstrlen(Path)) == 0){
 			char Msg[BUFSIZE * 2];
@@ -762,17 +762,17 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 			return;
 		}
 
-		//ƒtƒHƒ‹ƒ_‚Ì’Ç‰Á
+		//ãƒ•ã‚©ãƒ«ãƒ€ã®è¿½åŠ 
 		cItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE), hItem,
 			(HTREEITEM)TVI_SORT, fName, ICON_DIR_CLOSE, ICON_DIR_OPEN);
 		if(SucceedFromParent == 1){
-			//eî•ñ‚ÌŒp³
+			//è¦ªæƒ…å ±ã®ç¶™æ‰¿
 			CopyAutoTime(hWnd, cItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem));
 		}
 
 		TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), cItem, buf, CuDir);
 		if(GetDirSerch(buf) == FALSE){
-			//ÀƒtƒHƒ‹ƒ_ì¬
+			//å®Ÿãƒ•ã‚©ãƒ«ãƒ€ä½œæˆ
 			CreateDirectory(buf, NULL);
 		}
 	}
@@ -801,7 +801,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
-		//Ä‹A
+		//å†å¸°
 		DragDrop_GetDropTree(hWnd, buf, cItem);
 	} while(FindNextFile(hFindFile, &FindData) == TRUE);
 
@@ -813,7 +813,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 
 	DragDrop_GetDropFiles
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹‚æ‚èƒAƒCƒeƒ€‚Ìì¬
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã‚ˆã‚Šã‚¢ã‚¤ãƒ†ãƒ ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -851,7 +851,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 	}
 
 	ListView_RefreshFolder(hWnd);
-	//’Ç‰ÁƒAƒCƒeƒ€‚Ì‘I‘ğ
+	//è¿½åŠ ã‚¢ã‚¤ãƒ†ãƒ ã®é¸æŠ
 	if(hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		if(ListView_GetNextItem(GetDlgItem(hWnd, WWWC_LIST), -1, LVNI_SELECTED) != -1){
 			ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST),
@@ -863,7 +863,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 	}
 
 	TreeView_SetIconState(hWnd, hItem, 0);
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeItem, 1);
 	WaitCursor(FALSE);
 }
 
@@ -872,7 +872,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 
 	DragDrop_NotifyProc
 
-	ƒhƒ‰ƒbƒOƒƒbƒZ[ƒW
+	ãƒ‰ãƒ©ãƒƒã‚°ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
 
 ******************************************************************************/
 
@@ -928,7 +928,7 @@ LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 			if(tmp == -1 || (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), tmp) != NULL){
 				break;
 			}
-			//“¯ˆêƒtƒHƒ‹ƒ_‚Ìê‡‚Í‹Ö~ƒJ[ƒ\ƒ‹‚É‚·‚é
+			//åŒä¸€ãƒ•ã‚©ãƒ«ãƒ€ã®å ´åˆã¯ç¦æ­¢ã‚«ãƒ¼ã‚½ãƒ«ã«ã™ã‚‹
 			if(DragItemIndex != -1){
 				if(ListView_GetItemState(GetDlgItem(hWnd, WWWC_LIST), tmp, LVIS_SELECTED) == LVIS_SELECTED){
 					pdtn->dwEffect = DROPEFFECT_NONE;

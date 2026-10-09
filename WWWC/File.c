@@ -40,10 +40,10 @@ typedef DWORD (WINAPI *FUNC_GETDISKFREESPACEEX) (LPCTSTR, PULARGE_INTEGER, PULAR
 static HINSTANCE hDll = NULL;
 static FUNC_GETDISKFREESPACEEX _GetDiskFreeSpaceEx = NULL;
 
-//ŠO•”QÆ
+//å¤–éƒ¨å‚ç…§
 extern HINSTANCE g_hinst;
 extern char CuDir[];
-extern HWND WWWCWnd;					//–{‘Ì
+extern HWND WWWCWnd;					//æœ¬ä½“
 extern HTREEITEM RootItem;
 extern HTREEITEM RecyclerItem;
 extern int UpdateItemFlag;
@@ -62,7 +62,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 
 	GetFileSerchSize
 
-	ƒtƒ@ƒCƒ‹‚ÌƒTƒCƒY‚ğæ“¾‚·‚é
+	ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -77,7 +77,7 @@ long GetFileSerchSize(char *FileName)
 	FindClose(hFindFile);
 
 	if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0){
-		//ƒfƒBƒŒƒNƒgƒŠ‚Å‚Í‚È‚¢ê‡‚ÍƒTƒCƒY‚ğ•Ô‚·
+		//ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã§ã¯ãªã„å ´åˆã¯ã‚µã‚¤ã‚ºã‚’è¿”ã™
 		return (long)FindData.nFileSizeLow;
 	}
 	return -1;
@@ -88,7 +88,7 @@ long GetFileSerchSize(char *FileName)
 
 	GetFileMakeDay
 
-	ƒtƒ@ƒCƒ‹‚Ìì¬“ú‚ğæ“¾‚·‚é
+	ãƒ•ã‚¡ã‚¤ãƒ«ã®ä½œæˆæ—¥æ™‚ã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -125,7 +125,7 @@ BOOL GetFileMakeDay(char *FileName, char *buf)
 
 	GetDirSerch
 
-	ƒfƒBƒŒƒNƒgƒŠ‚ª‘¶İ‚·‚é‚©ƒ`ƒFƒbƒN‚·‚é
+	ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãŒå­˜åœ¨ã™ã‚‹ã‹ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 
 ******************************************************************************/
 
@@ -140,7 +140,7 @@ BOOL GetDirSerch(char *fPath)
 	FindClose(hFindFile);
 
 	if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-		//ƒfƒBƒŒƒNƒgƒŠ‚ª‘¶İ‚µ‚½ê‡
+		//ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªãŒå­˜åœ¨ã—ãŸå ´åˆ
 		return TRUE;
 	}
 	return FALSE;
@@ -151,7 +151,7 @@ BOOL GetDirSerch(char *fPath)
 
 	GetPathToFilename
 
-	ƒpƒX‚©‚çƒtƒ@ƒCƒ‹–¼‚ğæ“¾‚·‚é
+	ãƒ‘ã‚¹ã‹ã‚‰ãƒ•ã‚¡ã‚¤ãƒ«åã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -174,7 +174,7 @@ BOOL GetPathToFilename(char *fPath, char *ret)
 
 	CopyDirTree
 
-	ƒfƒBƒŒƒNƒgƒŠ‚ÌƒRƒs[
+	ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ã‚³ãƒ”ãƒ¼
 
 ******************************************************************************/
 
@@ -196,7 +196,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 		return -1;
 	}
 
-	//ƒRƒs[æ‚Ì–¼‘O‚Ìİ’è
+	//ã‚³ãƒ”ãƒ¼å…ˆã®åå‰ã®è¨­å®š
 	wsprintf(nPath, "%s\\%s", NewPath, name);
 	if(lstrcmpi(nPath, Path) == 0){
 		wsprintf(buf, STR_COPYNAME"%s", name);
@@ -205,7 +205,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 			if(ret != NULL){
 				lstrcpy(ret, buf);
 			}
-			//ƒRƒs[‚É¸”s‚µ‘±‚¯‚éê‡‚ÍƒGƒ‰[‚Æ‚·‚é
+			//ã‚³ãƒ”ãƒ¼ã«å¤±æ•—ã—ç¶šã‘ã‚‹å ´åˆã¯ã‚¨ãƒ©ãƒ¼ã¨ã™ã‚‹
 			cnt++;
 			if(cnt > COPYMAX){
 				return -1;
@@ -219,7 +219,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 			CreateDirectory(nPath, NULL);
 		}
 	}
-	//ŒŸõƒpƒX
+	//æ¤œç´¢ãƒ‘ã‚¹
 	wsprintf(sPath, "%s\\*", Path);
 
 	if((hFindFile = FindFirstFile(sPath, &FindData)) == INVALID_HANDLE_VALUE){
@@ -227,7 +227,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 	}
 
 	do{
-		//ƒfƒBƒŒƒNƒgƒŠ‚ÌƒRƒs[
+		//ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ã‚³ãƒ”ãƒ¼
 		if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
 			if(lstrcmp(FindData.cFileName, ".") != 0 && lstrcmp(FindData.cFileName, "..") != 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
@@ -242,36 +242,36 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 		wsprintf(buf2, "%s\\%s", nPath, FindData.cFileName);
 
-		//ƒtƒ@ƒCƒ‹‚ÌƒRƒs[
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚³ãƒ”ãƒ¼
 		if(lstrcmpi(FindData.cFileName, DATAFILENAME) != 0 ||
 			lstrcmpni(nPath, CuDir, lstrlen(CuDir)) != 0 || hWnd == NULL){
 			CopyFile(buf, buf2, TRUE);
 			continue;
 		}
 
-		//“]‘—æ‚Éƒtƒ@ƒCƒ‹‚ª‘¶İ‚µ‚È‚¢ê‡‚ÍAƒtƒ@ƒCƒ‹‚ÌƒRƒs[‚ğs‚¤
+		//è»¢é€å…ˆã«ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãªã„å ´åˆã¯ã€ãƒ•ã‚¡ã‚¤ãƒ«ã®ã‚³ãƒ”ãƒ¼ã‚’è¡Œã†
 		ItemPath = nPath + lstrlen(CuDir);
 		hItem = TreeView_FindItemPath(GetDlgItem(hWnd, WWWC_TREE), RootItem, ItemPath);
 		if(hItem == NULL){
 			CopyFile(buf, buf2, TRUE);
 			continue;
 		}
-		//“]‘—Œ³‚Ìƒtƒ@ƒCƒ‹‚©‚çƒAƒCƒeƒ€ƒŠƒXƒg‚ğæ“¾‚·‚é
+		//è»¢é€å…ƒã®ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã‚’å–å¾—ã™ã‚‹
 		tpFromItemInfo = ReadItemList(buf, &FromCnt, NULL);
 		if(tpFromItemInfo == NULL){
 			continue;
 		}
-		//“]‘—æ‚ÉƒAƒCƒeƒ€‚ğ’Ç‰Á‚·‚é
+		//è»¢é€å…ˆã«ã‚¢ã‚¤ãƒ†ãƒ ã‚’è¿½åŠ ã™ã‚‹
 		for(i = 0;i < FromCnt;i++){
 			if(*(tpFromItemInfo + i) == NULL){
 				continue;
 			}
 
-			//ƒAƒCƒeƒ€‚Ì’Ç‰Á
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®è¿½åŠ 
 			if(Item_Add(hWnd, hItem, *(tpFromItemInfo + i)) != -1){
 				*(tpFromItemInfo + i) = NULL;
 			}
-			//ƒRƒs[‚ªƒLƒƒƒ“ƒZƒ‹‚³‚ê‚Ä‚¢‚éê‡
+			//ã‚³ãƒ”ãƒ¼ãŒã‚­ãƒ£ãƒ³ã‚»ãƒ«ã•ã‚Œã¦ã„ã‚‹å ´åˆ
 			if(UpdateItemFlag == UF_CANCEL){
 				break;
 			}
@@ -297,7 +297,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 
 	DeleteDirTree
 
-	ƒfƒBƒŒƒNƒgƒŠ‚Ìíœ
+	ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®å‰Šé™¤
 
 ******************************************************************************/
 
@@ -343,7 +343,7 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 
 	SetDirTree
 
-	ƒfƒBƒŒƒNƒgƒŠ‚©‚çƒcƒŠ[ƒAƒCƒeƒ€‚ğì¬‚·‚é
+	ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‹ã‚‰ãƒ„ãƒªãƒ¼ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆã™ã‚‹
 
 ******************************************************************************/
 
@@ -370,7 +370,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		}
 		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 
-		//ƒcƒŠ[ƒAƒCƒeƒ€‚ª‘¶İ‚µ‚È‚¢ê‡‚Í’Ç‰Á‚ğs‚¤
+		//ãƒ„ãƒªãƒ¼ã‚¢ã‚¤ãƒ†ãƒ ãŒå­˜åœ¨ã—ãªã„å ´åˆã¯è¿½åŠ ã‚’è¡Œã†
 		if((pItem = TreeView_CheckName(hTreeView, hItem, FindData.cFileName)) == NULL){
 			pItem = TreeView_AllocItem(hTreeView, hItem, (HTREEITEM)TVI_SORT, FindData.cFileName,
 				ICON_DIR_CLOSE, ICON_DIR_OPEN);
@@ -381,7 +381,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 			GetDirInfo(hTreeView, buf, pItem);
 		}
 
-		//Ä‹A
+		//å†å¸°
 		SetDirTree(hTreeView, buf, pItem);
 	} while(FindNextFile(hFindFile, &FindData) == TRUE);
 
@@ -393,7 +393,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 	FindTreeItem
 
-	ƒAƒCƒeƒ€‚©‘¶İ‚·‚é‚©’²‚×‚é
+	ã‚¢ã‚¤ãƒ†ãƒ ã‹å­˜åœ¨ã™ã‚‹ã‹èª¿ã¹ã‚‹
 
 ******************************************************************************/
 
@@ -408,8 +408,8 @@ void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, buf, CuDir);
 
 	if(GetDirSerch(buf) == FALSE){
-		//ƒcƒŠ[‚Ìíœ
-		CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 0);
+		//ãƒ„ãƒªãƒ¼ã®å‰Šé™¤
+		CallTreeItem(hWnd, hItem, TreeView_FreeItem, 0);
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	}
 }
@@ -419,7 +419,7 @@ void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	SaveDirTree
 
-	ƒcƒŠ[ƒAƒCƒeƒ€î•ñ‚ğ•Û‘¶
+	ãƒ„ãƒªãƒ¼ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’ä¿å­˜
 
 ******************************************************************************/
 
@@ -444,13 +444,13 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
-		//ƒtƒHƒ‹ƒ_î•ñ‚Ì•Û‘¶
+		//ãƒ•ã‚©ãƒ«ãƒ€æƒ…å ±ã®ä¿å­˜
 		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 		if((pItem = TreeView_CheckName(hTreeView, hItem, FindData.cFileName)) != NULL){
 			PutDirInfo(hTreeView, buf, pItem);
 		}
 
-		//Ä‹A
+		//å†å¸°
 		SaveDirTree(hTreeView, buf, pItem);
 	} while(FindNextFile(hFindFile, &FindData) == TRUE);
 
@@ -462,7 +462,7 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 	mkDirStr
 
-	ƒfƒBƒŒƒNƒgƒŠ‚ÌŠK‘w‚ğì¬‚·‚é
+	ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®éšå±¤ã‚’ä½œæˆã™ã‚‹
 
 ******************************************************************************/
 
@@ -479,7 +479,7 @@ void mkDirStr(char *buf)
 			*(r++) = *(p++);
 		}else if(*p == '\\' || *p == '/'){
 			*r = '\0';
-			//ƒfƒBƒŒƒNƒgƒŠ‚Ìì¬
+			//ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ä½œæˆ
 			if(GetDirSerch(tmp) == FALSE){
 				CreateDirectory(tmp, NULL);
 			}
@@ -499,7 +499,7 @@ void mkDirStr(char *buf)
 
 	AllocItemStr
 
-	•¶š—ñ‚ğŠm•Û‚µ‚ÄƒRƒs[
+	æ–‡å­—åˆ—ã‚’ç¢ºä¿ã—ã¦ã‚³ãƒ”ãƒ¼
 
 ******************************************************************************/
 
@@ -512,7 +512,7 @@ static char *AllocItemStr(char *buf, char **ret)
 		return buf;
 	}
 
-	//•¶š‚Ì‹æØ‚èˆÊ’u‚Ìæ“¾
+	//æ–‡å­—ã®åŒºåˆ‡ã‚Šä½ç½®ã®å–å¾—
 	for(EndPoint = buf; *EndPoint != '\t' && *EndPoint != '\r' && *EndPoint != '\n' && *EndPoint != '\0'; EndPoint++);
 
 	*ret = (char *)GlobalAlloc(GMEM_FIXED, EndPoint - buf + 2);
@@ -533,7 +533,7 @@ static char *AllocItemStr(char *buf, char **ret)
 
 	LineSetItemInfo
 
-	ƒAƒCƒeƒ€‚Ì•¶š—ñ‚©‚çƒAƒCƒeƒ€‚ğì¬‚·‚é
+	ã‚¢ã‚¤ãƒ†ãƒ ã®æ–‡å­—åˆ—ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆã™ã‚‹
 
 ******************************************************************************/
 
@@ -632,7 +632,7 @@ char *LineSetItemInfo(struct TPITEM *tpItemList, char *t)
 
 	ReadItemList
 
-	ƒtƒ@ƒCƒ‹‚©‚çƒAƒCƒeƒ€ƒŠƒXƒg‚ğì¬‚·‚é
+	ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã‚’ä½œæˆã™ã‚‹
 
 ******************************************************************************/
 
@@ -658,7 +658,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 		return tpItemList;
 	}
 
-	//ƒtƒ@ƒCƒ‹‚ğŠJ‚­
+	//ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
 	hFile = CreateFile(FileName, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(hFile == NULL || hFile == (HANDLE)-1){
 		return NULL;
@@ -668,7 +668,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 		CloseHandle(hFile);
 		return NULL;
 	}
-	//ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş
+	//ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€
 	if(ReadFile(hFile, buf, FileSize, &ret, NULL) == FALSE){
 		GlobalFree(buf);
 		CloseHandle(hFile);
@@ -679,7 +679,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	FileSize = ret;
 	*(buf + FileSize) = '\0';
 
-	//s”‚ÌƒJƒEƒ“ƒg
+	//è¡Œæ•°ã®ã‚«ã‚¦ãƒ³ãƒˆ
 	for(p = buf; *p != '\0'; p++){
 		if(*p == '\n'){
 			LineCnt++;
@@ -687,19 +687,19 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	}
 	*cnt = LineCnt;
 
-	//“Ç‚İ‚İ¸”s
+	//èª­ã¿è¾¼ã¿å¤±æ•—
 	if(FileSize != 0 && LineCnt == 0){
 		GlobalFree(buf);
 		return NULL;
 	}
 
-	//ƒAƒCƒeƒ€î•ñ‚ğŠm•Û
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’ç¢ºä¿
 	tpRetItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * (*cnt));
 	if(tpRetItemList == NULL){
 		abort();
 	}
 	tpItemList = tpRetItemList;
-	//ƒAƒCƒeƒ€î•ñ‚ğæ“¾
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’å–å¾—
 	p = buf;
 	while(*p != '\0'){
 		if((*tpItemList = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM))) == NULL){
@@ -708,7 +708,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 		(*tpItemList)->iSize = sizeof(struct TPITEM);
 		(*tpItemList)->hItem = hItem;
 
-		//ƒAƒCƒeƒ€î•ñ•¶š—ñ‚©‚çƒAƒCƒeƒ€‚ğì¬
+		//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±æ–‡å­—åˆ—ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã‚’ä½œæˆ
 		p = LineSetItemInfo(*tpItemList, p);
 		for(; (*p == '\r' || *p == '\n'); p++);
 		tpItemList++;
@@ -723,7 +723,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 
 	ReadTreeMem
 
-	ƒtƒ@ƒCƒ‹‚©‚çƒAƒCƒeƒ€î•ñ‚ğ“Ç‚İ‚Ş
+	ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’èª­ã¿è¾¼ã‚€
 
 ******************************************************************************/
 
@@ -738,7 +738,7 @@ BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 		return FALSE;
 	}
 
-	//Šù‚É“Ç‚İ‚Ü‚ê‚Ä‚¢‚éê‡
+	//æ—¢ã«èª­ã¿è¾¼ã¾ã‚Œã¦ã„ã‚‹å ´åˆ
 	if(tpTreeInfo->ItemList != NULL){
 		return TRUE;
 	}
@@ -752,7 +752,7 @@ BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 		return FALSE;
 	}
 
-	//ƒ`ƒFƒbƒNİ’è
+	//ãƒã‚§ãƒƒã‚¯è¨­å®š
 	FolderCheckIni(hWnd, hItem);
 	return TRUE;
 }
@@ -762,7 +762,7 @@ BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 
 	ItemSize
 
-	ƒAƒCƒeƒ€î•ñ‚©‚çƒAƒCƒeƒ€‚ğ•¶š—ñ‚É‚µ‚½‚Æ‚«‚ÌƒTƒCƒY‚ğæ“¾‚·‚é
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã‚’æ–‡å­—åˆ—ã«ã—ãŸã¨ãã®ã‚µã‚¤ã‚ºã‚’å–å¾—ã™ã‚‹
 
 ******************************************************************************/
 
@@ -810,7 +810,7 @@ int ItemSize(struct TPITEM *tpItemInfo)
 
 	SetItemString
 
-	ƒAƒCƒeƒ€î•ñ‚©‚çƒAƒCƒeƒ€‚Ì•¶š—ñ‚ğì¬‚·‚é
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‹ã‚‰ã‚¢ã‚¤ãƒ†ãƒ ã®æ–‡å­—åˆ—ã‚’ä½œæˆã™ã‚‹
 
 ******************************************************************************/
 
@@ -881,7 +881,7 @@ char *SetItemString(struct TPITEM *tpItemInfo, char *p)
 
 	SaveItemList
 
-	ƒAƒCƒeƒ€ƒŠƒXƒg‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é
+	ã‚¢ã‚¤ãƒ†ãƒ ãƒªã‚¹ãƒˆã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã™ã‚‹
 
 ******************************************************************************/
 
@@ -898,7 +898,7 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 		return -1;
 	}
 
-	//•Û‘¶‚·‚éƒTƒCƒY‚ğæ“¾
+	//ä¿å­˜ã™ã‚‹ã‚µã‚¤ã‚ºã‚’å–å¾—
 	sLen = 0;
 	for(i = 0;i < ItemCnt;i++){
 		sLen += ItemSize(*(tpItemList + i));
@@ -911,7 +911,7 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 		return 1;
 	}
 
-	//ƒfƒBƒXƒN—e—Ê‚ğƒ`ƒFƒbƒN‚·‚é
+	//ãƒ‡ã‚£ã‚¹ã‚¯å®¹é‡ã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹
 	SetCurrentDirectory(CuDir);
 	if(SaveDriveCheck == 1){
 		if(_GetDiskFreeSpaceEx != NULL){
@@ -952,13 +952,13 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 	}
 	*buf = '\0';
 
-	//ƒAƒCƒeƒ€î•ñ•¶š—ñ‚ğì¬
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±æ–‡å­—åˆ—ã‚’ä½œæˆ
 	p = buf;
 	for(i = 0;i < ItemCnt;i++){
 		p = SetItemString(*(tpItemList + i), p);
 	}
 
-	//•Û‘¶‚·‚éƒtƒ@ƒCƒ‹‚ğŠJ‚­
+	//ä¿å­˜ã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«ã‚’é–‹ã
 	hFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(hFile == NULL || hFile == (HANDLE)-1){
 		ErrMsg(hWnd, GetLastError(), EMSG_SAVE_TITLE);
@@ -981,7 +981,7 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 
 	SaveTreeMem
 
-	ƒAƒCƒeƒ€î•ñ‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚·‚é
+	ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã™ã‚‹
 
 ******************************************************************************/
 
@@ -1005,8 +1005,8 @@ BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem)
 	mkDirStr(buf);
 	wsprintf(FileName, "%s\\"DATAFILENAME, buf);
 
-	//ƒAƒCƒeƒ€î•ñ‚Ì•Û‘¶
-	//•Û‘¶‚É¸”s‚µ‚½ê‡‚ÍA"Item.bak + ”š" ‚Å•Û‘¶‚ğs‚¤
+	//ã‚¢ã‚¤ãƒ†ãƒ æƒ…å ±ã®ä¿å­˜
+	//ä¿å­˜ã«å¤±æ•—ã—ãŸå ´åˆã¯ã€"Item.bak + æ•°å­—" ã§ä¿å­˜ã‚’è¡Œã†
 	f = 0;
 	while((ret = SaveItemList(hWnd, FileName, tpTreeInfo->ItemList, tpTreeInfo->ItemListCnt)) != 1){
 		if(ret == -1){
@@ -1019,7 +1019,7 @@ BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem)
 		wsprintf(FileName, "%s\\Item.bak%d", buf, f);
 	}
 
-	//ƒtƒHƒ‹ƒ_î•ñ‚Ì•Û‘¶
+	//ãƒ•ã‚©ãƒ«ãƒ€æƒ…å ±ã®ä¿å­˜
 	PutDirInfo(hTreeView, buf, hItem);
 	return TRUE;
 }
@@ -1029,7 +1029,7 @@ BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem)
 
 	InitGetDiskFreeSpaceEx
 
-	GetDiskFreeSpaceEx ‚ÌƒAƒhƒŒƒX‚ğæ“¾
+	GetDiskFreeSpaceEx ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’å–å¾—
 
 ******************************************************************************/
 
@@ -1051,7 +1051,7 @@ void InitGetDiskFreeSpaceEx()
 
 	FreeGetDiskFreeSpaceEx
 
-	ƒ‰ƒCƒuƒ‰ƒŠ‚Ì‰ğ•ú
+	ãƒ©ã‚¤ãƒ–ãƒ©ãƒªã®è§£æ”¾
 
 ******************************************************************************/
 
@@ -1068,7 +1068,7 @@ void FreeGetDiskFreeSpaceEx()
 
 	FileSelect
 
-	ƒtƒ@ƒCƒ‹‘I‘ğƒ_ƒCƒAƒƒO‚Ì•\¦
+	ãƒ•ã‚¡ã‚¤ãƒ«é¸æŠãƒ€ã‚¤ã‚¢ãƒ­ã‚°ã®è¡¨ç¤º
 
 ******************************************************************************/
 
@@ -1112,7 +1112,7 @@ int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, c
 
 	SetExecCommandLine
 
-	ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Ìì¬
+	ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -1125,7 +1125,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 		return;
 	}
 
-	// %•¶š ‚Ì•ÏŠ·‚ğs‚¤
+	// %æ–‡å­— ã®å¤‰æ›ã‚’è¡Œã†
 	for(p = buf, r = ret;*p != '\0';p++){
 		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
 			*(r++) = *(p++);
@@ -1147,7 +1147,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = "%";
 				break;
 
-			//•\¦‚·‚éURL,‹ó‚Ìê‡‚Íƒ`ƒFƒbƒN‚·‚éURL
+			//è¡¨ç¤ºã™ã‚‹URL,ç©ºã®å ´åˆã¯ãƒã‚§ãƒƒã‚¯ã™ã‚‹URL
 			case 'u': case 'U':
 				if(tpItemInfo == NULL){
 					break;
@@ -1159,7 +1159,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				}
 				break;
 
-			//•\¦‚·‚éURL,‹ó‚Ìê‡‚Í–³‚µ
+			//è¡¨ç¤ºã™ã‚‹URL,ç©ºã®å ´åˆã¯ç„¡ã—
 			case 'v': case 'V':
 				if(tpItemInfo == NULL){
 					break;
@@ -1167,7 +1167,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->ViewURL;
 				break;
 
-			//ƒ`ƒFƒbƒN‚·‚éURL
+			//ãƒã‚§ãƒƒã‚¯ã™ã‚‹URL
 			case 'c': case 'C':
 				if(tpItemInfo == NULL){
 					break;
@@ -1175,7 +1175,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->CheckURL;
 				break;
 
-			//ƒAƒCƒeƒ€‚Ìƒ^ƒCƒgƒ‹
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®ã‚¿ã‚¤ãƒˆãƒ«
 			case 't': case 'T':
 				if(tpItemInfo == NULL){
 					break;
@@ -1183,7 +1183,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->Title;
 				break;
 
-			//ƒAƒCƒeƒ€‚ÌƒTƒCƒY
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®ã‚µã‚¤ã‚º
 			case 's': case 'S':
 				if(tpItemInfo == NULL){
 					break;
@@ -1191,7 +1191,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->Size;
 				break;
 
-			//ƒAƒCƒeƒ€‚ÌXV“ú(iniƒtƒ@ƒCƒ‹‚ÌƒtƒH[ƒ}ƒbƒg‚ÉˆË‘¶)
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®æ›´æ–°æ—¥æ™‚(iniãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã«ä¾å­˜)
 			case 'd': case 'D':
 				if(tpItemInfo == NULL){
 					break;
@@ -1199,7 +1199,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->Date;
 				break;
 
-			//ƒAƒCƒeƒ€‚Ìƒ`ƒFƒbƒN“ú(iniƒtƒ@ƒCƒ‹‚ÌƒtƒH[ƒ}ƒbƒg‚ÉˆË‘¶)
+			//ã‚¢ã‚¤ãƒ†ãƒ ã®ãƒã‚§ãƒƒã‚¯æ—¥æ™‚(iniãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆã«ä¾å­˜)
 			case 'k': case 'K':
 				if(tpItemInfo == NULL){
 					break;
@@ -1207,7 +1207,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->CheckDate;
 				break;
 
-			//ƒAƒCƒeƒ€‚Éİ’è‚³‚ê‚Ä‚¢‚éƒRƒƒ“ƒg
+			//ã‚¢ã‚¤ãƒ†ãƒ ã«è¨­å®šã•ã‚Œã¦ã„ã‚‹ã‚³ãƒ¡ãƒ³ãƒˆ
 			case 'm': case 'M':
 				if(tpItemInfo == NULL){
 					break;
@@ -1215,14 +1215,14 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = tpItemInfo->Comment;
 				break;
 
-			//Œ»İŠJ‚¢‚Ä‚¢‚éƒtƒHƒ‹ƒ_‚ÌÀÛ‚ÌƒpƒX (’·‚¢Œ`®)
+			//ç¾åœ¨é–‹ã„ã¦ã„ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ã®å®Ÿéš›ã®ãƒ‘ã‚¹ (é•·ã„å½¢å¼)
 			case 'f':
 				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
 					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
 				t = FolderPath;
 				break;
 
-			//Œ»İŠJ‚¢‚Ä‚¢‚éƒtƒHƒ‹ƒ_‚ÌÀÛ‚ÌƒpƒX (’Z‚¢Œ`®)
+			//ç¾åœ¨é–‹ã„ã¦ã„ã‚‹ãƒ•ã‚©ãƒ«ãƒ€ã®å®Ÿéš›ã®ãƒ‘ã‚¹ (çŸ­ã„å½¢å¼)
 			case 'F':
 				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
 					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
@@ -1230,12 +1230,12 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 				t = FolderPath;
 				break;
 
-			//ƒ†[ƒUƒfƒBƒŒƒNƒgƒŠ‚ÌƒpƒX (’·‚¢Œ`®)
+			//ãƒ¦ãƒ¼ã‚¶ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ãƒ‘ã‚¹ (é•·ã„å½¢å¼)
 			case 'p':
 				t = CuDir;
 				break;
 
-			//ƒ†[ƒUƒfƒBƒŒƒNƒgƒŠ‚ÌƒpƒX (’Z‚¢Œ`®)
+			//ãƒ¦ãƒ¼ã‚¶ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã®ãƒ‘ã‚¹ (çŸ­ã„å½¢å¼)
 			case 'P':
 				GetShortPathName(CuDir, FolderPath, MAX_PATH - 1);
 				t = FolderPath;
@@ -1255,7 +1255,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 
 	ExecItemFile
 
-	ƒtƒ@ƒCƒ‹‚Ì‹N“®
+	ãƒ•ã‚¡ã‚¤ãƒ«ã®èµ·å‹•
 
 ******************************************************************************/
 
@@ -1269,13 +1269,13 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 	BOOL b_ret;
 
 	*buf = '\0';
-	//ƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚Ìì¬
+	//ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ã®ä½œæˆ
 	SetExecCommandLine(hWnd, CommandLine, buf, tpItemInfo);
 
 	ExeFilePath = FileName;
 	CommnadLineString = buf;
 
-	//ƒtƒ@ƒCƒ‹–¼‚ªw’è‚³‚ê‚Ä‚¢‚È‚¢ê‡‚ÍƒRƒ}ƒ“ƒhƒ‰ƒCƒ“‚ğİ’è‚·‚éiŠÖ˜A•t‚¯‚ÅÀsj
+	//ãƒ•ã‚¡ã‚¤ãƒ«åãŒæŒ‡å®šã•ã‚Œã¦ã„ãªã„å ´åˆã¯ã‚³ãƒãƒ³ãƒ‰ãƒ©ã‚¤ãƒ³ã‚’è¨­å®šã™ã‚‹ï¼ˆé–¢é€£ä»˜ã‘ã§å®Ÿè¡Œï¼‰
 	if(*ExeFilePath == '\0'){
 		if(*buf == '\0'){
 			return -1;
@@ -1296,10 +1296,10 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 	sei.nShow = SW_SHOWNORMAL;
 	sei.hInstApp = g_hinst;
 
-	//‹N“®
+	//èµ·å‹•
 	b_ret = ShellExecuteEx(&sei);
 	if(WWWCWnd == NULL || IsWindow(WWWCWnd) == 0){
-		//ƒvƒƒZƒX‚Ì‹­§I—¹
+		//ãƒ—ãƒ­ã‚»ã‚¹ã®å¼·åˆ¶çµ‚äº†
 		exit(0);
 	}
 	if(b_ret == FALSE){
@@ -1310,12 +1310,12 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 	}
 	WaitCursor(FALSE);
 
-	//“¯Šú‚µ‚È‚¢ê‡‚ÍŠÖ”‚ğ”²‚¯‚é
+	//åŒæœŸã—ãªã„å ´åˆã¯é–¢æ•°ã‚’æŠœã‘ã‚‹
 	if(SyncFlag == 0){
 		return 0;
 	}
 
-	//‹N“®ƒAƒvƒŠ‚ªI—¹‚·‚é‚Ü‚Å‘Ò‹@‚·‚é
+	//èµ·å‹•ã‚¢ãƒ—ãƒªãŒçµ‚äº†ã™ã‚‹ã¾ã§å¾…æ©Ÿã™ã‚‹
 	EnableWindow(hWnd, FALSE);
 	while(WaitForSingleObject(sei.hProcess, 0) == WAIT_TIMEOUT){
 		DoEvents();
@@ -1330,7 +1330,7 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 
 	CreateDropFileMem
 
-	ƒhƒƒbƒvƒtƒ@ƒCƒ‹‚Ìì¬
+	ãƒ‰ãƒ­ãƒƒãƒ—ãƒ•ã‚¡ã‚¤ãƒ«ã®ä½œæˆ
 
 ******************************************************************************/
 
@@ -1351,13 +1351,13 @@ HDROP CreateDropFileMem(char **FileName, int cnt)
 	}
 
 	lpDropFile = (LPDROPFILES) GlobalLock(hDrop);
-	lpDropFile->pFiles = sizeof(DROPFILES);		//ƒtƒ@ƒCƒ‹–¼‚ÌƒŠƒXƒg‚Ü‚Å‚ÌƒIƒtƒZƒbƒg
+	lpDropFile->pFiles = sizeof(DROPFILES);		//ãƒ•ã‚¡ã‚¤ãƒ«åã®ãƒªã‚¹ãƒˆã¾ã§ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆ
 	lpDropFile->pt.x = 0;
 	lpDropFile->pt.y = 0;
 	lpDropFile->fNC = FALSE;
 	lpDropFile->fWide = FALSE;
 
-	//\‘¢‘Ì‚ÌŒã‚ë‚Éƒtƒ@ƒCƒ‹–¼‚ÌƒŠƒXƒg‚ğƒRƒs[(ƒtƒ@ƒCƒ‹–¼\0ƒtƒ@ƒCƒ‹–¼\0ƒtƒ@ƒCƒ‹–¼\0\0)
+	//æ§‹é€ ä½“ã®å¾Œã‚ã«ãƒ•ã‚¡ã‚¤ãƒ«åã®ãƒªã‚¹ãƒˆã‚’ã‚³ãƒ”ãƒ¼(ãƒ•ã‚¡ã‚¤ãƒ«å\0ãƒ•ã‚¡ã‚¤ãƒ«å\0ãƒ•ã‚¡ã‚¤ãƒ«å\0\0)
 	buf = (char *)(lpDropFile + 1);
 	for (i = 0; i < cnt; i++) {
 		lstrcpy(buf, *(FileName + i));
