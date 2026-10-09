@@ -93,7 +93,7 @@ static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame)
 		p++;
 	}
 	for(r = URL; *p != '\"' && *p != '\0'; p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 		}else if(*p == '\\'){
 			p++;
@@ -105,7 +105,7 @@ static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame)
 	for(; (*p == '\"' || *p == ',') && *p != '\0'; p++);
 
 	for(r = Title; *p != '\"' && *p != '\0'; p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 		}else if(*p == '\\'){
 			p++;
@@ -117,7 +117,7 @@ static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame)
 	for(; (*p == '\"' || *p == ',') && *p != '\0'; p++);
 
 	for(r = Frame; *p != '\"' && *p != '\0'; p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 		}else if(*p == '\\'){
 			p++;

@@ -87,7 +87,7 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	GetModuleFileName(ghinst, CuDir, BUFSIZE - 1);
 	p = r = CuDir;
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if(*p == '\\' || *p == '/'){
 			r = p;

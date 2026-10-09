@@ -329,7 +329,7 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_SETTEXT, 0, (LPARAM)tmp);
 
 			for(r = p = buf; *p != '\0'; p++){
-				if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+				if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 					p++;
 				}else if(*p == '\\' || *p == '/'){
 					r = p;

@@ -359,10 +359,14 @@ static char *GetTitle(char *buf)
 
 	//JIS を SJIS に変換
 	SjisBuf = SrcConv(buf, lstrlen(buf) + 1);
+	if(SjisBuf == NULL){
+		return NULL;
+	}
 
 	//タイトルタグのサイズを取得
 	len = GetTagContentSize(SjisBuf, TITLE_TAG);
 	if(len == 0){
+		GlobalFree(SjisBuf);
 		return NULL;
 	}
 
@@ -377,7 +381,7 @@ static char *GetTitle(char *buf)
 
 	if(rc == FALSE){
 		GlobalFree(ret);
-		ret = NULL;
+		return NULL;
 	}
 	//特殊文字の変換
 	ConvHTMLChar(ret);
@@ -404,7 +408,7 @@ static void SetErrorString(struct TPITEM *tpItemInfo, char *buf, BOOL HeadFlag)
 
 	r = buf;
 	if(HeadFlag == TRUE){
-		for(; *r != ' '; r++);
+		for(; *r != ' ' && *r != '\0'; r++);
 		r = (*r == ' ') ? r + 1 : buf;
 	}
 
@@ -591,6 +595,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 	struct TPHTTP *tpHTTP;
 	char chtime[BUFSIZE];
 	char *headcontent;
+	char *p;
 	int CmpMsg = ST_DEFAULT;
 	int len;
 
@@ -627,16 +632,17 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 			tpItemInfo->OldDate = CreateOldData(tpItemInfo->Date);
 
 			//日付形式の変換
+			p = headcontent;
 			if(DateConv(headcontent, chtime) == 0){
-				lstrcpy(headcontent, chtime);
+				p = chtime;
 			}
 			/* アイテムに今回のチェック内容をセットする */
 			if(tpItemInfo->Date != NULL){
 				GlobalFree(tpItemInfo->Date);
 			}
-			tpItemInfo->Date = (char *)GlobalAlloc(GMEM_FIXED, sizeof(char) * lstrlen(headcontent) + ((CmpMsg == ST_UP) ? 2 : 1));
+			tpItemInfo->Date = (char *)GlobalAlloc(GMEM_FIXED, sizeof(char) * lstrlen(p) + ((CmpMsg == ST_UP) ? 2 : 1));
 			if(tpItemInfo->Date != NULL){
-				lstrcpy(tpItemInfo->Date, headcontent);
+				lstrcpy(tpItemInfo->Date, p);
 				if(CmpMsg == ST_UP){
 					//日付の変更を示す記号の付加
 					lstrcat(tpItemInfo->Date, "*");
@@ -894,7 +900,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		return CHECK_ERROR;
 	}
 	p++;
-	for(r = tmp; *p != ' ' && *p != '\0'; p++, r++){
+	for(r = tmp; *p != ' ' && *p != '\0' && r - tmp < BUFSIZE - 1; p++, r++){
 		*r = *p;
 	}
 	*r = '\0';
@@ -1659,6 +1665,9 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 	WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
 
 	dwSize = BUFSIZE;
+	if (tpItemInfo->DLLData1 != NULL) {
+		dwSize += lstrlen(tpItemInfo->DLLData1);
+	}
 	if (Proxy == 1 && pUsePass == 1) {
 		dwSize += (lstrlen(pUser) + 1 + lstrlen(pPass)) * 13 / 10;
 	}
@@ -2169,7 +2178,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 		GetPrivateProfileString("InternetShortcut", "URL", "", URL, MAXSIZE - 1, FilePath);
 
 		for(r = p = FilePath; *p != '\0'; p++){
-			if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 				p++;
 			}else if(*p == '\\' || *p == '/'){
 				r = p + 1;
