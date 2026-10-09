@@ -42,6 +42,7 @@
 #define MENU_STR_NEWITEM				"新規作成(&N)"
 
 #define ABOUTTITLE						"バージョン情報"
+#define ABOUT_MODIFIED						"(WWWC 1.1.3 を元にした改変版)"
 
 #define IMSG_DOUBLESTART				"既に起動しています"
 

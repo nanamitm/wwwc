@@ -73,6 +73,8 @@
 		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<A HREF="#http_proxy">Proxy設定</A>
 		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
+			<A HREF="#http_secure">HTTPS の証明書とパスワード</A>
+		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<A HREF="#http_menu">メニュー</A>
 		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<A HREF="#http_brows">ブラウザに表示</A>
@@ -135,7 +137,8 @@
 		<TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<H3><A NAME="install">インストール</A></H3>
 		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT">
-			<P>Windows XP, Vista, 7, 8, 8.1, 10で動作します。</P>
+			<P>Windows 10, 11で動作します。</P>
+			<P>64bit 版 (x64) と 32bit 版 (x86) があります。64bit 版では 32bit のプラグイン DLL は使えません。</P>
 			<P>ダウンロードしたファイルを適当なフォルダに展開して、その中の <STRONG>WWWC.exe</STRONG> を実行するだけです。</P>
 			<P>初めて起動するとWWWCのフォルダ内にユーザ名のフォルダが作成され、ユーザ毎の設定内容が保存されます。</P>
 			<P>レジストリは使用しないためアンインストールを行うときは WWWCのフォルダを削除するだけでいいです。</P>
@@ -229,6 +232,7 @@
 			「起動時にウィンドウを表示しない」を設定すると起動時にウィンドウを表示しないでタスクトレイのアイコンが表示されるだけになります。</P>
 			<P>更新時の動作で「メッセージを出す」を設定すると更新チェックが終わったときに更新アイテムが存在すると更新メッセージを表示します。
 			「音を鳴らす」を設定すると更新チェックが終わって更新アイテムが存在すると音を鳴らすようにします。鳴らす音を設定することもできます。</P>
+			<P>「表示テーマ」では、ライト / ダーク / Windows の設定に従う から画面の表示を選べます。既定は「Windows の設定に従う」で、Windows の「アプリ モードを選ぶ」の設定に合わせて切り替わります。ダーク表示は Windows 10 1809 以降で有効です。</P>
 			<P>更に細かい表示や動作の設定を行いたい場合は、WWWC.exe が存在するフォルダ内にあるユーザディレクトリ（Windowsにログインしたユーザ名）の中にある「user.ini」を編集することで可能です。
 			設定方法は「<A HREF="ini_sample.txt">ini_sample.txt</A>」を参考にしてください。設定を行うときは WWWC を終了しておいてください。</P>
 		</TD></TR>
@@ -324,6 +328,15 @@
 			他にアイテムのプロパティで設定と違うProxyを使用するように設定することもできます。</P>
 		</TD></TR>
 
+		<!-- HTTPS の証明書とパスワード -->
+		<TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
+			<H3><A NAME="http_secure">HTTPS の証明書とパスワード</A></H3>
+		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT">
+			<P>HTTPS のアイテムでは、サーバの証明書を検証します。証明書に問題がある (自己署名の証明書、期限切れ、名前が一致しないなど) 場合はチェックエラーになります。</P>
+			<P>LAN 内の機器など、証明書に問題があっても信頼できるサーバをチェックする場合は、アイテムのプロパティで「オプション」のタブを開いて、「証明書のエラーを無視する」を設定してください。</P>
+			<P>アイテムの認証とProxyの認証のパスワードは、Windows の機能 (DPAPI) で暗号化して保存します。暗号化したパスワードはそのPCでしか使えないため、アイテム情報や設定を別のPCに移した場合は、パスワードを入力し直してください。また、暗号化したパスワードは Ver 1.1.3 以前の WWWC では読めません。</P>
+		</TD></TR>
+
 		<!-- メニュー -->
 		<TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<H3><A NAME="http_menu">メニュー</A></H3>
@@ -406,7 +419,8 @@
 		<TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT" BGCOLOR="#A6CAF0">
 			<H3><A NAME="info">サポート</A></H3>
 		</TD></TR><TR><TD WIDTH="30"><FONT COLOR="#FFFFFF">&nbsp;</FONT></TD><TD ALIGN="LEFT">
-			<P>最新情報、サポート情報、各種ツールなどは<STRONG><A HREF="https://www.nakka.com/wwwc/">WWWCのサイト</A></STRONG>から入手することができます。</P>
+			<P>このバージョン (Ver 1.2.0) は、WWWC Ver 1.1.3 を元に改変したものです。改変版についての問い合わせは、オリジナルの作者ではなく改変版の配布元にお願いします。</P>
+			<P>オリジナルの WWWC の情報や各種ツールなどは<STRONG><A HREF="https://www.nakka.com/wwwc/">WWWCのサイト</A></STRONG>から入手することができます。</P>
 			<P>このプログラムによって起きたいかなる障害も作者は責任を持ちません。大切なファイルはバックアップをとっておくことを強く薦めます。</P>
 		</TD></TR>
 
