@@ -461,7 +461,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 {
 	struct TPCHECKTIME *tpCheckTimeItem;
 	char buf[BUFSIZE];
-	long wndParam;
+	LONG_PTR wndParam;
 	HWND pWnd;
 
 	//日 の取得
@@ -492,7 +492,7 @@ static BOOL SetAutoCheckInfo(HWND hDlg)
 	}
 
 	//自動チェック情報の取得
-	wndParam = GetWindowLong(hDlg, GWL_USERDATA);
+	wndParam = GetWindowLongPtr(hDlg, GWLP_USERDATA);
 	if(wndParam == 0){
 		//新規追加の場合は確保
 		tpCheckTimeItem = (struct TPCHECKTIME *)GlobalAlloc(GPTR, sizeof(struct TPCHECKTIME));
@@ -620,12 +620,12 @@ static BOOL CALLBACK SetAutoCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			CheckDlgButton(hDlg, IDC_RADIO3, 1);
 			CheckDlgButton(hDlg, IDC_RADIO6, 1);
 			EnableAutoTimeContorol(hDlg);
-			SetWindowLong(hDlg, GWL_USERDATA, 0);
+			SetWindowLongPtr(hDlg, GWLP_USERDATA, 0);
 			break;
 		}
 
 		//自動チェック情報をウィンドウに設定
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 
 		tpCheckTimeItem = (struct TPCHECKTIME *)lParam;
 		CheckDlgButton(hDlg, IDC_CHECK_NO, tpCheckTimeItem->flag);
@@ -722,7 +722,7 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 		LVS_EX_ONECLICKACTIVATE | LVS_EX_FULLROWSELECT |
 		SendDlgItemMessage(hDlg, IDC_LIST_AUTOTIME, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
 
-	SetWindowLong(hDlg, GWL_USERDATA, (long)PropItem);
+	SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)PropItem);
 
 	if(PropItem == NULL){
 		//オプション画面からの呼び出し
@@ -808,7 +808,7 @@ static void SetAutoCheckList(HWND hDlg)
 	HTREEITEM hItem;
 	int i, TimeSize;
 
-	if(GetWindowLong(hDlg, GWL_USERDATA) == 0){
+	if(GetWindowLongPtr(hDlg, GWLP_USERDATA) == 0){
 		//オプション画面からの呼び出しの場合
 		if(tpCheckTime != NULL){
 			GlobalFree(tpCheckTime);
@@ -838,7 +838,7 @@ static void SetAutoCheckList(HWND hDlg)
 	}
 
 	//フォルダ設定画面からの呼び出しの場合
-	hItem = (HTREEITEM)GetWindowLong(hDlg, GWL_USERDATA);
+	hItem = (HTREEITEM)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(WWWCWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
 		return;
@@ -904,7 +904,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 	HTREEITEM hItem;
 	int i, TimeSize;
 
-	hItem = (HTREEITEM)GetWindowLong(hDlg, GWL_USERDATA);
+	hItem = (HTREEITEM)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
 	tpTreeInfo = (struct TPTREE *)GlobalAlloc(GPTR, sizeof(struct TPTREE));
 	if(tpTreeInfo == NULL){

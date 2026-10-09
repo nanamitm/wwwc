@@ -936,7 +936,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			EndDialog(hDlg, FALSE);
 			break;
 		}
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_SETTEXT, 0, lParam);
 		break;
 
@@ -948,7 +948,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		switch(wParam)
 		{
 		case IDOK:
-			buf = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			buf = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(buf == NULL){
 				EndDialog(hDlg, FALSE);
 				break;

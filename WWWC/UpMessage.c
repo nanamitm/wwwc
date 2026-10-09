@@ -1265,7 +1265,7 @@ void ExeAction(HWND hDlg, WPARAM wParam)
 
 static void SetBannerSubClass(HWND hWnd)
 {
-	BannerWindowProcedure = (WNDPROC)SetWindowLong(hWnd, GWL_WNDPROC, (long)SubClassBannerProc);
+	BannerWindowProcedure = (WNDPROC)SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)SubClassBannerProc);
 }
 
 
@@ -1279,7 +1279,7 @@ static void SetBannerSubClass(HWND hWnd)
 
 static void DelBannerSubClass(HWND hWnd)
 {
-	SetWindowLong(hWnd, GWL_WNDPROC, (long)BannerWindowProcedure);
+	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)BannerWindowProcedure);
 	BannerWindowProcedure = NULL;
 }
 

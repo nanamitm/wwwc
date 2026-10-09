@@ -59,8 +59,8 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 {
-	if(TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem) == (HTREEITEM)*((long *)Param)){
-		(HTREEITEM)*((long *)Param) = hItem;
+	if(TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem) == *((HTREEITEM *)Param)){
+		*((HTREEITEM *)Param) = hItem;
 	}
 }
 
@@ -160,7 +160,7 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	case WM_INITDIALOG:
 		folWnd = hDlg;
 
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		ret = (char *)lParam;
 		if(ret == NULL){
 			EndDialog(hDlg, FALSE);
@@ -189,7 +189,7 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDOK:
-			ret = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			ret = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(ret == NULL){
 				EndDialog(hDlg, FALSE);
 				break;

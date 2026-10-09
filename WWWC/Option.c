@@ -314,7 +314,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		tpItemInfo = (struct TPITEM *)lParam;
 		if(tpItemInfo == NULL){
 			EndDialog(hDlg, FALSE);
@@ -365,7 +365,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 
 		case IDOK:
-			tpItemInfo = (struct TPITEM *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(tpItemInfo == NULL){
 				EndDialog(hDlg, FALSE);
 				break;

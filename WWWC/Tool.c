@@ -451,7 +451,7 @@ static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, GWL_USERDATA, (LONG)lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)lParam);
 
 		tpSetTool = (struct TP_TOOLS *)lParam;
 		SetWindowText(GetDlgItem(hDlg, IDC_STATIC_FILENAME), tpSetTool->FileName);
@@ -508,7 +508,7 @@ static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 				break;
 			}
 
-			tpSetTool = (struct TP_TOOLS *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpSetTool = (struct TP_TOOLS *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
 			hLib = LoadLibrary(tpSetTool->FileName);
 			if(hLib == NULL){
@@ -716,7 +716,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		SendDlgItemMessage(hDlg, IDC_SPIN_MENUINDEX,
 			UDM_SETRANGE, 0, (LPARAM)MAKELONG((short)100, (short)-1));
 
-		SetWindowLong(hDlg, GWL_USERDATA, (LONG)lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)lParam);
 		ToolInfoToDialog(hDlg, (struct TP_TOOLS *)lParam, funcStr);
 
 		SendMessage(hDlg, WM_COMMAND, IDC_CHECK_WINDOWMENU, 0);
@@ -916,7 +916,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				MessageBox(hDlg, EMSG_NOINPUT, EMSG_NOINPUT_TITLE, MB_OK | MB_ICONEXCLAMATION);
 				break;
 			}
-			tpSetTool = (struct TP_TOOLS *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpSetTool = (struct TP_TOOLS *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
 			lstrcpy(tpSetTool->title, buf);
 			*tpSetTool->FileName = '\0';

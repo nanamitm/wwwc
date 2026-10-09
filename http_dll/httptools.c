@@ -147,7 +147,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			EndDialog(hDlg, FALSE);
 			break;
 		}
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_SETTEXT, 0, lParam);
 		break;
 
@@ -159,7 +159,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		switch(wParam)
 		{
 		case IDOK:
-			buf = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			buf = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(buf == NULL){
 				EndDialog(hDlg, FALSE);
 				break;
@@ -639,7 +639,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, DWL_USER, (long)lParam);
+		SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 
 		i = 0;
 		lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -715,7 +715,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch(wParam)
 		{
 		case IDOK:
-			pWnd = (HWND)GetWindowLong(hDlg, DWL_USER);
+			pWnd = (HWND)GetWindowLongPtr(hDlg, DWLP_USER);
 			if((SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), -1, LVNI_SELECTED)) == -1){
 				break;
 			}

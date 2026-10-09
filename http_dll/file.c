@@ -289,7 +289,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	{
 	case WM_INITDIALOG:
 		/* ウィンドウにアイテム情報を待避する */
-		SetWindowLong(hDlg,DWL_USER,(long)lParam);
+		SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
 
 		tpItemInfo = (struct TPITEM *)lParam;
 		
@@ -340,7 +340,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 		case IDOK:
 			/* ウィンドウからアイテムの情報を取得する */
-			tpItemInfo = (struct TPITEM *)GetWindowLong(hDlg, DWL_USER);
+			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, DWLP_USER);
 			
 			/* タイトル */
 			if(tpItemInfo->Title != NULL){

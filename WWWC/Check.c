@@ -576,7 +576,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 	if(TrayIcon == 1 && TrayMessage(hWnd, NIM_MODIFY, TRAY_ID, TrayIcon_Chaeck, buf) == FALSE){
 		TrayMessage(hWnd, NIM_ADD, TRAY_ID, TrayIcon_Chaeck, buf);
 	}
-	SetClassLong(hWnd, GCL_HICON, (long)TrayIcon_Chaeck_Win);
+	SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)TrayIcon_Chaeck_Win);
 
 	//既にチェック中の場合
 	if(gCheckFlag == 1){
@@ -1517,7 +1517,7 @@ void CheckEndProc(HWND hWnd)
 	if(TrayIcon == 1 && TrayMessage(hWnd, NIM_MODIFY, TRAY_ID, vIcon, buf) == FALSE){
 		TrayMessage(hWnd, NIM_ADD, TRAY_ID, vIcon, buf);
 	}
-	SetClassLong(hWnd, GCL_HICON, (long)TrayIcon_Main_Win);
+	SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)TrayIcon_Main_Win);
 
 	if(CmdCheckEnd == TRUE){
 		if(UPcnt > 0 && CmdNoUpCheckEnd == TRUE){
