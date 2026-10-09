@@ -58,6 +58,7 @@
 #define STR_ERROR_HEADER				"ヘッダを解析できませんでした。"
 #define STR_ERROR_MOVE					"転送エラー"
 #define STR_ERROR_TIMEOUT				"タイムアウトしました。"
+#define STR_ERROR_CERT					"サーバ証明書を検証できませんでした。(プロパティの「証明書のエラーを無視する」で無視できます)"
 
 #define STR_STATUS_GETHOST				"ホスト情報を取得しています..."
 #define STR_STATUS_CONNECT				"接続中..."

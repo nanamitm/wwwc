@@ -441,6 +441,24 @@ static void SetHttpError(struct TPITEM *tpItemInfo, char *def, char *func)
 	char *buf;
 
 	err = GetLastError();
+	switch (err) {
+	case ERROR_WINHTTP_SECURE_FAILURE:
+	case ERROR_WINHTTP_SECURE_INVALID_CA:
+	case ERROR_WINHTTP_SECURE_CERT_CN_INVALID:
+	case ERROR_WINHTTP_SECURE_CERT_DATE_INVALID:
+	case ERROR_WINHTTP_SECURE_CERT_WRONG_USAGE:
+	case ERROR_WINHTTP_SECURE_INVALID_CERT:
+	case ERROR_WINHTTP_SECURE_CERT_REVOKED:
+	case ERROR_WINHTTP_SECURE_CERT_REV_FAILED:
+		//証明書のエラー
+		buf = (char *)HeapAlloc(GetProcessHeap(), 0, lstrlen(STR_ERROR_CERT) + 3 + 10 + 3 + lstrlen(func) + 1);
+		if (buf != NULL) {
+			wsprintf(buf, "%s (%u): %s", STR_ERROR_CERT, err, func);
+			SetErrorString(tpItemInfo, buf, FALSE);
+			HeapFree(GetProcessHeap(), 0, buf);
+		}
+		return;
+	}
 	if (err == NO_ERROR) {
 		buf = (char *)HeapAlloc(GetProcessHeap(), 0, lstrlen(def) + 2 + lstrlen(func) + 1);
 		wsprintf(buf, "%s :%s", def, func);
@@ -1657,12 +1675,15 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 		HTTP_FreeItem(tpItemInfo);
 		return -1;
 	}
-	DWORD dwFlags =
-		SECURITY_FLAG_IGNORE_UNKNOWN_CA |
-		SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
-		SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
-		SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
-	WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
+	//証明書は検証する。アイテムで無視が指定されている場合のみ証明書のエラーを無視する
+	if (GetOptionInt(tpItemInfo->Option2, OP2_IGNORECERT) == 1) {
+		DWORD dwFlags =
+			SECURITY_FLAG_IGNORE_UNKNOWN_CA |
+			SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
+			SECURITY_FLAG_IGNORE_CERT_CN_INVALID |
+			SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+		WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
+	}
 
 	dwSize = BUFSIZE;
 	if (tpItemInfo->DLLData1 != NULL) {

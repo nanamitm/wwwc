@@ -51,6 +51,7 @@
 #define OP2_USER						5
 #define OP2_PASS						6
 #define OP2_REFERER						7
+#define OP2_IGNORECERT					8
 
 #define LVM_FIRST						0x1000      // ListView messages
 #define LVM_SETEXTENDEDLISTVIEWSTYLE	(LVM_FIRST + 54)
