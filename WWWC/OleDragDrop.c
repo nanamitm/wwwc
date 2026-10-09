@@ -194,7 +194,7 @@ static HRESULT APIPRIVATE OLE_IDropTarget_Internal_SendMessage(LPDROPTARGET pThi
 	pdtn->grfKeyState = grfKeyState;	/* キー、マウスボタンの状態 */
 	pdtn->cfFormat = cfFormat;			/* クリップボードフォーマット */
 	if (pdo) {
-		pdtn->hMem = sm.hGlobal;			/* 実データ */
+		pdtn->hMem = (cfFormat != 0) ? sm.hGlobal : NULL;			/* 実データ */
 	}
 	pdtn->pdo = pdo;					/* IDataObject */
 
