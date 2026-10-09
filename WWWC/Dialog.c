@@ -61,7 +61,7 @@ extern char AniIcon[];			//アニメーションbitmap
 static HPALETTE SetPalette(HWND hWnd, LPBITMAPINFOHEADER lpBi);
 static void ShowStretchDIB(HDC hdc, char *mDIB,
 						   int x, int y, int x2, int y2, int xx, int yy);
-static BOOL CALLBACK TitleProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK TitleProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -164,7 +164,7 @@ static void ShowStretchDIB(HDC hdc, char *mDIB, int x, int y, int x2, int y2, in
 
 ******************************************************************************/
 
-static BOOL CALLBACK TitleProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK TitleProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PBITMAPINFO pbi;
 	PAINTSTRUCT ps;
@@ -277,7 +277,7 @@ static BOOL CALLBACK TitleProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 	//背景を設定
 	case WM_CTLCOLORDLG:
-		return (int)hBrush;
+		return (INT_PTR)hBrush;
 
 	case WM_COMMAND:
 		switch(LOWORD(wParam))
@@ -339,7 +339,7 @@ void CloseTitleWindow(HWND tWnd)
 
 ******************************************************************************/
 
-BOOL CALLBACK AniProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK AniProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	PAINTSTRUCT ps;
 	HDC hdc;

@@ -767,7 +767,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 			(HTREEITEM)TVI_SORT, fName, ICON_DIR_CLOSE, ICON_DIR_OPEN);
 		if(SucceedFromParent == 1){
 			//êeèÓïÒÇÃåpè≥
-			CopyAutoTime(hWnd, cItem, (long)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem));
+			CopyAutoTime(hWnd, cItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem));
 		}
 
 		TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), cItem, buf, CuDir);
@@ -876,7 +876,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 
 ******************************************************************************/
 
-long DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
+LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	LPIDROPTARGET_NOTIFY pdtn;
 	HTREEITEM DnDItem;

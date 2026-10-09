@@ -79,9 +79,9 @@ static void init_themes(void);
 static void themes_free(void);
 #endif	//OP_XP_STYLE
 static void AllocGetText(HWND hEdit, char **buf);
-static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -126,7 +126,7 @@ static void themes_free(void)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-long open_theme(const HWND hWnd, const WCHAR *class_name)
+LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name)
 {
 	static FARPROC _OpenThemeData = NULL;
 
@@ -139,7 +139,7 @@ long open_theme(const HWND hWnd, const WCHAR *class_name)
 	if(_OpenThemeData == NULL){
 		return 0;
 	}
-	return (long)_OpenThemeData(hWnd, class_name);
+	return (LONG_PTR)_OpenThemeData(hWnd, class_name);
 }
 #endif	//OP_XP_STYLE
 
@@ -153,7 +153,7 @@ long open_theme(const HWND hWnd, const WCHAR *class_name)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-void close_theme(long hTheme)
+void close_theme(LONG_PTR hTheme)
 {
 	static FARPROC _CloseThemeData = NULL;
 
@@ -180,7 +180,7 @@ void close_theme(long hTheme)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme)
+BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 {
 	static FARPROC _DrawThemeBackground = NULL;
 	DWORD state = 0;
@@ -305,7 +305,7 @@ static void AllocGetText(HWND hEdit, char **buf)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	HICON hIcon;
@@ -314,7 +314,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		tpItemInfo = (struct TPITEM *)lParam;
 		if(tpItemInfo == NULL){
 			EndDialog(hDlg, FALSE);
@@ -365,7 +365,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 
 		case IDOK:
-			tpItemInfo = (struct TPITEM *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(tpItemInfo == NULL){
 				EndDialog(hDlg, FALSE);
 				break;
@@ -438,7 +438,7 @@ BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 
 ******************************************************************************/
 
-static void CALLBACK FindPropTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindPropTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -457,7 +457,7 @@ int FindPropItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindPropTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, (FARPROC)FindPropTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -543,7 +543,7 @@ LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPTREE *tpTreeInfo;
 	HTREEITEM cItem;
@@ -690,7 +690,7 @@ static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_FOLDER];
@@ -742,7 +742,7 @@ int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 
@@ -861,7 +861,7 @@ static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 int ViewProperties(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_OPTION];

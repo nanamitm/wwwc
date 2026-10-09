@@ -26,7 +26,7 @@ static long all_alloc_size = 0;
 #ifdef MEM_CHECK
 #define ADDRESS_CNT		100000
 #define DEBUG_ADDRESS	0
-static long address[ADDRESS_CNT];
+static LONG_PTR address[ADDRESS_CNT];
 static int address_index;
 #endif	// MEM_CHECK
 
@@ -45,9 +45,9 @@ void *mem_alloc(const DWORD size)
 #ifdef MEM_CHECK
 	if (address_index < ADDRESS_CNT) {
 		if (address_index == DEBUG_ADDRESS) {
-			address[address_index] = (long)mem;
+			address[address_index] = (LONG_PTR)mem;
 		} else {
-			address[address_index] = (long)mem;
+			address[address_index] = (LONG_PTR)mem;
 		}
 		address_index++;
 	}
@@ -71,9 +71,9 @@ void *mem_calloc(const DWORD size)
 #ifdef MEM_CHECK
 	if (address_index < ADDRESS_CNT) {
 		if (address_index == DEBUG_ADDRESS) {
-			address[address_index] = (long)mem;
+			address[address_index] = (LONG_PTR)mem;
 		} else {
-			address[address_index] = (long)mem;
+			address[address_index] = (LONG_PTR)mem;
 		}
 		address_index++;
 	}
@@ -97,7 +97,7 @@ void mem_free(void **mem)
 			int i;
 
 			for (i = 0; i < ADDRESS_CNT; i++) {
-				if (address[i] == (long)*mem) {
+				if (address[i] == (LONG_PTR)*mem) {
 					address[i] = 0;
 					break;
 				}

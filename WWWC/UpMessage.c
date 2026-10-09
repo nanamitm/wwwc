@@ -307,10 +307,10 @@ static BOOL ListView_UpGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, lvItem->pszText, tmp2);
 			}
 
-		}else if((char *)*((long *)((long)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)) != NULL){
+		}else if(*((char **)((char *)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)) != NULL){
 			//アイテム情報とカラム情報からテキストを設定
 			lstrcpyn(lvItem->pszText,
-				(char *)*((long *)((long)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
+				*((char **)((char *)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
 
 		}else{
 			*(lvItem->pszText) = '\0';
@@ -897,7 +897,7 @@ static void ShowUpMessage(HWND hDlg)
 		}
 		ListView_InsertItemEx(GetDlgItem(hDlg, WWWC_LIST),
 			(char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-			(long)*(ViewUpItemList + i), -1);
+			(LPARAM)*(ViewUpItemList + i), -1);
 		UpItemCnt++;
 	}
 
@@ -1265,7 +1265,7 @@ void ExeAction(HWND hDlg, WPARAM wParam)
 
 static void SetBannerSubClass(HWND hWnd)
 {
-	BannerWindowProcedure = (WNDPROC)SetWindowLong(hWnd, GWL_WNDPROC, (long)SubClassBannerProc);
+	BannerWindowProcedure = (WNDPROC)SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)SubClassBannerProc);
 }
 
 
@@ -1279,7 +1279,7 @@ static void SetBannerSubClass(HWND hWnd)
 
 static void DelBannerSubClass(HWND hWnd)
 {
-	SetWindowLong(hWnd, GWL_WNDPROC, (long)BannerWindowProcedure);
+	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)BannerWindowProcedure);
 	BannerWindowProcedure = NULL;
 }
 
@@ -1312,7 +1312,7 @@ static LRESULT CALLBACK SubClassBannerProc(HWND hWnd, UINT msg, WPARAM wParam,LP
 
 ******************************************************************************/
 
-BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	RECT WindowRect, lvRect;
 	char buf[BUFSIZE];

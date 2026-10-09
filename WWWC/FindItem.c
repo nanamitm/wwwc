@@ -91,15 +91,15 @@ extern char LvFindColumn[];
 
 static BOOL AddFindItem(struct TPITEM *NewItemInfo);
 static void FreeFindItemList(void);
-static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void FindStart(HWND hDlg);
 static LPARAM TabCtrl_GetlParam(HWND hTabCtrl, int iItem);
 static void TabCtrl_SetlParam(HWND hTabCtrl, int iItem, LPARAM lParam);
 static void InitializeFindWindow(HWND hDlg);
 static void SizeFindWindow(HWND hDlg);
 static void CloseFindWindow(HWND hDlg);
-static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT Tab_NotifyProc(HWND hWnd, LPARAM lParam, WPARAM wParam);
 static LRESULT FindListViewHeaderNotifyProc(HWND hWnd, LPARAM lParam, struct TPLVCOLUMN *ColInfo);
 static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem);
@@ -167,7 +167,7 @@ static void FreeFindItemList(void)
 
 ******************************************************************************/
 
-static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	struct TPFINDINFO *FindInfo = (struct TPFINDINFO *)Param;
@@ -273,10 +273,10 @@ static void FindStart(HWND hDlg)
 
 	if(tpFindInfo.FindSub == TRUE){
 		//再帰して検索
-		CallTreeItem(WWWCWnd, tpFindInfo.hItem, (FARPROC)FindItem, (long)&tpFindInfo);
+		CallTreeItem(WWWCWnd, tpFindInfo.hItem, (FARPROC)FindItem, (LPARAM)&tpFindInfo);
 	}else{
 		//指定のフォルダのみ検索
-		FindItem(WWWCWnd, tpFindInfo.hItem, (long)&tpFindInfo);
+		FindItem(WWWCWnd, tpFindInfo.hItem, (LPARAM)&tpFindInfo);
 	}
 
 	if(FindItemList != NULL){
@@ -289,7 +289,7 @@ static void FindStart(HWND hDlg)
 			}
 			ListView_InsertItemEx(GetDlgItem(hDlg, WWWC_LIST),
 				(char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-				(long)*(FindItemList + i), i);
+				(LPARAM)*(FindItemList + i), i);
 			ListView_SetItemState(GetDlgItem(hDlg, WWWC_LIST), i,
 				(((*(FindItemList + i))->CheckSt == 1) ? INDEXTOOVERLAYMASK(ICON_ST_NOCHECK) : 0), LVIS_OVERLAYMASK);
 		}
@@ -518,7 +518,7 @@ static void CloseFindWindow(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hCombo;
 	struct TPFINDINFO *FindInfo;
@@ -641,7 +641,7 @@ static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
 ******************************************************************************/
 
-static BOOL CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPFINDINFO *FindInfo;
 
@@ -816,10 +816,10 @@ static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, lvItem->pszText, tmp2);
 			}
 
-		}else if((char *)*((long *)((long)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)) != NULL){
+		}else if(*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)) != NULL){
 			//アイテム情報とカラム情報からテキストを設定
 			lstrcpyn(lvItem->pszText,
-				(char *)*((long *)((long)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
+				*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
 
 		}else{
 			*(lvItem->pszText) = '\0';
@@ -856,7 +856,7 @@ static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 
 ******************************************************************************/
 
-BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	RECT WindowRect;
 	char buf[BUFSIZE];

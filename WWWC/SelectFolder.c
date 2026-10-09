@@ -43,10 +43,10 @@ extern HTREEITEM RootItem;
 	Local Function Prototypes
 **************************************************************************/
 
-static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param);
-static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void CreateTree(HWND hDlg, HTREEITEM hItem);
-static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -57,10 +57,10 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 ******************************************************************************/
 
-static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
-	if(TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem) == (HTREEITEM)*((long *)Param)){
-		(HTREEITEM)*((long *)Param) = hItem;
+	if(TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem) == *((HTREEITEM *)Param)){
+		*((HTREEITEM *)Param) = hItem;
 	}
 }
 
@@ -73,13 +73,13 @@ static void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	TV_INSERTSTRUCT tvitn;
 	TV_ITEM tvit;
 	HTREEITEM pItem;
 	char buf[BUFSIZE];
-	long l;
+	HTREEITEM l;
 
 	tvit.mask = TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE | TVIF_PARAM | TVIF_STATE;
 	tvit.hItem = hItem;
@@ -108,12 +108,12 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 		tvitn.hParent = (HTREEITEM)TVI_ROOT;
 	}else{
 		pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
-		l = (long)pItem;
-		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), (FARPROC)FindTreeItem, (long)&l);
-		if(l == (long)pItem){
+		l = pItem;
+		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), (FARPROC)FindTreeItem, (LPARAM)&l);
+		if(l == pItem){
 			return;
 		}
-		tvitn.hParent = (HTREEITEM)l;
+		tvitn.hParent = l;
 	}
 	tvitn.item = tvit;
 
@@ -135,7 +135,7 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 static void CreateTree(HWND hDlg, HTREEITEM hItem)
 {
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)CreateTreeItem, (long)hItem);
+	CallTreeItem(WWWCWnd, RootItem, (FARPROC)CreateTreeItem, (LPARAM)hItem);
 	TreeView_Expand(GetDlgItem(hDlg, WWWC_TREE), TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), TVE_EXPAND);
 }
 
@@ -148,7 +148,7 @@ static void CreateTree(HWND hDlg, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HTREEITEM hItem;
 	char *ret;
@@ -160,7 +160,7 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	case WM_INITDIALOG:
 		folWnd = hDlg;
 
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		ret = (char *)lParam;
 		if(ret == NULL){
 			EndDialog(hDlg, FALSE);
@@ -189,7 +189,7 @@ static BOOL CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDOK:
-			ret = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			ret = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(ret == NULL){
 				EndDialog(hDlg, FALSE);
 				break;

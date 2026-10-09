@@ -52,7 +52,7 @@ extern int LvSIconSize;
 **************************************************************************/
 
 static BOOL AddProtocol(struct TP_PROTOCOL *NewProtocol);
-static BOOL CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -127,7 +127,7 @@ static BOOL AddTool(struct TP_TOOLS *NewTool)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_PROTOCOL tpProtocolInfo;
 	struct TPPROTOCOLSET tpProtocolSet;

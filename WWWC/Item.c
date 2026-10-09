@@ -54,7 +54,7 @@ extern int DefNoCheck;
 
 static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction);
 static void SetCopyItemInfo(struct TPITEM *tpItemInfo, HWND IconWnd, HWND InfoWnd);
-static BOOL CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static int UpdateItemInfo(HWND hWnd, struct TPITEM *tpToItemInfo, struct TPITEM *tpFromItemInfo);
 static BOOL Item_SelectDelete(HWND hWnd);
 static BOOL FolderDelete(HWND hWnd);
@@ -755,7 +755,7 @@ static void SetCopyItemInfo(struct TPITEM *tpItemInfo, HWND IconWnd, HWND InfoWn
 
 ******************************************************************************/
 
-static BOOL CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HICON hIcon;
 	char buf[BUFSIZE * 2];
@@ -968,7 +968,7 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 				if(tpListViewItemInfo != *(tpTreeInfo->ItemList + i)){
 					continue;
 				}
-				ListView_SetlParam(GetDlgItem(hWnd, WWWC_LIST), j, (long)NewItemInfo);
+				ListView_SetlParam(GetDlgItem(hWnd, WWWC_LIST), j, (LPARAM)NewItemInfo);
 				//チェックする/しない設定
 				ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), j,
 					((NewItemInfo->CheckSt == 1) ? INDEXTOOVERLAYMASK(ICON_ST_NOCHECK) : 0), LVIS_OVERLAYMASK);
@@ -992,7 +992,7 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 
 		if(hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 			ListView_InsertItemEx(GetDlgItem(hWnd, WWWC_LIST), (char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-				(long)(*(tpItemList + i)), -1);
+				(LPARAM)(*(tpItemList + i)), -1);
 			//チェックする/しない設定
 			ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST),
 				ListView_GetItemCount(GetDlgItem(hWnd, WWWC_LIST)) - 1,
@@ -1705,7 +1705,7 @@ void Item_MainItemIni(HWND hMainWnd, HWND hWnd, struct TPITEM **tpItemList, int 
 
 ******************************************************************************/
 
-void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;
@@ -2151,7 +2151,7 @@ BOOL ClearRecycler(HWND hWnd, BOOL Flag)
 	tpTreeInfo->CheckSt = 0;
 	tpTreeInfo->AutoCheckSt = 1;
 	tpTreeInfo->Comment = NULL;
-	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, (long)tpTreeInfo);
+	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, (LPARAM)tpTreeInfo);
 
 	TreeView_SetIconState(hWnd, RecyclerItem, 0);
 

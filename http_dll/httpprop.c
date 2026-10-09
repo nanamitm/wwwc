@@ -79,11 +79,11 @@ static void AddItemInfo(HWND hWnd, struct TPITEM *tpItemInfo);
 static struct TPITEM *GetItemInfo(HWND hWnd);
 static void DeleteItemInfo(struct TPITEM *tpItemInfo);
 static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i);
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void ReqTypeEnable(HWND hDlg);
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -229,7 +229,7 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char tmp[BUFSIZE];
@@ -438,7 +438,7 @@ static void ReqTypeEnable(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -582,7 +582,7 @@ static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -722,7 +722,7 @@ static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 
 __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[3];
@@ -797,7 +797,7 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 ******************************************************************************/
 
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	BOOL EnableFlag;
@@ -925,7 +925,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 ******************************************************************************/
 
-static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char *buf;
 
@@ -936,7 +936,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			EndDialog(hDlg, FALSE);
 			break;
 		}
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_SETTEXT, 0, lParam);
 		break;
 
@@ -948,7 +948,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		switch(wParam)
 		{
 		case IDOK:
-			buf = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			buf = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(buf == NULL){
 				EndDialog(hDlg, FALSE);
 				break;
@@ -978,7 +978,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	int i;
@@ -1101,7 +1101,7 @@ static BOOL CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 
 __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[2];

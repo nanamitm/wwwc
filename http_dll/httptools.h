@@ -17,7 +17,7 @@
 	Function Prototypes
 **************************************************************************/
 
-BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 #endif
 /* End of source */

@@ -56,7 +56,7 @@ static HDDEDATA CALLBACK DDECallback(WORD wType, WORD wFmt, HCONV hConv, HSZ hsz
 static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame);
 static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL);
 static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser);
-static int SetListItem(HWND hListView, char *buf, int Img, long lp, int iItem);
+static int SetListItem(HWND hListView, char *buf, int Img, LPARAM lp, int iItem);
 static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView);
 
 
@@ -136,7 +136,7 @@ static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame)
 
 ******************************************************************************/
 
-static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char *buf;
 
@@ -147,7 +147,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			EndDialog(hDlg, FALSE);
 			break;
 		}
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_SETTEXT, 0, lParam);
 		break;
 
@@ -159,7 +159,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		switch(wParam)
 		{
 		case IDOK:
-			buf = (char *)GetWindowLong(hDlg, GWL_USERDATA);
+			buf = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(buf == NULL){
 				EndDialog(hDlg, FALSE);
 				break;
@@ -189,7 +189,7 @@ static BOOL CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	int i;
@@ -559,7 +559,7 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 
 ******************************************************************************/
 
-static int SetListItem(HWND hListView, char *buf,int Img,long lp,int iItem)
+static int SetListItem(HWND hListView, char *buf,int Img,LPARAM lp,int iItem)
 {
 	LV_ITEM LvItem;
 
@@ -625,7 +625,7 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 ******************************************************************************/
 
-BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM **ItemList;
 	LV_COLUMN lvc;
@@ -639,7 +639,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, DWL_USER, (long)lParam);
+		SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 
 		i = 0;
 		lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -715,7 +715,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch(wParam)
 		{
 		case IDOK:
-			pWnd = (HWND)GetWindowLong(hDlg, DWL_USER);
+			pWnd = (HWND)GetWindowLongPtr(hDlg, DWLP_USER);
 			if((SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), -1, LVNI_SELECTED)) == -1){
 				break;
 			}
@@ -960,7 +960,7 @@ BOOL DDE_SetBrowseURL(HWND hWnd, char *browser, char *URL)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetBrowserProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetBrowserProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 

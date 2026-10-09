@@ -407,7 +407,7 @@ static void ListView_AddProtocol(HWND hListView, struct TP_PROTOCOL *tpProtocolI
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_PROTOCOL tpProtocolInfo;
 	struct TPPROTOCOLSET tpProtocolSet;
@@ -544,7 +544,7 @@ static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
 	char buf[BUFSIZE];
@@ -708,7 +708,7 @@ static BOOL CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 ******************************************************************************/
 
-BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LV_COLUMN lvc;
 	FARPROC Func_ProtocolProperty;
@@ -720,7 +720,7 @@ BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 	int SelectItem;
 	int i;
 #ifdef OP_XP_STYLE
-	static long hThemeUp, hThemeDown;
+	static LONG_PTR hThemeUp, hThemeDown;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)
