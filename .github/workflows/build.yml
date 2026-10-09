@@ -1,0 +1,75 @@
+name: Build and test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: ${{ matrix.configuration }} ${{ matrix.platform }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+        platform: [x86, x64]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: microsoft/setup-msbuild@v2
+
+      # The projects use the VS 2026 toolset (v145). When the runner image does not
+      # have it yet, build with the newest installed toolset instead.
+      - name: Select the platform toolset
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          # MSVC 14.5x = v145 (VS 2026), 14.3x-14.4x = v143 (VS 2022)
+          $msvc = Get-ChildItem "$vs\VC\Tools\MSVC" -Directory | ForEach-Object { [version]$_.Name }
+          Write-Host "Visual Studio: $vs"
+          Write-Host "MSVC: $($msvc -join ', ')"
+          $toolset = if ($msvc | Where-Object { $_.Minor -ge 50 }) { 'v145' }
+                     elseif ($msvc | Where-Object { $_.Minor -ge 30 }) { 'v143' }
+          if (-not $toolset) { throw "no supported MSVC toolset (v143 or later) found" }
+          Write-Host "Using $toolset"
+          "TOOLSET=$toolset" >> $env:GITHUB_ENV
+          if ($toolset -ne 'v145') { "::notice::v145 is not installed on this runner; built with $toolset" }
+
+      - name: Build
+        shell: pwsh
+        run: >
+          msbuild WWWC.sln -m -nologo -warnAsError
+          -p:Configuration=${{ matrix.configuration }}
+          -p:Platform=${{ matrix.platform }}
+          -p:PlatformToolset=${{ env.TOOLSET }}
+
+      - name: Test
+        if: matrix.configuration == 'Release'
+        shell: pwsh
+        run: |
+          $bin = if ('${{ matrix.platform }}' -eq 'x64') { 'x64\Release' } else { 'Release' }
+          ./tests/run-tests.ps1 -BinDir $bin
+
+      - name: Upload binaries
+        if: matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: wwwc-${{ matrix.platform }}
+          path: |
+            ${{ matrix.platform == 'x64' && 'x64/Release' || 'Release' }}/WWWC.exe
+            ${{ matrix.platform == 'x64' && 'x64/Release' || 'Release' }}/wwwc.dll
+          retention-days: 14

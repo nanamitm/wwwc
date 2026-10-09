@@ -1,0 +1,273 @@
+## Helpers for the WWWC tests: Win32 window access, a test environment per case,
+## the local test server and simple assertions.
+## The tests drive WWWC through window messages (no mouse or keyboard input),
+## so they do not depend on the foreground window or the system locale.
+
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public static class WwwcWin {
+  [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+  [DllImport("user32.dll", CharSet = CharSet.Ansi, EntryPoint = "SendMessageA")] public static extern IntPtr SendMessageText(IntPtr h, uint m, IntPtr w, string l);
+  [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+  [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr h, int id);
+  [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
+  [DllImport("user32.dll")] public static extern bool MoveWindow(IntPtr h, int x, int y, int w, int hh, bool r);
+  [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
+  [DllImport("user32.dll")] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] public static extern int GetClassName(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  public delegate bool EnumProc(IntPtr h, IntPtr l);
+  [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
+  [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+}
+
+// Cross-process access to WWWC's list view (ANSI, 32-bit or 64-bit WWWC)
+public static class WwwcList {
+  [DllImport("kernel32.dll")] static extern IntPtr OpenProcess(uint a, bool i, uint pid);
+  [DllImport("kernel32.dll")] static extern IntPtr VirtualAllocEx(IntPtr p, IntPtr a, UIntPtr s, uint t, uint pr);
+  [DllImport("kernel32.dll")] static extern bool VirtualFreeEx(IntPtr p, IntPtr a, UIntPtr s, uint t);
+  [DllImport("kernel32.dll")] static extern bool WriteProcessMemory(IntPtr p, IntPtr a, byte[] b, UIntPtr s, out UIntPtr w);
+  [DllImport("kernel32.dll")] static extern bool ReadProcessMemory(IntPtr p, IntPtr a, byte[] b, UIntPtr s, out UIntPtr r);
+  [DllImport("kernel32.dll")] static extern bool CloseHandle(IntPtr h);
+  [DllImport("kernel32.dll")] static extern bool IsWow64Process(IntPtr p, out bool w);
+  [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
+
+  class Remote : IDisposable {
+    public IntPtr hp, mem; public bool is32;
+    public Remote(IntPtr hwnd, int size) {
+      uint pid; GetWindowThreadProcessId(hwnd, out pid);
+      hp = OpenProcess(0x0008 | 0x0010 | 0x0020 | 0x0400, false, pid);
+      IsWow64Process(hp, out is32);
+      mem = VirtualAllocEx(hp, IntPtr.Zero, (UIntPtr)size, 0x3000, 0x04);
+    }
+    public void Write(byte[] b, int off) { UIntPtr w; WriteProcessMemory(hp, mem + off, b, (UIntPtr)b.Length, out w); }
+    public byte[] Read(int off, int n) { var b = new byte[n]; UIntPtr r; ReadProcessMemory(hp, mem + off, b, (UIntPtr)n, out r); return b; }
+    public void Dispose() { VirtualFreeEx(hp, mem, UIntPtr.Zero, 0x8000); CloseHandle(hp); }
+  }
+
+  public static int Count(IntPtr lv) { return (int)SendMessage(lv, 0x1000 + 4, IntPtr.Zero, IntPtr.Zero); }
+
+  // LVITEMA: mask@0 iItem@4 iSubItem@8 state@12 stateMask@16, pszText@20/24 cchTextMax@24/32 (32/64-bit)
+  public static string GetText(IntPtr lv, int item, int sub) {
+    using (var r = new Remote(lv, 2048)) {
+      var it = new byte[88];
+      BitConverter.GetBytes(1).CopyTo(it, 0);
+      BitConverter.GetBytes(item).CopyTo(it, 4);
+      BitConverter.GetBytes(sub).CopyTo(it, 8);
+      if (r.is32) { BitConverter.GetBytes((int)(long)(r.mem + 512)).CopyTo(it, 20); BitConverter.GetBytes(1024).CopyTo(it, 24); }
+      else { BitConverter.GetBytes((long)(r.mem + 512)).CopyTo(it, 24); BitConverter.GetBytes(1024).CopyTo(it, 32); }
+      r.Write(it, 0); r.Write(new byte[1024], 512);
+      SendMessage(lv, 0x1000 + 45, (IntPtr)item, r.mem);   // LVM_GETITEMTEXTA
+      var b = r.Read(512, 1024); int n = Array.IndexOf(b, (byte)0); if (n < 0) n = b.Length;
+      return Encoding.ASCII.GetString(b, 0, n);
+    }
+  }
+
+  // select only the given item (LVM_SETITEMSTATE, LVIS_SELECTED | LVIS_FOCUSED)
+  public static void Select(IntPtr lv, int item) {
+    using (var r = new Remote(lv, 256)) {
+      var it = new byte[88];
+      BitConverter.GetBytes(8).CopyTo(it, 0); BitConverter.GetBytes(3).CopyTo(it, 16);
+      r.Write(it, 0); SendMessage(lv, 0x1000 + 43, (IntPtr)(-1), r.mem);
+      BitConverter.GetBytes(3).CopyTo(it, 12);
+      r.Write(it, 0); SendMessage(lv, 0x1000 + 43, (IntPtr)item, r.mem);
+    }
+  }
+}
+"@
+
+$script:Sjis = [Text.Encoding]::GetEncoding(932)
+$script:TestRoot = Join-Path ([IO.Path]::GetTempPath()) "wwwc-tests"
+$script:Results = New-Object System.Collections.ArrayList
+
+# WWWC command ids (WWWC/resource.h, WWWC/General.h)
+$script:CMD_ALLCHECK = 40002
+$script:CMD_CHECKEND = 40004
+$script:CMD_PROP = 40013
+$script:CMD_ACTION = 52002      # + index of the protocol menu: 3 header, 4 source, 5 title
+$script:ID_LIST = 1002
+
+## ---------------------------------------------------------------- assertions
+
+function Test-Case([string]$Name, [scriptblock]$Body) {
+  $script:CaseErrors = New-Object System.Collections.ArrayList
+  $sw = [Diagnostics.Stopwatch]::StartNew()
+  try { & $Body } catch { [void]$script:CaseErrors.Add("exception: $($_.Exception.Message) at $($_.InvocationInfo.PositionMessage)") }
+  finally { Stop-AllWwwc }
+  $ok = $script:CaseErrors.Count -eq 0
+  [void]$script:Results.Add([pscustomobject]@{ Name = $Name; Passed = $ok; Errors = @($script:CaseErrors); Seconds = [int]$sw.Elapsed.TotalSeconds })
+  if ($ok) { Write-Host "  PASS  $Name ($([int]$sw.Elapsed.TotalSeconds)s)" -ForegroundColor Green }
+  else {
+    Write-Host "  FAIL  $Name" -ForegroundColor Red
+    $script:CaseErrors | ForEach-Object { Write-Host "        $_" -ForegroundColor Red }
+  }
+}
+
+function Assert-True($Condition, [string]$Message) {
+  if (-not $Condition) { [void]$script:CaseErrors.Add($Message) }
+}
+
+function Assert-Equal($Expected, $Actual, [string]$Message) {
+  if ($Expected -ne $Actual) { [void]$script:CaseErrors.Add("$Message (expected '$Expected', actual '$Actual')") }
+}
+
+function Wait-Until([scriptblock]$Condition, [int]$TimeoutSeconds = 15) {
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while ((Get-Date) -lt $deadline) {
+    if (& $Condition) { return $true }
+    Start-Sleep -Milliseconds 200
+  }
+  return [bool](& $Condition)
+}
+
+## ---------------------------------------------------------------- test server
+
+function Start-TestServer([int]$Port) {
+  $script:ServerPort = $Port
+  $script:ServerLog = Join-Path $script:TestRoot "server.log"
+  New-Item -ItemType Directory -Force $script:TestRoot | Out-Null
+  Set-Content -Path $script:ServerLog -Value $null
+  $py = (Get-Command python -ErrorAction SilentlyContinue).Source
+  if (-not $py) { $py = (Get-Command py -ErrorAction Stop).Source }
+  $err = Join-Path $script:TestRoot "server.err"
+  $script:ServerProcess = Start-Process $py -ArgumentList "-I", "`"$PSScriptRoot\..\server\test_server.py`"", $Port, "`"$script:ServerLog`"" -PassThru -WindowStyle Hidden -RedirectStandardError $err
+  $ok = Wait-Until {
+    try { $c = New-Object Net.Sockets.TcpClient; $c.Connect("127.0.0.5", $Port); $c.Close(); $true } catch { $false }
+  } 15
+  if (-not $ok) { throw "test server did not start on port ${Port}: $(Get-Content $err -Raw)" }
+}
+
+function Stop-TestServer {
+  if ($script:ServerProcess -and -not $script:ServerProcess.HasExited) { $script:ServerProcess | Stop-Process -Force }
+}
+
+function Url([string]$Path, [string]$HostName = "127.0.0.1") { "http://${HostName}:$($script:ServerPort)$Path" }
+
+# Server log lines written after the mark
+function Get-ServerMark { @(Get-Content $script:ServerLog).Count }
+function Get-ServerLog([int]$Mark = 0) { @(Get-Content $script:ServerLog | Select-Object -Skip $Mark) }
+
+## ---------------------------------------------------------------- test environment
+
+# A fresh copy of WWWC with its own data directory
+function New-TestEnv([string]$Name, [string]$BinDir) {
+  $dir = Join-Path $script:TestRoot $Name
+  if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+  $data = Join-Path $dir "data\$env:USERNAME"
+  New-Item -ItemType Directory -Force (Join-Path $dir "bin"), $data | Out-Null
+  Copy-Item (Join-Path $BinDir "WWWC.exe"), (Join-Path $BinDir "wwwc.dll") (Join-Path $dir "bin")
+  [pscustomobject]@{ Dir = $dir; Bin = (Join-Path $dir "bin"); Data = $data; ItemFile = (Join-Path $data "Item.dat"); Process = $null; Window = [IntPtr]::Zero }
+}
+
+# One Item.dat line: Title, CheckURL, Size, Date, Status, CheckDate, OldSize, OldDate, ViewURL,
+# Option1 (2 = GET), Option2, Comment, CheckSt, ErrStatus, DLLData1, DLLData2
+function ItemLine([string]$Title, [string]$Url, [string]$Option2 = "0;;0;;;;;;0;;;;;;;;0", [string]$Status = "0") {
+  "$Title`t$Url`t`t`t$Status`t`t`t`t`t2`t$Option2`t`t0`t`t`t"
+}
+
+function Set-Items($Env, [string[]]$Lines) {
+  [IO.File]::WriteAllBytes($Env.ItemFile, $script:Sjis.GetBytes(($Lines -join "`r`n") + "`r`n"))
+}
+
+# Fields of the saved item (read after WWWC exits)
+function Get-SavedItem($Env, [string]$Title) {
+  $line = $script:Sjis.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ -like "$Title`t*" } | Select-Object -First 1
+  if ($null -eq $line) { return $null }
+  $f = $line -split "`t"
+  [pscustomobject]@{ Title = $f[0]; Url = $f[1]; Size = $f[2]; Date = $f[3]; Status = [int]$f[4]; Option2 = $f[10]; ErrStatus = $f[13] }
+}
+
+function Get-SavedTitles($Env) {
+  @($script:Sjis.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ } | ForEach-Object { ($_ -split "`t")[0] })
+}
+
+## ---------------------------------------------------------------- windows
+
+function Get-ProcessWindows([int]$ProcessId) {
+  $list = New-Object System.Collections.ArrayList
+  [void][WwwcWin]::EnumWindows({ param($h, $l)
+      $p = 0; [void][WwwcWin]::GetWindowThreadProcessId($h, [ref]$p)
+      if ($p -eq $ProcessId -and [WwwcWin]::IsWindowVisible($h)) {
+        $t = New-Object Text.StringBuilder 256; $c = New-Object Text.StringBuilder 256
+        [void][WwwcWin]::GetWindowText($h, $t, 256); [void][WwwcWin]::GetClassName($h, $c, 256)
+        [void]$list.Add([pscustomobject]@{ Handle = $h; Title = $t.ToString(); Class = $c.ToString() })
+      }
+      $true }, [IntPtr]::Zero)
+  $list
+}
+
+# Windows of WWWC other than the main window
+function Get-Dialogs($Env) { @(Get-ProcessWindows $Env.Process.Id | Where-Object { $_.Handle -ne $Env.Window }) }
+
+## ---------------------------------------------------------------- WWWC
+
+$script:Started = New-Object System.Collections.ArrayList
+
+function Start-Wwwc($Env) {
+  $Env.Process = Start-Process (Join-Path $Env.Bin "WWWC.exe") -ArgumentList "/d:`"$(Join-Path $Env.Dir 'data')`"" -PassThru
+  [void]$script:Started.Add($Env.Process)
+  $ok = Wait-Until { $Env.Process.HasExited -or (Get-ProcessWindows $Env.Process.Id | Where-Object Class -eq "WWWCWindowClass") } 15
+  if ($Env.Process.HasExited) { return $false }
+  if (-not $ok) { throw "WWWC main window did not appear" }
+  $Env.Window = (Get-ProcessWindows $Env.Process.Id | Where-Object Class -eq "WWWCWindowClass" | Select-Object -First 1).Handle
+  [void][WwwcWin]::MoveWindow($Env.Window, 40, 40, 900, 420, $true)
+  Start-Sleep -Milliseconds 500
+  return $true
+}
+
+# Close WWWC (answers the "exit while checking" question with Yes) and return the exit code
+function Stop-Wwwc($Env, [int]$TimeoutSeconds = 15) {
+  if ($Env.Process.HasExited) { return $Env.Process.ExitCode }
+  Get-Dialogs $Env | ForEach-Object { [void][WwwcWin]::PostMessage($_.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
+  [void][WwwcWin]::PostMessage($Env.Window, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+  $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
+  while (-not $Env.Process.HasExited -and (Get-Date) -lt $deadline) {
+    Start-Sleep -Milliseconds 300
+    foreach ($d in Get-Dialogs $Env) {
+      if ([WwwcWin]::GetDlgItem($d.Handle, 6) -ne [IntPtr]::Zero) {
+        [void][WwwcWin]::PostMessage($d.Handle, 0x0111, [IntPtr]6, [IntPtr]::Zero)   # IDYES
+      }
+    }
+  }
+  if (-not $Env.Process.HasExited) { $Env.Process | Stop-Process -Force; $Env.Process.WaitForExit(); return $null }
+  $Env.Process.WaitForExit()
+  return $Env.Process.ExitCode
+}
+
+# Kill only the WWWC processes started by the tests
+function Stop-AllWwwc {
+  foreach ($p in $script:Started) { if (-not $p.HasExited) { $p | Stop-Process -Force } }
+  $script:Started.Clear()
+}
+
+function Send-Command($Env, [int]$Id) { [void][WwwcWin]::PostMessage($Env.Window, 0x0111, [IntPtr]$Id, [IntPtr]::Zero) }
+
+function Get-ListHandle($Env) { [WwwcWin]::GetDlgItem($Env.Window, $script:ID_LIST) }
+
+function Get-ListTitles($Env) {
+  $lv = Get-ListHandle $Env
+  @(for ($i = 0; $i -lt [WwwcList]::Count($lv); $i++) { [WwwcList]::GetText($lv, $i, 0) })
+}
+
+# Give the list view the focus (a click on its empty area) and select the item,
+# so that item commands apply to the list and not to the folder tree
+function Select-ListItem($Env, [string]$Title) {
+  $lv = Get-ListHandle $Env
+  $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetClientRect($lv, [ref]$r)
+  $lp = [IntPtr](((($r.B - 8) -band 0xFFFF) -shl 16) -bor 8)
+  [void][WwwcWin]::PostMessage($lv, 0x0201, [IntPtr]1, $lp)   # WM_LBUTTONDOWN
+  [void][WwwcWin]::PostMessage($lv, 0x0202, [IntPtr]0, $lp)   # WM_LBUTTONUP
+  Start-Sleep -Milliseconds 300
+  $titles = Get-ListTitles $Env
+  $index = [array]::IndexOf($titles, $Title)
+  if ($index -lt 0) { throw "item '$Title' is not in the list ($($titles -join ', '))" }
+  [WwwcList]::Select($lv, $index)
+  Start-Sleep -Milliseconds 200
+}
+
+function Get-HandleCount($Env) { (Get-Process -Id $Env.Process.Id).HandleCount }
