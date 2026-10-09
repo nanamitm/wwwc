@@ -52,7 +52,7 @@ extern int AppCnt;
 **************************************************************************/
 
 //DDE
-static HDDEDATA CALLBACK DDECallback(WORD wType, WORD wFmt, HCONV hConv, HSZ hsz1, HSZ hsz2, HDDEDATA hData, DWORD lData1, DWORD lData2);
+static HDDEDATA CALLBACK DDECallback(UINT wType, UINT wFmt, HCONV hConv, HSZ hsz1, HSZ hsz2, HDDEDATA hData, ULONG_PTR lData1, ULONG_PTR lData2);
 static void GetDDEStr(char *buf, char *URL, char *Title, char *Frame);
 static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL);
 static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser);
@@ -68,8 +68,8 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView);
 
 ******************************************************************************/
 
-static HDDEDATA CALLBACK DDECallback(WORD wType, WORD wFmt, HCONV hConv, HSZ hsz1,
-									 HSZ hsz2, HDDEDATA hData, DWORD lData1, DWORD lData2)
+static HDDEDATA CALLBACK DDECallback(UINT wType, UINT wFmt, HCONV hConv, HSZ hsz1,
+									 HSZ hsz2, HDDEDATA hData, ULONG_PTR lData1, ULONG_PTR lData2)
 {
 	return (HDDEDATA)0;
 }
@@ -222,12 +222,12 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			if(*buf == '\0'){
 				break;
 			}
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)buf);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)buf);
 			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
 			break;
 
 		case IDC_BUTTON_EDIT:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0){
 				break;
 			}
@@ -244,7 +244,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_DELETE:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0 || MessageBox(hDlg, STR_Q_MSG_DEL, STR_Q_TITLE_DEL, MB_ICONQUESTION | MB_YESNO) == IDNO){
 				break;
 			}
@@ -253,7 +253,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_UP:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i <= 0){
 				break;
 			}
@@ -265,7 +265,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_DOWN:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0 || i >= SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0) - 1){
 				break;
 			}
@@ -277,7 +277,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDOK:
-			AppCnt = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0);
+			AppCnt = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0);
 			if(AppCnt > 30) AppCnt = 30;
 
 			WritePrivateProfileString("DDE", NULL, NULL, app_path);
@@ -325,7 +325,7 @@ static int GetActiveURLInfo(HWND hWnd, char *browser, char *Title, char *URL)
 	DWORD m_dwDDEID;
 
 	m_dwDDEID = 0L;
-	if(DdeInitialize(&m_dwDDEID, (PFNCALLBACK)MakeProcInstance((FARPROC)DDECallback, AfxGetInstanceHandle()),
+	if(DdeInitialize(&m_dwDDEID, DDECallback,
 		CBF_SKIP_ALLNOTIFICATIONS | APPCMD_CLIENTONLY, 0L) != DMLERR_NO_ERROR){
 		MessageBox(hWnd, STR_ERR_MSG_DDEEINIT, STR_ERR_TITLE_DDEEINIT, MB_ICONWARNING | MB_OK);
 		return 0;
@@ -467,7 +467,7 @@ static int GetURLInfo(HWND hWnd, UINT sMsg, char *browser)
 	DWORD m_dwDDEID;
 
 	m_dwDDEID = 0L;
-	if(DdeInitialize(&m_dwDDEID, (PFNCALLBACK)MakeProcInstance((FARPROC)DDECallback, AfxGetInstanceHandle()),
+	if(DdeInitialize(&m_dwDDEID, DDECallback,
 		CBF_SKIP_ALLNOTIFICATIONS | APPCMD_CLIENTONLY, 0L) != DMLERR_NO_ERROR){
 		MessageBox(hWnd, STR_ERR_MSG_DDEEINIT, STR_ERR_TITLE_DDEEINIT, MB_ICONWARNING | MB_OK);
 		return 0;
@@ -859,7 +859,7 @@ DWORD DDE_SetActiveBrowser(HWND hWnd, char *browser)
 	DWORD m_dwDDEID;
 
 	m_dwDDEID = 0L;
-	if(DdeInitialize(&m_dwDDEID, (PFNCALLBACK)MakeProcInstance((FARPROC)DDECallback, AfxGetInstanceHandle()),
+	if(DdeInitialize(&m_dwDDEID, DDECallback,
 		CBF_SKIP_ALLNOTIFICATIONS | APPCMD_CLIENTONLY, 0L) != DMLERR_NO_ERROR){
 		MessageBox(hWnd, STR_ERR_MSG_DDEEINIT, STR_ERR_TITLE_DDEEINIT, MB_ICONWARNING | MB_OK);
 		return 0;
@@ -918,7 +918,7 @@ BOOL DDE_SetBrowseURL(HWND hWnd, char *browser, char *URL)
 	DWORD m_dwDDEID;
 
 	m_dwDDEID = 0L;
-	if(DdeInitialize(&m_dwDDEID, (PFNCALLBACK)MakeProcInstance((FARPROC)DDECallback, AfxGetInstanceHandle()),
+	if(DdeInitialize(&m_dwDDEID, DDECallback,
 		CBF_SKIP_ALLNOTIFICATIONS | APPCMD_CLIENTONLY, 0L) != DMLERR_NO_ERROR){
 		MessageBox(hWnd, STR_ERR_MSG_DDEEINIT, STR_ERR_TITLE_DDEEINIT, MB_ICONWARNING | MB_OK);
 		return FALSE;

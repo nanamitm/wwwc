@@ -184,7 +184,7 @@ void SetToolMenu(HWND hWnd)
 						ToolList[i].Key == VK_INSERT ||
 						ToolList[i].Key == VK_DELETE ||
 						ToolList[i].Key == VK_NUMLOCK) ext_flag = 1 << 24;
-					GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (p - buf) - 1);
+					GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (int)(p - buf) - 1);
 				}
 				AppendMenu(ToolMenu, MF_STRING, ID_WMENU_TOOL_ACTION + i, buf);
 			}
@@ -220,7 +220,7 @@ int DllToolExec(HWND hWnd, int i, struct TPITEM **ToolItemList, int ToolItemList
 
 	//ツールの関数名からアドレスを取得
 	if(ToolList[i].Func_Tool == NULL){
-		ToolList[i].Func_Tool = GetProcAddress((HMODULE)ToolList[i].lib, ToolList[i].func);
+		ToolList[i].Func_Tool = (TOOL_FUNC)GetProcAddress((HMODULE)ToolList[i].lib, ToolList[i].func);
 	}
 	if(ToolList[i].Func_Tool == NULL){
 		ErrMsg(hWnd, GetLastError(), NULL);
@@ -247,7 +247,7 @@ int DllToolExec(HWND hWnd, int i, struct TPITEM **ToolItemList, int ToolItemList
 static int DllToolProp(HWND hWnd, char *File, char *Func)
 {
 	HINSTANCE hLib;
-	FARPROC Func_Tool;
+	TOOL_FUNC Func_Tool;
 	int ret = 0;
 
 	hLib = LoadLibrary(File);
@@ -256,7 +256,7 @@ static int DllToolProp(HWND hWnd, char *File, char *Func)
 	}
 
 	//ツールの関数名からアドレスを取得
-	Func_Tool = GetProcAddress((HMODULE)hLib, Func);
+	Func_Tool = (TOOL_FUNC)GetProcAddress((HMODULE)hLib, Func);
 	if(Func_Tool != NULL){
 		//DLL内のツールを実行
 		ret = Func_Tool(hWnd, NULL, -1, TOOL_EXEC_PORP, 0);
@@ -444,7 +444,7 @@ static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 	struct TP_TOOLS *tpSetTool;
 	struct TP_GETTOOL GetTool;
 	HINSTANCE hLib;
-	FARPROC Func_GetToolList;
+	GETTOOLLIST_FUNC Func_GetToolList;
 	int cnt = 0;
 	int ret, i;
 
@@ -464,7 +464,7 @@ static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 		}
 
 		//ツール取得関数のアドレスを取得
-		Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+		Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 		if(Func_GetToolList == NULL){
 			ErrMsg(hDlg, GetLastError(), NULL);
 			FreeLibrary(hLib);
@@ -502,7 +502,7 @@ static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 		{
 		case IDOK:
 			//リストの選択項目を取得
-			i = SendDlgItemMessage(hDlg, IDC_LIST_DLLENTRY, LB_GETCURSEL, 0, 0);
+			i = (int)SendDlgItemMessage(hDlg, IDC_LIST_DLLENTRY, LB_GETCURSEL, 0, 0);
 			if(i == -1){
 				MessageBox(hDlg, EMSG_SELECT_TOOL, EMSG_SELECT_TITLE_TOOL, MB_OK | MB_ICONEXCLAMATION);
 				break;
@@ -518,7 +518,7 @@ static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 			}
 
 			//ツール取得関数のアドレスを取得
-			Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+			Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 			if(Func_GetToolList == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);
@@ -695,7 +695,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 	HMENU hMenu;		//ポップアップメニューのハンドル
 	RECT ButtonRect;	//ボタンの位置
 	HINSTANCE hLib;
-	FARPROC Func_GetToolHideOption;
+	GETTOOLHIDEOPTION_FUNC Func_GetToolHideOption;
 	char buf[BUFSIZE], tmp[BUFSIZE];
 	char *p, *r;
 	static char funcStr[BUFSIZE];
@@ -780,7 +780,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 			break;
 		}
 		//ツール取得関数のアドレスを取得
-		Func_GetToolHideOption = GetProcAddress((HMODULE)hLib, "GetToolHideOption");
+		Func_GetToolHideOption = (GETTOOLHIDEOPTION_FUNC)GetProcAddress((HMODULE)hLib, "GetToolHideOption");
 		if(Func_GetToolHideOption == NULL){
 			FreeLibrary(hLib);
 			break;
@@ -923,7 +923,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 			SendDlgItemMessage(hDlg, IDC_EDIT_FILENAME, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->FileName);
 
 			/* ホットキーの取得 */
-			i = SendDlgItemMessage(hDlg,IDC_HOTKEY, HKM_GETHOTKEY, 0, 0);
+			i = (int)SendDlgItemMessage(hDlg,IDC_HOTKEY, HKM_GETHOTKEY, 0, 0);
 			tpSetTool->Key = LOBYTE(i);
 			i = HIBYTE(i);
 			tpSetTool->Ctrl = ((i & HOTKEYF_SHIFT) ? 4 : 0) |
@@ -1128,7 +1128,7 @@ static void ToolInfoToList(HWND hListView, int SelectItem, struct TP_TOOLS *tpSe
 			tpSetTool->Key == VK_INSERT ||
 			tpSetTool->Key == VK_DELETE ||
 			tpSetTool->Key == VK_NUMLOCK) ext_flag = 1 << 24;
-		GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (p - buf) - 1);
+		GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (int)(p - buf) - 1);
 	}
 	ListView_SetItemText(hListView, SelectItem, 5, buf);
 

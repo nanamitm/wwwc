@@ -180,7 +180,7 @@ BOOL Clipboard_DeleteCutStatus(HWND hWnd)
 
 	ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_CUT);
 
-	CallTreeItem(hWnd, CutItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, CutItem, TreeView_FreeItem, 1);
 	CutItem = NULL;
 	return TRUE;
 }
@@ -385,7 +385,7 @@ static HANDLE Clipboard_Set_TEXT_FolderPath(HWND hWnd, HTREEITEM hItem)
 
 static HANDLE Clipboard_Set_TEXT_ItemInfo(struct TPITEM *tpItemInfo)
 {
-	FARPROC Func_GetItemText;
+	PROTOCOL_GETITEMTEXT_FUNC Func_GetItemText;
 	HANDLE hMemText;
 	char buf[BUFSIZE];
 	char *p;
@@ -415,7 +415,7 @@ static HANDLE Clipboard_Set_TEXT_ItemInfo(struct TPITEM *tpItemInfo)
 
 	//プロトコルDLLのアイテムの文字列を取得する関数を呼ぶ
 	wsprintf(buf, "%sGetItemText", tpProtocol[ProtocolIndex].FuncHeader);
-	Func_GetItemText = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+	Func_GetItemText = (PROTOCOL_GETITEMTEXT_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	if(Func_GetItemText == NULL){
 		return NULL;
 	}

@@ -109,7 +109,7 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 	}else{
 		pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		l = pItem;
-		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), (FARPROC)FindTreeItem, (LPARAM)&l);
+		CallTreeItem(folWnd, TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), FindTreeItem, (LPARAM)&l);
 		if(l == pItem){
 			return;
 		}
@@ -135,7 +135,7 @@ static void CALLBACK CreateTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 static void CreateTree(HWND hDlg, HTREEITEM hItem)
 {
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)CreateTreeItem, (LPARAM)hItem);
+	CallTreeItem(WWWCWnd, RootItem, CreateTreeItem, (LPARAM)hItem);
 	TreeView_Expand(GetDlgItem(hDlg, WWWC_TREE), TreeView_GetRoot(GetDlgItem(folWnd, WWWC_TREE)), TVE_EXPAND);
 }
 
@@ -223,7 +223,7 @@ static INT_PTR CALLBACK SelectFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 BOOL SelectFolder(HWND hWnd, char *ret)
 {
-	return DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTFOLDER), hWnd, SelectFolderProc, (LPARAM)ret);
+	return (BOOL)DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTFOLDER), hWnd, SelectFolderProc, (LPARAM)ret);
 }
 
 /******************************************************************************

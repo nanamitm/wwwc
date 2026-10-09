@@ -206,7 +206,7 @@ void CreateTB(HWND hWnd)
 	tb.hInst = HINST_COMMCTRL;
 
 	tb.nID = IDB_VIEW_SMALL_COLOR;
-	Viewdid = SendDlgItemMessage(hWnd, WWWC_TB,
+	Viewdid = (int)SendDlgItemMessage(hWnd, WWWC_TB,
 		TB_ADDBITMAP, ICON_VIEW_CNT, (LPARAM)&tb);
 
 	SetTbBitmap(hWnd, ID_KEY_UPDIR, Viewdid);
@@ -216,7 +216,7 @@ void CreateTB(HWND hWnd)
 	SetTbBitmap(hWnd, ID_MENUITEM_VIEW_REPORT, Viewdid);
 
 	tb.nID = IDB_STD_SMALL_COLOR;
-	stdid = SendDlgItemMessage(hWnd, WWWC_TB,
+	stdid = (int)SendDlgItemMessage(hWnd, WWWC_TB,
 		TB_ADDBITMAP, ICON_STD_CNT, (LPARAM)&tb);
 
 	SetTbBitmap(hWnd, ID_MENUITEM_TBNEW, stdid);
@@ -252,7 +252,7 @@ LRESULT ToolBar_NotifyProc(HWND hWnd, LPARAM lParam)
 	switch(pHdr->hdr.code)
 	{
 	case TBN_ENDADJUST:		//カスタマイズの終了
-		count = SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
+		count = (int)SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
 		*ViewTbItem = '\0';
 
 		//保存用文字列の作成
@@ -286,7 +286,7 @@ LRESULT ToolBar_NotifyProc(HWND hWnd, LPARAM lParam)
 	case TBN_GETBUTTONINFO:	//ボタン文字列の取得
 		if(pHdr->iItem < TBMAXBUTTON){
 			pHdr->tbButton = tbb[pHdr->iItem];
-			dwtemp = SendMessage(pHdr->hdr.hwndFrom, TB_GETSTATE, tbb[pHdr->iItem].idCommand, 0);
+			dwtemp = (UINT)SendMessage(pHdr->hdr.hwndFrom, TB_GETSTATE, tbb[pHdr->iItem].idCommand, 0);
 			if(dwtemp != -1){
 				pHdr->tbButton.fsState = (BYTE)dwtemp;
 			}
@@ -303,7 +303,7 @@ LRESULT ToolBar_NotifyProc(HWND hWnd, LPARAM lParam)
 		}
 
 	case TBN_RESET:			//リセット
-		count = SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
+		count = (int)SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
 		for(loop = 0;loop < count;loop++){
 			SendMessage(TbWnd, TB_DELETEBUTTON, 0, 0);
 		}
@@ -340,7 +340,7 @@ void ShowTbMenu(HWND hWnd, HMENU hMenu, int cmd)
 	int i, count;
 
 	//ボタンの位置を検索
-	count = SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
+	count = (int)SendMessage(TbWnd, TB_BUTTONCOUNT, 0, 0);
 	for(i = 0; i < count; i++){
 		SendMessage(TbWnd, TB_GETBUTTON, i, (LPARAM)&tbButton);
 		if(tbButton.idCommand == cmd){

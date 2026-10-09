@@ -323,7 +323,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->Title = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->Title != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXT, len, (LPARAM)tpItemInfo->Title);
@@ -331,7 +331,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 			/* URLを設定する */
 			if(tpItemInfo->CheckURL != NULL){
-				len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+				len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 				buf = GlobalAlloc(GPTR, len + 1);
 				if(buf != NULL){
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)buf);
@@ -365,7 +365,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				}
 				GlobalFree(tpItemInfo->CheckURL);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->CheckURL = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->CheckURL != NULL){
 				SendMessage(GetDlgItem(hDlg,IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)tpItemInfo->CheckURL);
@@ -375,7 +375,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			if(tpItemInfo->ViewURL != NULL){
 				GlobalFree(tpItemInfo->ViewURL);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->ViewURL = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->ViewURL != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXT, len, (LPARAM)tpItemInfo->ViewURL);
@@ -385,7 +385,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			if(tpItemInfo->Comment != NULL){
 				GlobalFree(tpItemInfo->Comment);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->Comment = (char *)GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->Comment != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT, len, (LPARAM)tpItemInfo->Comment);
@@ -398,7 +398,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 		case IDC_BUTTON_CHANGE:		//URLの入れ替え
 			/* チェックするURLの取得 */
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			p = GlobalAlloc(GPTR, len + 1);
 			if(p != NULL){
 				SendMessage(GetDlgItem(hDlg,IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)p);
@@ -1012,12 +1012,12 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			if(*buf == '\0'){
 				break;
 			}
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)buf);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)buf);
 			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
 			break;
 
 		case IDC_BUTTON_EDIT:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0){
 				break;
 			}
@@ -1034,7 +1034,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_DELETE:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0 || MessageBox(hDlg, STR_Q_MSG_DEL, STR_Q_TITLE_DEL, MB_ICONQUESTION | MB_YESNO) == IDNO){
 				break;
 			}
@@ -1043,7 +1043,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_UP:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i <= 0){
 				break;
 			}
@@ -1055,7 +1055,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDC_BUTTON_DOWN:
-			i = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
+			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
 			if(i < 0 || i >= SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0) - 1){
 				break;
 			}
@@ -1067,7 +1067,7 @@ static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			break;
 
 		case IDOK:
-			AppCnt = SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0);
+			AppCnt = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0);
 			if(AppCnt > 30) AppCnt = 30;
 
 			WritePrivateProfileString("DDE", NULL, NULL, app_path);

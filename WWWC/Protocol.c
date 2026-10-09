@@ -130,7 +130,7 @@ void FreeProtocol(void)
 void SetProtocolInfo(void)
 {
 	struct TPPROTOCOLINFO tpProtocolInfo;
-	FARPROC Func_GetInfo;
+	PROTOCOL_GETINFO_FUNC Func_GetInfo;
 	char buf[BUFSIZE];
 	int i;
 	int ret;
@@ -142,7 +142,7 @@ void SetProtocolInfo(void)
 			continue;
 		}
 		wsprintf(buf, "%sGetInfo", tpProtocol[i].FuncHeader);
-		Func_GetInfo = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_GetInfo = (PROTOCOL_GETINFO_FUNC)GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
 		if(Func_GetInfo != NULL){
 			tpProtocolInfo.iSize = sizeof(struct TPPROTOCOLINFO);
 			ret = Func_GetInfo(&tpProtocolInfo);
@@ -172,14 +172,14 @@ void EndProtocolNotify(void)
 	int i;
 	char buf[BUFSIZE];
 	int ret;
-	FARPROC Func_EndNotify;
+	PROTOCOL_ENDNOTIFY_FUNC Func_EndNotify;
 
 	for(i = 0;i < ProtocolCnt;i++){
 		if(tpProtocol[i].lib == NULL){
 			continue;
 		}
 		wsprintf(buf, "%sEndNotify", tpProtocol[i].FuncHeader);
-		Func_EndNotify = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_EndNotify = (PROTOCOL_ENDNOTIFY_FUNC)GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
 		if(Func_EndNotify != NULL){
 			ret = Func_EndNotify();
 		}
@@ -411,7 +411,7 @@ static INT_PTR CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 {
 	struct TP_PROTOCOL tpProtocolInfo;
 	struct TPPROTOCOLSET tpProtocolSet;
-	FARPROC Func_GetProtocolList;
+	GETPROTOCOLLIST_FUNC Func_GetProtocolList;
 	HINSTANCE hLib;
 	HWND ParamLvWnd;
 	char buf[BUFSIZE];
@@ -435,7 +435,7 @@ static INT_PTR CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 		}
 
 		//プロトコル情報取得関数のアドレスを取得
-		Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+		Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 		if(Func_GetProtocolList == NULL){
 			ErrMsg(hDlg, GetLastError(), NULL);
 			FreeLibrary(hLib);
@@ -485,7 +485,7 @@ static INT_PTR CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 			}
 
 			//プロトコル情報取得関数のアドレスを取得
-			Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+			Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 			if(Func_GetProtocolList == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);
@@ -711,7 +711,7 @@ static INT_PTR CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LV_COLUMN lvc;
-	FARPROC Func_ProtocolProperty;
+	PROTOCOL_PROTOCOLPROPERTY_FUNC Func_ProtocolProperty;
 	HMODULE hLib;
 	HIMAGELIST IconList;
 	char buf[BUFSIZE];
@@ -992,7 +992,7 @@ INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 				break;
 			}
 			wsprintf(buf, "%sProtocolProperty", tmp2);
-			Func_ProtocolProperty = GetProcAddress((HMODULE)hLib, buf);
+			Func_ProtocolProperty = (PROTOCOL_PROTOCOLPROPERTY_FUNC)GetProcAddress((HMODULE)hLib, buf);
 			if(Func_ProtocolProperty == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);

@@ -292,7 +292,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXGETSEL, 0, (LPARAM)&seltext);
 			if(seltext.cpMin == seltext.cpMax){
 				settext.cpMin = 0;
-				settext.cpMax = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
+				settext.cpMax = (LONG)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&settext);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_COPY, 0, 0);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&seltext);
@@ -329,7 +329,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 				break;
 			}
 			seltext.cpMin = 0;
-			seltext.cpMax = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
+			seltext.cpMax = (LONG)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&seltext);
 			break;
 		}
@@ -1525,7 +1525,7 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 	int i, j;
 	int Port;
 
-	j = SendMessage(hWnd, WM_GETCHECKLISTCNT, 0, 0);
+	j = (int)SendMessage(hWnd, WM_GETCHECKLISTCNT, 0, 0);
 	CheckItemList = (struct TPITEM **)SendMessage(hWnd, WM_GETCHECKLIST, 0, 0);
 	if(CheckItemList == NULL){
 		return FALSE;
@@ -1610,7 +1610,7 @@ static unsigned int CALLBACK HTTP_Thread(struct TPITEM *tpItemInfo)
 	urlComponents.dwUrlPathLength = sizeof(szUrlPath) / sizeof(WCHAR);
 
 	MultiByteToWideChar(CP_ACP, 0, (char *)tpItemInfo->Param2, -1, url, 2048);
-	if (!WinHttpCrackUrl(url, wcslen(url), 0, &urlComponents)) {
+	if (!WinHttpCrackUrl(url, (DWORD)wcslen(url), 0, &urlComponents)) {
 		SetHttpError(tpItemInfo, STR_ERROR_CONNECT, "WinHttpCrackUrl");
 		WinHttpCloseHandle(hSession);
 		SendMessage(tpHTTP->hWnd, WM_CHECK_END, CHECK_ERROR, (LPARAM)tpItemInfo);

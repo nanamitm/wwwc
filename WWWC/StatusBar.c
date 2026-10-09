@@ -186,7 +186,7 @@ LRESULT StatusBar_NotifyProc(HWND hWnd, LPARAM lParam)
 	}
 
 	pTT->hinst = NULL;
-	len = SendDlgItemMessage(hWnd, WWWC_SB, SB_GETTEXTLENGTH, (WPARAM)CForm->idFrom, 0);
+	len = (int)SendDlgItemMessage(hWnd, WWWC_SB, SB_GETTEXTLENGTH, (WPARAM)CForm->idFrom, 0);
 	if(len <= 0){
 		pTT->lpszText = NULL;
 		return 0;

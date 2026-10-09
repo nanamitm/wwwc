@@ -196,7 +196,7 @@ static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL i
 
 	while(*p != '\0'){
 		for(r = p; *r != '\0' && *r != '*'; r++);
-		len = r - p;
+		len = (int)(r - p);
 
 		t = FindStr(t, p, len, ((*ts == NULL) ? TRUE : FALSE), icase);
 		if(t == NULL){
@@ -254,7 +254,7 @@ static BOOL StrFilter(char *buf, char *sStr, char *eStr, int f, BOOL icase)
 		lstrcpy(s1, e1);
 	}else{
 		//文字列の抽出
-		lstrcpyn(buf, s1, e1 - s1 + 1);
+		lstrcpyn(buf, s1, (int)(e1 - s1 + 1));
 	}
 	return TRUE;
 }

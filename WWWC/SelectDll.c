@@ -134,8 +134,8 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	struct TP_TOOLS tpSetTool;
 	struct TP_GETTOOL GetTool;
 	HINSTANCE hLib;
-	FARPROC Func_GetProtocolList;
-	FARPROC Func_GetToolList;
+	GETPROTOCOLLIST_FUNC Func_GetProtocolList;
+	GETTOOLLIST_FUNC Func_GetToolList;
 	static char DLLPath[BUFSIZE];
 	int cnt = 0;
 	int ret, i;
@@ -158,7 +158,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 		}
 
 		//プロトコル情報取得関数のアドレスを取得
-		Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+		Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 		if(Func_GetProtocolList != NULL){
 			//プロトコル情報を取得
 			while(1){
@@ -173,7 +173,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 		}
 
 		//ツール取得関数のアドレスを取得
-		Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+		Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 		if(Func_GetToolList != NULL){
 			//ツール情報を取得
 			cnt = 0;
@@ -234,7 +234,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 
 			//プロトコル情報取得関数のアドレスを取得
-			Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+			Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 			if(Func_GetProtocolList != NULL){
 				//プロトコルの追加
 				for(i = 0; i < SendDlgItemMessage(hDlg, IDC_LIST_PROTOCOL, LB_GETCOUNT, 0, 0); i++){
@@ -272,7 +272,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			}
 
 			//ツール取得関数のアドレスを取得
-			Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+			Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 			if(Func_GetToolList != NULL){
 				//ツールの追加
 				for(i = 0; i < SendDlgItemMessage(hDlg, IDC_LIST_TOOL, LB_GETCOUNT, 0, 0); i++){
@@ -333,7 +333,7 @@ static INT_PTR CALLBACK SelectDllProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 BOOL SelectDll(HWND hWnd, char *DLLPath)
 {
-	return DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTDLL), hWnd, SelectDllProc, (LPARAM)DLLPath);
+	return (BOOL)DialogBoxParam(g_hinst, MAKEINTRESOURCE(IDD_DIALOG_SELECTDLL), hWnd, SelectDllProc, (LPARAM)DLLPath);
 }
 
 /* End of source */

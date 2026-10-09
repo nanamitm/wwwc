@@ -189,7 +189,7 @@ static INT_PTR CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 				break;
 			}
 			SendDlgItemMessage(hDlg, IDC_EDIT_FILE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)icon_info->path);
-			icon_info->index = ListView_GetlParam(GetDlgItem(hDlg, IDC_LIST_ICON), i);
+			icon_info->index = (int)ListView_GetlParam(GetDlgItem(hDlg, IDC_LIST_ICON), i);
 
 			ImageList_Destroy((void *)ListView_GetImageList(GetDlgItem(hDlg, IDC_LIST_ICON), LVSIL_NORMAL));
 			EndDialog(hDlg, TRUE);

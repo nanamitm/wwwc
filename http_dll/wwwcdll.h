@@ -158,8 +158,8 @@ struct TPITEM{
 /* 以下保存されない情報 */
 	int IconStatus;					/* アイコンの状態 (ICON_ST_) */
 
-	int Soc1;						/* ソケット1 */
-	int Soc2;						/* ソケット2 */
+	UINT_PTR Soc1;						/* ソケット1 */
+	UINT_PTR Soc2;						/* ソケット2 */
 	HANDLE hGetHost1;				/* ホスト情報のハンドル1 */
 	HANDLE hGetHost2;				/* ホスト情報のハンドル1 */
 	LONG_PTR Param1;					/* DLL用long値1 */

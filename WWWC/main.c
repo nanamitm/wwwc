@@ -463,7 +463,7 @@ static void WindowRefresh(HWND hWnd)
 	WaitCursor(TRUE);
 
 	SetDirTree(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
-	CallTreeItem(hWnd, RootItem, (FARPROC)FindTreeDir, 0);
+	CallTreeItem(hWnd, RootItem, FindTreeDir, 0);
 
 	ListView_SetRedraw(GetDlgItem(hWnd, WWWC_LIST), LDF_NODRAW);
 	ListView_DeleteAllItems(GetDlgItem(hWnd, WWWC_LIST));
@@ -474,8 +474,8 @@ static void WindowRefresh(HWND hWnd)
 	ListView_ShowItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)));
 	ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), 0, LVIS_FOCUSED, LVIS_FOCUSED);
 
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_SetIconState, 0);
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_SetIconState, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeItem, 0);
 
 	SetProtocolMenu(hWnd);
 	SetSbText(hWnd);
@@ -566,7 +566,7 @@ static void SaveIniFile(HWND hWnd)
 static void RefreshIniFile(HWND hWnd)
 {
 	if(gCheckFlag != 0){
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+		CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 	}
 	WaitCursor(TRUE);
 
@@ -883,7 +883,7 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	//TreeViewの初期状態設定
 	TreeView_Expand(GetDlgItem(hWnd, WWWC_TREE), RootItem, TVE_EXPAND);
 	if(StartExpand != 0){
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_AllExpand, StartExpand);
+		CallTreeItem(hWnd, RootItem, TreeView_AllExpand, StartExpand);
 	}
 	switch(StartDirOpen)
 	{
@@ -910,7 +910,7 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 			TreeView_EnsureVisible(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		}
 	}
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeItem, 0);
 
 	//コントロールのフォーカスを設定
 	FocusWnd = GetDlgItem(hWnd, WWWC_TREE);
@@ -985,7 +985,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 				return FALSE;
 			}
 		}
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+		CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 	}
 
 	//現在開いているフォルダを保存
@@ -1054,7 +1054,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 	}
 
 	//ツリー情報を解放
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeTreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeTreeItem, 0);
 	//カラム情報を解放
 	GlobalFree(ColumnInfo);
 	ColumnInfo = NULL;
@@ -1313,7 +1313,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 					InvalidateRect(GetDlgItem(hWnd, WWWC_LIST), NULL, FALSE);
 					UpdateWindow(GetDlgItem(hWnd, WWWC_LIST));
 				}
-				CallTreeItem(hWnd, RootItem, (FARPROC)TreeCheckAutoTime, 0);
+				CallTreeItem(hWnd, RootItem, TreeCheckAutoTime, 0);
 			}
 			break;
 
@@ -1712,7 +1712,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			}
 			WaitCursor(TRUE);
 
-			CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+			CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 
 			WaitCursor(FALSE);
 
@@ -1755,7 +1755,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			}
 			WaitCursor(TRUE);
 
-			CallTreeItem(hWnd, RootItem, (FARPROC)TreeItemIni, 0);
+			CallTreeItem(hWnd, RootItem, TreeItemIni, 0);
 
 			WaitCursor(FALSE);
 
@@ -1963,7 +1963,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	case WM_LV_INITICON:
 		{
 			struct TPITEM *tpItemInfo;
-			tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), wParam);
+			tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), (int)wParam);
 			if(tpItemInfo == NULL){
 				break;
 			}
@@ -2091,7 +2091,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		if (gCheckFlag == 0) {
 			break;
 		}
-		if (ResultCheckStatus(hWnd, ((struct TPITEM *)lParam), wParam) == FALSE) {
+		if (ResultCheckStatus(hWnd, ((struct TPITEM *)lParam), (int)wParam) == FALSE) {
 			//チェックアイテムリストの初期化
 			InitCheckItemList(hWnd, ((struct TPITEM *)lParam));
 		}
@@ -2135,7 +2135,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 	//アイテムをセットするメッセージ
 	case WM_SETITEMLIST:
-		if(Item_ListAdd(hWnd, (struct TPITEM **)lParam, wParam) == TRUE){
+		if(Item_ListAdd(hWnd, (struct TPITEM **)lParam, (int)wParam) == TRUE){
 			FocusWnd = GetDlgItem(hWnd, WWWC_LIST);
 			SetFocus(FocusWnd);
 		}
@@ -2262,7 +2262,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	//フォルダの同期
 	case WM_FOLDER_REFRESH:
 		SetDirTree(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
-		CallTreeItem(hWnd, RootItem, (FARPROC)FindTreeDir, 0);
+		CallTreeItem(hWnd, RootItem, FindTreeDir, 0);
 		break;
 
 	//イベント処理
@@ -2421,7 +2421,7 @@ static void CommandLineFunc(HWND hWnd, char *StrCmdLine)
 			}else{
 				for(r = p; *r != '\0' && *r != ' '; r++);
 			}
-			lstrcpyn(buf, p, r - p + 1);
+			lstrcpyn(buf, p, (int)(r - p + 1));
 			p = r;
 			if(*p != '\0') p++;
 
@@ -2577,7 +2577,7 @@ static void StartCommandLine(char *StrCmdLine)
 				}else{
 					for(r = p; *r != '\0' && *r != ' '; r++);
 				}
-				lstrcpyn(CmdDirPath, p, r - p + 1);
+				lstrcpyn(CmdDirPath, p, (int)(r - p + 1));
 				p = r;
 				if(*p == '\"') p++;
 				break;
@@ -2594,7 +2594,7 @@ static void StartCommandLine(char *StrCmdLine)
 				}else{
 					for(r = p; *r != '\0' && *r != ' '; r++);
 				}
-				lstrcpyn(CmdUser, p, r - p + 1);
+				lstrcpyn(CmdUser, p, (int)(r - p + 1));
 				p = r;
 				if(*p == '\"') p++;
 				break;
@@ -2770,7 +2770,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	HANDLE hMutex = NULL;
 	INITCOMMONCONTROLSEX iccex;
 	HINSTANCE hLib;
-	FARPROC _InitCommonControlsEx;
+	BOOL (WINAPI *_InitCommonControlsEx)(const INITCOMMONCONTROLSEX *picce);
 
 	if((hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, MUTEX)) == NULL){
 		hMutex = CreateMutex(NULL, TRUE, MUTEX);
@@ -2788,7 +2788,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 新しいCommonControlの初期化を行う
 	hLib = LoadLibrary("comctl32.dll");
 	if(hLib != NULL){
-		_InitCommonControlsEx = GetProcAddress((HMODULE)hLib, "InitCommonControlsEx");
+		_InitCommonControlsEx = (BOOL (WINAPI *)(const INITCOMMONCONTROLSEX *))GetProcAddress((HMODULE)hLib, "InitCommonControlsEx");
 		if(_InitCommonControlsEx != NULL){
 			iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
 			iccex.dwICC = ICC_COOL_CLASSES | ICC_BAR_CLASSES;

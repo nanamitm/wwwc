@@ -78,7 +78,7 @@ void FreeItemInfo(struct TPITEM *TmpItemInfo, BOOL ProtocolFreeFlag)
 		if(ProtocolIndex != -1 && (tpProtocol + ProtocolIndex)->lib != NULL){
 			if((tpProtocol + ProtocolIndex)->Func_FreeItem == NULL){
 				wsprintf(buf, "%sFreeItem", (tpProtocol + ProtocolIndex)->FuncHeader);
-				(tpProtocol + ProtocolIndex)->Func_FreeItem = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+				(tpProtocol + ProtocolIndex)->Func_FreeItem = (PROTOCOL_FREEITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 			}
 			if((tpProtocol + ProtocolIndex)->Func_FreeItem != NULL){
 				(tpProtocol + ProtocolIndex)->Func_FreeItem(TmpItemInfo);
@@ -247,7 +247,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 		//実行
 		if(tpProtocol[ProtocolIndex].Func_ExecItem == NULL){
 			wsprintf(buf, "%sExecItem", tpProtocol[ProtocolIndex].FuncHeader);
-			tpProtocol[ProtocolIndex].Func_ExecItem = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+			tpProtocol[ProtocolIndex].Func_ExecItem = (PROTOCOL_EXECITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 		}
 		if(tpProtocol[ProtocolIndex].Func_ExecItem != NULL){
 			ret = tpProtocol[ProtocolIndex].Func_ExecItem(hWnd, tpProtocol[ProtocolIndex].tpMenu[i].Action, tpItemInfo);
@@ -1316,7 +1316,7 @@ BOOL Item_FlagDelete(struct TPTREE *tpTreeInfo)
 
 BOOL Item_Create(HWND hWnd, int ProtocolIndex)
 {
-	FARPROC Func_Property;
+	PROTOCOL_ITEM_FUNC Func_Property;
 	struct TPTREE *tpTreeInfo;
 	struct TPITEM *NewItemInfo;
 	HTREEITEM hItem;
@@ -1329,7 +1329,7 @@ BOOL Item_Create(HWND hWnd, int ProtocolIndex)
 		return FALSE;
 	}
 	wsprintf(buf, "%sProperty", tpProtocol[ProtocolIndex].FuncHeader);
-	Func_Property = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+	Func_Property = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	if(Func_Property == NULL){
 		return FALSE;
 	}
@@ -1603,7 +1603,7 @@ int Item_Initialize(HWND hWnd, struct TPITEM *tpItemInfo, BOOL InitIconFlag)
 	if(tpProtocol[ProtocolIndex].Func_InitItem == NULL){
 		//プロトコルDLLのアイテム初期化関数を呼ぶ
 		wsprintf(buf, "%sInitItem", tpProtocol[ProtocolIndex].FuncHeader);
-		tpProtocol[ProtocolIndex].Func_InitItem = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+		tpProtocol[ProtocolIndex].Func_InitItem = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	}
 	if(tpProtocol[ProtocolIndex].Func_InitItem != NULL){
 		ret = tpProtocol[ProtocolIndex].Func_InitItem(hWnd, tpItemInfo);
@@ -2130,7 +2130,7 @@ BOOL ClearRecycler(HWND hWnd, BOOL Flag)
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, buf, CuDir);
 	DeleteDirTree(buf, FALSE);
 	RemoveDirectory(buf);
-	CallTreeItem(hWnd, RecyclerItem, (FARPROC)TreeView_FreeTreeItem, 1);
+	CallTreeItem(hWnd, RecyclerItem, TreeView_FreeTreeItem, 1);
 
 	while(TreeView_GetChild(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem) != NULL){
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE),

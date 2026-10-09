@@ -460,7 +460,7 @@ void StartDragSubItem(HWND hWnd)
 			break;
 		}
 		RefreshListView(hWnd);
-		CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 	}
 }
 
@@ -1136,7 +1136,7 @@ void RefreshListView(HWND hDlg)
 	UpdateWindow(GetDlgItem(WWWCWnd, WWWC_LIST));
 	InvalidateRect(GetDlgItem(hDlg, WWWC_LIST), NULL, FALSE);
 	UpdateWindow(GetDlgItem(hDlg, WWWC_LIST));
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 
 	ListView_RefreshItem(GetDlgItem(WWWCWnd, WWWC_LIST));
 	ListView_RefreshItem(GetDlgItem(hDlg, WWWC_LIST));
@@ -1247,7 +1247,7 @@ void ExeAction(HWND hDlg, WPARAM wParam)
 	}
 	//アイテム情報の解放
 	GlobalFree(ToolItemList);
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 
 	//表示の更新
 	RefreshListView(hDlg);
@@ -1588,7 +1588,7 @@ INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 
 	//リストビューアイテムの初期化
 	case WM_LV_INITICON:
-		InitSubIcon(hDlg, wParam);
+		InitSubIcon(hDlg, (int)wParam);
 		RefreshListView(hDlg);
 		break;
 

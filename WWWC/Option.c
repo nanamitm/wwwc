@@ -126,15 +126,19 @@ static void themes_free(void)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
+typedef HTHEME (WINAPI *OPENTHEMEDATA_FUNC)(HWND hwnd, LPCWSTR pszClassList);
+typedef HRESULT (WINAPI *CLOSETHEMEDATA_FUNC)(HTHEME hTheme);
+typedef HRESULT (WINAPI *DRAWTHEMEBACKGROUND_FUNC)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, const RECT *pRect, const RECT *pClipRect);
+
 LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name)
 {
-	static FARPROC _OpenThemeData = NULL;
+	static OPENTHEMEDATA_FUNC _OpenThemeData = NULL;
 
 	if(hModThemes == NULL){
 		return 0;
 	}
 	if(_OpenThemeData == NULL){
-		_OpenThemeData = GetProcAddress(hModThemes, "OpenThemeData");
+		_OpenThemeData = (OPENTHEMEDATA_FUNC)GetProcAddress(hModThemes, "OpenThemeData");
 	}
 	if(_OpenThemeData == NULL){
 		return 0;
@@ -155,13 +159,13 @@ LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name)
 #ifdef OP_XP_STYLE
 void close_theme(LONG_PTR hTheme)
 {
-	static FARPROC _CloseThemeData = NULL;
+	static CLOSETHEMEDATA_FUNC _CloseThemeData = NULL;
 
 	if(hModThemes == NULL){
 		return;
 	}
 	if(_CloseThemeData == NULL){
-		_CloseThemeData = GetProcAddress(hModThemes, "CloseThemeData");
+		_CloseThemeData = (CLOSETHEMEDATA_FUNC)GetProcAddress(hModThemes, "CloseThemeData");
 	}
 	if(_CloseThemeData == NULL){
 		return;
@@ -182,14 +186,14 @@ void close_theme(LONG_PTR hTheme)
 #ifdef OP_XP_STYLE
 BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 {
-	static FARPROC _DrawThemeBackground = NULL;
+	static DRAWTHEMEBACKGROUND_FUNC _DrawThemeBackground = NULL;
 	DWORD state = 0;
 
 	if(hModThemes == NULL){
 		return FALSE;
 	}
 	if(_DrawThemeBackground == NULL){
-		_DrawThemeBackground = GetProcAddress(hModThemes, "DrawThemeBackground");
+		_DrawThemeBackground = (DRAWTHEMEBACKGROUND_FUNC)GetProcAddress(hModThemes, "DrawThemeBackground");
 	}
 	if(_DrawThemeBackground == NULL){
 		return FALSE;
@@ -288,7 +292,7 @@ static void AllocGetText(HWND hEdit, char **buf)
 	if(*buf != NULL){
 		GlobalFree(*buf);
 	}
-	len = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0) + 1;
+	len = (int)SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0) + 1;
 	*buf = (char *)GlobalAlloc(LMEM_FIXED, sizeof(char) * (len + 1));
 	if(*buf != NULL){
 		**buf = '\0';
@@ -409,7 +413,7 @@ static INT_PTR CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-	FARPROC Func_Property = NULL;
+	PROTOCOL_ITEM_FUNC Func_Property = NULL;
 	char buf[BUFSIZE];
 	int ProtocolIndex;
 	int ret;
@@ -417,12 +421,12 @@ BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 	ProtocolIndex = GetProtocolIndex(tpItemInfo->CheckURL);
 	if(ProtocolIndex != -1 && tpProtocol[ProtocolIndex].lib != NULL){
 		wsprintf(buf, "%sProperty", tpProtocol[ProtocolIndex].FuncHeader);
-		Func_Property = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+		Func_Property = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	}
 
 	//アイテムのプロパティを表示
 	if(Func_Property == NULL){
-		return DialogBoxParam(g_hinst,
+		return (BOOL)DialogBoxParam(g_hinst,
 			MAKEINTRESOURCE(IDD_DIALOG_ITEM), hWnd, OptionItemProc, (LPARAM)tpItemInfo);
 	}
 	ret = Func_Property(hWnd, tpItemInfo);
@@ -457,7 +461,7 @@ int FindPropItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindPropTree, (LPARAM)&ret);
+	CallTreeItem(hWnd, hItem, FindPropTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -633,7 +637,7 @@ static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 		}
 
 		TreeView_SetIconState(WWWCWnd, PropItem, 0);
-		CallTreeItem(WWWCWnd, PropItem, (FARPROC)TreeView_FreeItem, 0);
+		CallTreeItem(WWWCWnd, PropItem, TreeView_FreeItem, 0);
 		break;
 
 	case WM_NOTIFY:
@@ -654,7 +658,7 @@ static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 				DestroyIcon(hIcon);
 				break;
 			}
-			i = SendDlgItemMessage(hDlg, IDC_EDIT_COMMENT, WM_GETTEXTLENGTH, 0, 0) + 1;
+			i = (int)SendDlgItemMessage(hDlg, IDC_EDIT_COMMENT, WM_GETTEXTLENGTH, 0, 0) + 1;
 			tmp = (char *)GlobalAlloc(GPTR, i + 1);
 			if(tmp == NULL){
 				abort();

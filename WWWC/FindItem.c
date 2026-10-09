@@ -278,7 +278,7 @@ static void FindStart(HWND hDlg)
 
 	if(tpFindInfo.FindSub == TRUE){
 		//再帰して検索
-		CallTreeItem(WWWCWnd, tpFindInfo.hItem, (FARPROC)FindItem, (LPARAM)&tpFindInfo);
+		CallTreeItem(WWWCWnd, tpFindInfo.hItem, FindItem, (LPARAM)&tpFindInfo);
 	}else{
 		//指定のフォルダのみ検索
 		FindItem(WWWCWnd, tpFindInfo.hItem, (LPARAM)&tpFindInfo);
@@ -592,14 +592,14 @@ static INT_PTR CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 		//コンボボックスの設定
 		hCombo = GetDlgItem(hDlg, IDC_COMBO_FINDSTRING);
 		if(SendMessage(hCombo, CB_GETDROPPEDSTATE, 0, 0) == TRUE){
-			if((i = SendMessage(hCombo, CB_GETCURSEL, 0, 0)) > -1){
+			if((i = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0)) > -1){
 				SendMessage(hCombo, CB_SETCURSEL, i , 0);
 			}
 			SendMessage(hCombo, CB_SHOWDROPDOWN, FALSE, 0);
 		}
 		SendMessage(hCombo, WM_GETTEXT, BUFSIZE - 3, (LPARAM)buf);
 		if(*buf != '\0'){
-			if((i = SendMessage(hCombo, CB_FINDSTRING, -1, (LPARAM)buf)) > -1){
+			if((i = (int)SendMessage(hCombo, CB_FINDSTRING, -1, (LPARAM)buf)) > -1){
 				SendMessage(hCombo, CB_DELETESTRING, i, 0);
 			}
 			SendMessage(hCombo, CB_INSERTSTRING, 0, (LPARAM)buf);
@@ -1120,7 +1120,7 @@ INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	//リストビューアイテムの初期化
 	case WM_LV_INITICON:
-		InitSubIcon(hDlg, wParam);
+		InitSubIcon(hDlg, (int)wParam);
 		RefreshListView(hDlg);
 		break;
 

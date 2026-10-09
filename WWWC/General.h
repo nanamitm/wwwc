@@ -351,8 +351,8 @@ struct TPITEM{
 	//以下保存されない情報
 	int IconStatus;										//アイコンの状態 (ICON_ST_)
 
-	int Soc1;											//ソケット1
-	int Soc2;											//ソケット2
+	UINT_PTR Soc1;										//ソケット1 (SOCKET)
+	UINT_PTR Soc2;										//ソケット2 (SOCKET)
 	HANDLE hGetHost1;									//ホスト情報のハンドル1
 	HANDLE hGetHost2;									//ホスト情報のハンドル1
 	LONG_PTR Param1;										//DLL用long値1
@@ -416,6 +416,29 @@ struct TPPROTOCOLINFO{
 	int tpMenuCnt;
 };
 
+struct TP_GETTOOL;
+
+//プロトコルDLLの関数 (http_dll/wwwcdll.h と同じシグネチャ)
+typedef int (CALLBACK *PROTOCOL_ITEM_FUNC)(HWND hWnd, struct TPITEM *tpItemInfo);		//Initialize, Start, Timer, Cancel, ItemCheckEnd, InitItem, Property
+typedef int (CALLBACK *PROTOCOL_SOCKET_FUNC)(HWND hWnd, WPARAM wParam, LPARAM lParam, struct TPITEM *tpItemInfo);	//Gethost, Select
+typedef BOOL (CALLBACK *PROTOCOL_CREATEDROPITEM_FUNC)(struct TPITEM *tpItemInfo, char *fPath, char *iPath, char *ret);
+typedef int (CALLBACK *PROTOCOL_DROPFILE_FUNC)(HWND hWnd, char *FileType, char *FilePath, struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_EXECITEM_FUNC)(HWND hWnd, char *Action, struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_FREEITEM_FUNC)(struct TPITEM *tpItemInfo);
+typedef HANDLE (CALLBACK *PROTOCOL_GETITEMTEXT_FUNC)(struct TPITEM *tpItemInfo);
+typedef int (CALLBACK *PROTOCOL_GETINFO_FUNC)(struct TPPROTOCOLINFO *tpInfo);
+typedef int (CALLBACK *PROTOCOL_ENDNOTIFY_FUNC)(void);
+typedef int (CALLBACK *PROTOCOL_PROTOCOLPROPERTY_FUNC)(HWND hWnd);
+typedef int (CALLBACK *GETPROTOCOLLIST_FUNC)(int cnt, struct TPPROTOCOLSET *tpProtocolSet);
+
+//ツールDLLの関数
+typedef int (CALLBACK *GETTOOLLIST_FUNC)(int cnt, struct TP_GETTOOL *tpToolInfo);
+typedef int (CALLBACK *GETTOOLHIDEOPTION_FUNC)(char *FuncName);
+typedef int (CALLBACK *TOOL_FUNC)(HWND hWnd, struct TPITEM **ToolItemList, int ToolItemListCnt, int type, int CheckType);
+
+//CallTreeItem から呼ばれる関数
+typedef void (CALLBACK *TREEITEM_FUNC)(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+
 //プロトコル情報
 struct TP_PROTOCOL{
 	char scheme[BUFSIZE];
@@ -434,18 +457,18 @@ struct TP_PROTOCOL{
 	int Icon;
 
 	HANDLE lib;
-	FARPROC Func_Initialize;
-	FARPROC Func_Start;
-	FARPROC Func_Gethost;
-	FARPROC Func_Select;
-	FARPROC Func_Timer;
-	FARPROC Func_Cancel;
-	FARPROC Func_ItemCheckEnd;
-	FARPROC Func_CreateDropFile;
-	FARPROC Func_DropFile;
-	FARPROC Func_ExecItem;
-	FARPROC Func_InitItem;
-	FARPROC Func_FreeItem;
+	PROTOCOL_ITEM_FUNC Func_Initialize;
+	PROTOCOL_ITEM_FUNC Func_Start;
+	PROTOCOL_SOCKET_FUNC Func_Gethost;
+	PROTOCOL_SOCKET_FUNC Func_Select;
+	PROTOCOL_ITEM_FUNC Func_Timer;
+	PROTOCOL_ITEM_FUNC Func_Cancel;
+	PROTOCOL_ITEM_FUNC Func_ItemCheckEnd;
+	PROTOCOL_CREATEDROPITEM_FUNC Func_CreateDropFile;
+	PROTOCOL_DROPFILE_FUNC Func_DropFile;
+	PROTOCOL_EXECITEM_FUNC Func_ExecItem;
+	PROTOCOL_ITEM_FUNC Func_InitItem;
+	PROTOCOL_FREEITEM_FUNC Func_FreeItem;
 };
 
 //リストビューカラム
@@ -483,7 +506,7 @@ struct TP_TOOLS{
 	char CommandLine[BUFSIZE];
 
 	HANDLE lib;
-	FARPROC Func_Tool;
+	TOOL_FUNC Func_Tool;
 };
 
 
@@ -590,7 +613,7 @@ int ImageListFileIconAdd(HIMAGELIST IconList, char *FileName, UINT uFlags, int I
 //--------------------------
 //	TreeView
 //--------------------------
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param);
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, TREEITEM_FUNC Func, LPARAM Param);
 HWND CreateTreeView(HWND hWnd);
 void TreeView_Initialize(HWND hWnd);
 HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, char *Title, int Icon, int IconSel);

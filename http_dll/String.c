@@ -516,7 +516,7 @@ char *CreateMoveURL(char *FromURL, char *ToURL)
 	if(ret == NULL){
 		return NULL;
 	}
-	lstrcpyn(ret, FromURL, p - FromURL + 1);
+	lstrcpyn(ret, FromURL, (int)(p - FromURL + 1));
 	lstrcpy(ret + (p - FromURL), ToURL);
 	return ret;
 }
@@ -785,7 +785,7 @@ long HeaderSize(char *buf)
 			break;
 		}
 	}
-	return p - buf;
+	return (long)(p - buf);
 }
 
 
@@ -1902,7 +1902,7 @@ long DeleteSizeInfo(char *buf, long size)
 		*r = '\0';
 	}
 	if(r != (buf + HeaderSize(buf))){
-		return (r - buf);
+		return (long)(r - buf);
 	}
 	return size;
 }

@@ -102,7 +102,7 @@ static void TreeView_SetHistory(HTREEITEM NewItem);
 
 ******************************************************************************/
 
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, LPARAM Param)
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, TREEITEM_FUNC Func, LPARAM Param)
 {
 	HTREEITEM cItem;
 
@@ -502,7 +502,7 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 	RemoveDirectory(buf);
 
 	//フォルダの削除
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeTreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeTreeItem, 1);
 	pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	TreeView_SetIconState(hWnd, pItem, 0);
@@ -627,7 +627,7 @@ BOOL IsTreeItem(HWND hWnd, HTREEITEM hItem)
 	HTREEITEM RetItem;
 
 	RetItem = hItem;
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)FindTreeItem, (LPARAM)&RetItem);
+	CallTreeItem(WWWCWnd, RootItem, FindTreeItem, (LPARAM)&RetItem);
 	if(RetItem != NULL){
 		return FALSE;
 	}
@@ -1349,7 +1349,7 @@ void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, path, CuDir);
 	if(GetDirSerch(path) == FALSE && FindCheckItem(hWnd, hItem) == 0 && FindPropItem(hWnd, hItem) == 0){
-		CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeTreeItem, 1);
+		CallTreeItem(hWnd, hItem, TreeView_FreeTreeItem, 1);
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		return;
 	}
@@ -1427,10 +1427,10 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 			ListView_RefreshFolder(hWnd);
 		}
 		TreeView_SetIconState(hWnd, pItem, 0);
-		CallTreeItem(hWnd, pItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(hWnd, pItem, TreeView_FreeItem, 1);
 
 	}else{
-		CallTreeItem(hWnd, DgdpItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(hWnd, DgdpItem, TreeView_FreeItem, 1);
 	}
 	if(NoFileFlag == FALSE){
 		FreeDropFiles();

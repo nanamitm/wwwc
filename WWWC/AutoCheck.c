@@ -936,7 +936,7 @@ static void TreeCopyAutoCheckInfo(HWND hDlg)
 	tpTreeInfo->AutoCheckSt = IsDlgButtonChecked(hDlg, IDC_CHECK_FOLDER_DEF);
 
 	//自動チェック設定のコピー
-	CallTreeItem(WWWCWnd, hItem, (FARPROC)CopyAutoTime, (LPARAM)tpTreeInfo);
+	CallTreeItem(WWWCWnd, hItem, CopyAutoTime, (LPARAM)tpTreeInfo);
 
 	if(tpTreeInfo->tpCheckTime != NULL){
 		GlobalFree(tpTreeInfo->tpCheckTime);

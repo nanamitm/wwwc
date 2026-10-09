@@ -416,7 +416,7 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 	}
 
 	sfg = (lParamSort < 0) ? 1 : 0;	//昇順／降順
-	ghed = ABS(lParamSort) - 1;		//ソートを行うヘッダ
+	ghed = (int)ABS(lParamSort) - 1;		//ソートを行うヘッダ
 
 	*buf1 = '\0';
 	*buf2 = '\0';
@@ -986,7 +986,7 @@ void ListView_StyleChange(HWND hWnd, int NewStyle)
 	SetListMenuUnCheck(hWnd, ID_MENUITEM_VIEW_REPORT, 0);
 	SetListMenuUnCheck(hWnd, ID_MENUITEM_VIEW_REPORT_LINE, 0);
 
-	st = SendDlgItemMessage(hWnd, WWWC_LIST, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
+	st = (int)SendDlgItemMessage(hWnd, WWWC_LIST, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
 	if((st & LVS_EX_FULLROWSELECT) != 0){
 		st ^= LVS_EX_FULLROWSELECT;
 	}
@@ -1479,7 +1479,7 @@ void ListView_StartDragItem(HWND hWnd)
 		}
 	}
 	TreeView_SetIconState(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), 0);
-	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), TreeView_FreeItem, 1);
 
 	WaitCursor(FALSE);
 }

@@ -20,7 +20,7 @@
 
 /* Local Function Prototypes */
 #ifdef _DEBUG
-static long all_alloc_size = 0;
+static SIZE_T all_alloc_size = 0;
 
 // #define MEM_CHECK
 #ifdef MEM_CHECK
@@ -122,7 +122,7 @@ void mem_debug(void)
 		return;
 	}
 
-	wsprintf(buf, TEXT("Memory leak: %lu bytes"), all_alloc_size);
+	wsprintf(buf, TEXT("Memory leak: %lu bytes"), (unsigned long)all_alloc_size);
 	MessageBox(NULL, buf, TEXT("debug"), 0);
 #ifdef MEM_CHECK
 	{

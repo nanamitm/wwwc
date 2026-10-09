@@ -409,7 +409,7 @@ void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 
 	if(GetDirSerch(buf) == FALSE){
 		//ツリーの削除
-		CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 0);
+		CallTreeItem(hWnd, hItem, TreeView_FreeItem, 0);
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	}
 }
