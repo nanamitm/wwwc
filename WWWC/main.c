@@ -445,7 +445,7 @@ static void ShowHelp(HWND hWnd)
 	GetModuleFileName(g_hinst, buf, BUFSIZE - 1);
 	p = r = buf;
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if(*p == '\\' || *p == '/'){
 			r = p;
@@ -2311,7 +2311,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 static void DelLastYen(char *p)
 {
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if((*p == '\\' || *p == '/') && *(p + 1) == '\0'){
 			*p = '\0';
@@ -2340,7 +2340,7 @@ static void GetAppPath(HINSTANCE hinst)
 	GetModuleFileName(hinst, DefDirPath, BUFSIZE - 1);
 	r = p = DefDirPath;
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if(*p == '\\' || *p == '/'){
 			r = p;

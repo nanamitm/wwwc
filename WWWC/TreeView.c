@@ -559,7 +559,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 	//ルートの場合
 	if((*p == '\\' && *(p + 1) == '\\') || (*p == '/' && *(p + 1) == '/')){
 		for(p = path + 2; *p != '\0'; p++){
-			if(IsDBCSLeadByte((BYTE)*p) == FALSE){
+			if(IsDBCSLeadByte((BYTE)*p) == FALSE || *(p + 1) == '\0'){
 				if(*p == '\\' || *p == '/'){
 					break;
 				}
@@ -577,8 +577,8 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 	}
 
 	//パスを展開
-	for(r = buf; *p != '\0'; p++, r++){
-		if(IsDBCSLeadByte((BYTE)*p) == FALSE){
+	for(r = buf; *p != '\0' && r - buf < BUFSIZE - 2; p++, r++){
+		if(IsDBCSLeadByte((BYTE)*p) == FALSE || *(p + 1) == '\0'){
 			if(*p == '\\' || *p == '/'){
 				break;
 			}
@@ -715,6 +715,9 @@ BOOL TreeView_IsRecyclerItem(HWND hTreeView, HTREEITEM hItem)
 
 ******************************************************************************/
 
+//パスの最大長 (呼び出し元で "\Item.dat" などを付けても BUFSIZE に収まるように)
+#define TREE_PATH_MAX		(BUFSIZE - 16)
+
 void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootString)
 {
 	HTREEITEM pItem;
@@ -724,7 +727,7 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 
 	//ルートアイテムの場合はそのままパスを返す
 	if(hItem == RootItem){
-		lstrcpy(ret, RootString);
+		lstrcpyn(ret, RootString, BUFSIZE);
 		return;
 	}
 
@@ -735,13 +738,24 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 	pItem = TreeView_GetParent(hTreeView, hItem);
 	while(pItem != RootItem){
 		TreeView_GetItemInfo(hTreeView, pItem, tvName);
+		if(lstrlen(tvName) + 1 + lstrlen(buf) >= TREE_PATH_MAX){
+			break;
+		}
 		wsprintf(work, "%s\\%s", tvName, buf);
 		lstrcpy(buf, work);
 
 		pItem = TreeView_GetParent(hTreeView, pItem);
 	}
-	//指定の文字列と結合
-	wsprintf(ret, "%s\\%s", RootString, buf);
+	//指定の文字列と結合 (呼び出し元のバッファは BUFSIZE 以上)
+	lstrcpyn(ret, RootString, TREE_PATH_MAX);
+	if(pItem != RootItem || lstrlen(ret) + 1 + lstrlen(buf) >= TREE_PATH_MAX){
+		//長すぎるパスはファイル名に使えない文字にして、ファイル操作を失敗させる
+		//(切り詰めると別のフォルダのデータを読み書きしてしまうため)
+		lstrcat(ret, "\\?");
+		return;
+	}
+	lstrcat(ret, "\\");
+	lstrcat(ret, buf);
 }
 
 

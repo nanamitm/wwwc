@@ -288,7 +288,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			buf = (char *)GlobalAlloc(GPTR, lstrlen(tpItemInfo->Comment) + 1);
 			if(buf != NULL){
 				for(p = tpItemInfo->Comment, r = buf ;*p != '\0'; p++){
-					if(IsDBCSLeadByte(*p) == TRUE){
+					if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 						*(r++) = *(p++);
 						*(r++) = *p;
 					}else if(*p == '\\' && *(p + 1) == 'n'){

@@ -40,7 +40,7 @@
 	Global Variables
 **************************************************************************/
 
-char app_path[BUFSIZE];
+char app_path[PATH_BUFSIZE];
 
 HINSTANCE ghinst;
 HANDLE hRTFLibdll = NULL;

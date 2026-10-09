@@ -1044,7 +1044,7 @@ BOOL Item_UrlAdd(HWND hWnd, char *Title, char *buf, int NameFlag, HTREEITEM hIte
 			break;
 		}
 		for(r = url; *p != '\0'; p++){
-			if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 				//２バイトコードの場合
 				*(r++) = *(p++);
 				*(r++) = *p;
@@ -1058,6 +1058,7 @@ BOOL Item_UrlAdd(HWND hWnd, char *Title, char *buf, int NameFlag, HTREEITEM hIte
 		//新しいアイテム情報の確保
 		NewItemInfo = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM));
 		if(NewItemInfo == NULL){
+			GlobalFree(url);
 			return FALSE;
 		}
 		NewItemInfo->iSize = sizeof(struct TPITEM);

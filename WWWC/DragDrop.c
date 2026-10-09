@@ -634,7 +634,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 	p = buf;
 	r = NULL;
 	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if(*p == '.'){
 			r = p;

@@ -473,8 +473,8 @@ void mkDirStr(char *buf)
 
 	p = buf;
 	r = tmp;
-	while(*p != '\0'){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+	while(*p != '\0' && r - tmp < MAX_PATH - 2){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *(p++);
 		}else if(*p == '\\' || *p == '/'){
@@ -570,8 +570,8 @@ char *LineSetItemInfo(struct TPITEM *tpItemList, char *t)
 	if(*t != '\t') return t;
 
 	//Status
-	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++, r++){
-		*r = *t;
+	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++){
+		if(r - Tmpbuf < BUFSIZE - 1) *(r++) = *t;
 	}
 	*r = '\0';
 	tpItemList->Status = atoi(Tmpbuf);
@@ -606,8 +606,8 @@ char *LineSetItemInfo(struct TPITEM *tpItemList, char *t)
 	if(*t != '\t') return t;
 
 	//Status
-	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++, r++){
-		*r = *t;
+	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++){
+		if(r - Tmpbuf < BUFSIZE - 1) *(r++) = *t;
 	}
 	*r = '\0';
 	tpItemList->CheckSt = atoi(Tmpbuf);
@@ -679,18 +679,26 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	FileSize = ret;
 	*(buf + FileSize) = '\0';
 
-	//行数のカウント
-	for(p = buf; *p != '\0'; p++){
-		if(*p == '\n'){
-			LineCnt++;
+	//行数のカウント (下のアイテム作成と同じく、改行で区切られた空でない行を数える)
+	p = buf;
+	while(*p != '\0'){
+		for(; *p == '\r' || *p == '\n'; p++);
+		if(*p == '\0'){
+			break;
 		}
+		LineCnt++;
+		for(; *p != '\0' && *p != '\r' && *p != '\n'; p++);
 	}
 	*cnt = LineCnt;
 
-	//読み込み失敗
-	if(FileSize != 0 && LineCnt == 0){
+	//空行だけの場合
+	if(LineCnt == 0){
 		GlobalFree(buf);
-		return NULL;
+		tpItemList = (struct TPITEM **)GlobalAlloc(GPTR, 0);
+		if(tpItemList == NULL){
+			abort();
+		}
+		return tpItemList;
 	}
 
 	//アイテム情報を確保
@@ -701,7 +709,9 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	tpItemList = tpRetItemList;
 	//アイテム情報を取得
 	p = buf;
-	while(*p != '\0'){
+	for(; *p == '\r' || *p == '\n'; p++);
+	*cnt = 0;
+	while(*p != '\0' && *cnt < LineCnt){
 		if((*tpItemList = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM))) == NULL){
 			abort();
 		}
@@ -712,6 +722,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 		p = LineSetItemInfo(*tpItemList, p);
 		for(; (*p == '\r' || *p == '\n'); p++);
 		tpItemList++;
+		(*cnt)++;
 	}
 
 	GlobalFree(buf);
@@ -1127,7 +1138,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 
 	// %文字 の変換を行う
 	for(p = buf, r = ret;*p != '\0';p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 
