@@ -184,10 +184,77 @@
     <ClCompile Include="ToolBar.c" />
     <ClCompile Include="TreeView.c" />
     <ClCompile Include="undo.c" />
+    <ClCompile Include="DarkMode.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\Darkmodelib.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibColor.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibDpi.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibHook.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibIni.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibPaintHelper.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibSubclass.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibSubclassControl.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibSubclassWindow.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <ClCompile Include="..\third_party\darkmodelib\src\DmlibWinApi.cpp">
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>UNICODE;_UNICODE;NOMINMAX;_WINDOWS;STRICT_TYPED_ITEMIDS;WIN32_LEAN_AND_MEAN;VC_EXTRALEAN;SUPPORT_UTF8;_DARKMODELIB_NO_INI_CONFIG;_DARKMODELIB_CUSTOM_MEM=0x002;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalOptions>/utf-8 /Zc:__cplusplus</AdditionalOptions>
+      <AdditionalIncludeDirectories>..\third_party\darkmodelib\include;..\third_party\darkmodelib\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
     <ClCompile Include="UpMessage.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="General.h" />
+    <ClInclude Include="DarkMode.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="OleDragDrop.h" />
     <ClInclude Include="Profile.h" />

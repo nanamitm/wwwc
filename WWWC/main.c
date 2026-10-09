@@ -24,6 +24,7 @@
 #include "General.h"
 #include "OleDragDrop.h"
 #include "Profile.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -168,6 +169,7 @@ extern int EndCheckMsg;
 
 extern int AutoCheck;
 extern int StartCheck;
+extern int DarkModeType;
 
 extern int AllInitMsg;
 
@@ -926,6 +928,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	}
 
 	WaitCursor(FALSE);
+
+	//ダークモード
+	DarkMode_ApplyMainWindow(hWnd);
 
 	//起動時ではない場合は関数を抜ける
 	if(StartFlag == FALSE){
@@ -2813,6 +2818,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	GetINI();
 	GetProtocolInfo();
 
+	//ダークモードの初期化
+	DarkMode_Initialize(DarkModeType);
+
 	//終了処理
 	if(atexit(AppExit)){
 		MessageBox(NULL, EMSG_ATEXIT, APP_NAME, MB_OK | MB_ICONERROR);
@@ -2890,6 +2898,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageFunc(hWnd, &msg);
 	}
 
+	DarkMode_Uninitialize();
 	DestroyMenu(hPOPUP);
 	if(hMutex != NULL){
 		CloseHandle(hMutex);

@@ -177,6 +177,7 @@ int EndCheckMsg;
 
 int AutoCheck;
 int StartCheck;
+int DarkModeType;
 int NoMinuteCheck;
 
 int OpenReturnIcon;
@@ -221,6 +222,7 @@ void GetINI(void)
 
 	profile_get_string("GENERAL", "DateFormat", "yyyy/MM/dd", DateFormat, BUFSIZE - 1, app_path);
 	profile_get_string("GENERAL", "TimeFormat", "HH:mm", TimeFormat, BUFSIZE - 1, app_path);
+	DarkModeType = profile_get_int("GENERAL", "DarkMode", 0, app_path);
 
 	GetWindowRect(GetDesktopWindow(), &DeskTopRect);
 
@@ -482,6 +484,7 @@ void PutINI(void)
 
 	profile_write_string("GENERAL", "DateFormat", DateFormat, app_path);
 	profile_write_string("GENERAL", "TimeFormat", TimeFormat, app_path);
+	profile_write_int("GENERAL", "DarkMode", DarkModeType, app_path);
 
 	profile_write_int("WINDOW", "left", WinRect.left, app_path);
 	profile_write_int("WINDOW", "top", WinRect.top, app_path);

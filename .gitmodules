@@ -1,0 +1,3 @@
+[submodule "third_party/darkmodelib"]
+	path = third_party/darkmodelib
+	url = https://github.com/ozone10/win32-darkmodelib

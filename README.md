@@ -81,6 +81,11 @@ int CALLBACK ツール関数名(HWND hWnd, struct TPITEM **ToolItemList, int Too
 
 WWWC.exe 側の対応する関数ポインタ型は `WWWC/General.h` (`PROTOCOL_ITEM_FUNC` など) で定義しています。
 
+## サードパーティ
+
+- [win32-darkmodelib](https://github.com/ozone10/win32-darkmodelib) (`third_party/darkmodelib`, git submodule): ダークモード表示に使用。MPL-2.0 (一部 MIT)。ライセンス本文は submodule 内の `LICENSE.md` / `LICENSE-MIT.md` / `docs/LICENSE-*.md` を参照。
+  クローン時は `git clone --recursive`、または `git submodule update --init` を実行してください。
+
 ## 注意
 
 - ソースファイル (`.c` `.h` `.rc`) の文字コードは **UTF-8 (BOM なし)**、改行は CRLF です。コンパイラには `/source-charset:utf-8 /execution-charset:.932` を指定しているため、文字列リテラルは従来どおり Shift_JIS (CP932) で埋め込まれます。
