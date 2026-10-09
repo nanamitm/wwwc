@@ -19,4 +19,10 @@
 			/>
 		</dependentAssembly>
 	</dependency>
+	<!-- DPI 非対応のまま、高 DPI 環境では GDI の描画 (文字など) を OS が高解像度で行う (Windows 10 1703 以降) -->
+	<application xmlns="urn:schemas-microsoft-com:asm.v3">
+		<windowsSettings>
+			<gdiScaling xmlns="http://schemas.microsoft.com/SMI/2017/WindowsSettings">true</gdiScaling>
+		</windowsSettings>
+	</application>
 </assembly>
