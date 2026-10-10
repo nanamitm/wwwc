@@ -215,3 +215,28 @@ Test-Case "delete and undo an item with a clipboard record larger than 32 KiB" {
   $saved = (Read-Utf8Text $e.ItemFile).TrimEnd("`r", "`n").Split("`t")
   Assert-Equal $comment $saved[11] "the complete comment is preserved"
 }
+
+
+Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
+  $e = New-TestEnv "feat-file64" $BinDir
+  $file = Join-Path $e.Dir "large.bin"
+  [WwwcWin]::CreateSparseFile($file, 2147483655)
+  $fields = (ItemLine "large file" "file:///$file").Split("`t")
+  $fields[2] = "2147483655"
+  $fields[9] = "1;;0"    # FILE: ignore date, compare size
+  Set-Items $e @($fields -join "`t")
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"),
+    "[PROTOCOL]`r`nProtocolCnt=2`r`ntitle-0=HTTP`r`nDLL-0=wwwc.dll`r`nFuncHeader-0=HTTP_`r`nUpIconIndex-0=-1`r`ntitle-1=FILE`r`nDLL-1=wwwc.dll`r`nFuncHeader-1=FILE_`r`nUpIconIndex-1=-1`r`n[UPMSG]`r`nUPSnd=0`r`nUPMsg=0`r`n", $script:Enc)
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK; Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code (above 2 GiB)"
+  $first = Get-SavedItem $e "large file"
+  Assert-Equal "2147483655" $first.Size "size above 2 GiB is positive"
+  Assert-True (($first.Status -band 1) -eq 0) "unchanged size is not marked updated"
+  $stream = [IO.File]::OpenWrite($file)
+  try { $stream.SetLength(6442450951) } finally { $stream.Dispose() }
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK; Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code (above 4 GiB)"
+  $second = Get-SavedItem $e "large file"
+  Assert-Equal "6442450951" $second.Size.TrimEnd("*") "upper 32 bits are preserved"
+  Assert-True (($second.Status -band 1) -ne 0) "a 4 GiB size increase is detected without date comparison"
+}

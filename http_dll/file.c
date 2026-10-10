@@ -17,6 +17,7 @@
 
 #define _INC_OLE
 #include <windows.h>
+#include <stdio.h>
 #undef  _INC_OLE
 
 #include "String.h"
@@ -138,7 +139,8 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 		FindClose(hFindFile);
 
 		//サイズの比較
-		wsprintf(buf, "%ld", (long)FindData.nFileSizeLow);
+		_snprintf_s(buf, sizeof(buf), _TRUNCATE, "%llu",
+			((unsigned long long)FindData.nFileSizeHigh << 32) | FindData.nFileSizeLow);
 		/* 前回チェック時のものと比較する */
 		if(GetOptionInt(tpItemInfo->Option1, 1) == 0 && LresultCmp(tpItemInfo->Size, buf) != 0){
 			CmpMsg = ST_UP;
