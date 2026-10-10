@@ -188,3 +188,15 @@ Test-Case "failed Shift_JIS migration preserves data and retries after unlocking
   Assert-True ((Read-Utf8 (Join-Path $e.Data "user.ini")) -match "CharSetUTF8=1") "successful retry is marked complete"
   Assert-True ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes("$($e.Data)_sjis_backup\Item.dat"), [byte[]]$original)) "retry preserves the original backup"
 }
+
+
+Test-Case "Unicode numeric HTML entities and invalid references in page titles" {
+  $e = New-TestEnv "utf8-entities" $BinDir
+  Set-Items $e @(ItemLine "entities" (Url "/title-entities"))
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "entities"; Send-Command $e ($CMD_ACTION + 5)
+  $expected = "`u{65E5}`u{672C} `u{1F600} `u{1F600} &#xD800; &#0; &#1114112; &#x;"
+  Assert-True (Wait-Until { (Get-ListTitles $e) -contains $expected } 10) "numeric references decode to Unicode while invalid references stay literal"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-True ((Get-SavedTitles $e) -contains $expected) "decoded Unicode title is saved"
+}

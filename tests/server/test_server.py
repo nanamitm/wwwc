@@ -38,6 +38,7 @@ TITLE_UTF8 = TITLE_JA + " \U0001F600 中文 한국어"   # + emoji, Chinese, Kor
 def page(title, charset):
     return ("<html><head><title>%s</title></head><body>%s</body></html>" % (title, title)).encode(charset)
 TITLE_PAGES = {
+    "entities": b"<html><head><title>&#26085;&#26412; &#x1F600; &#128512; &#xD800; &#0; &#1114112; &#x;</title></head></html>",
     "utf8": page(TITLE_UTF8, "utf-8"),
     "sjis": page(TITLE_JA, "cp932"),
     "euc": page(TITLE_JA, "euc_jp"),
