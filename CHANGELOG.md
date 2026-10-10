@@ -3,6 +3,31 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## Unreleased
+
+### New
+
+- HTTP settings: "Use the Windows proxy settings" (WinHTTP automatic proxy:
+  the Windows settings including automatic detection and configuration
+  scripts). The proxy is now chosen from three options: none, Windows
+  settings, or a given server (`[PROXY] Proxy` = 0 / 2 / 1). With the
+  Windows settings the proxy credentials are passed to WinHTTP, so they are
+  sent only to a proxy, never to a site reached directly.
+
+### Fixes
+
+- The proxy set in the item properties ("use a different proxy") was not
+  used: the request connected directly.
+- Identifiers, URLs, titles, file names and ini keys are compared ordinally
+  instead of by the user's locale (which ignores some characters and, under
+  a Turkish locale, does not match "I" and "i").
+
+### Removed
+
+- The unused Winsock code in wwwc.dll (host name cache, `HostNoCache`).
+  WWWC.exe still initializes Winsock and forwards `WM_WSOCK_GETHOST` /
+  `WM_WSOCK_SELECT` for protocol plugins that use them.
+
 ## 1.3.1
 
 ### Fixes

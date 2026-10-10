@@ -75,7 +75,6 @@ struct HTTPREQ{
 	struct TPITEM Item;				/* 通信スレッド用のアイテム情報 */
 	struct TPHTTP HTTP;				/* 通信スレッド用の接続情報と受信データ */
 
-	int Proxy;
 	int pNoCache;
 	int pUsePass;
 	char pUser[BUFSIZE];
@@ -1437,12 +1436,25 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 		px = ItemProxy;
 		pt = atoi(ItemPort);
 
-	}else if(ProxyFlag == 0 && Proxy == 1){
+	}else if(ProxyFlag == 0 && Proxy == PROXY_NAMED){
 		px = pServer;
 		pt = pPort;
 	}
 
-	if((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2){
+	//使用するプロキシ (通信スレッドはこの結果だけを使う)
+	tpHTTP->ProxyMode = PROXY_NONE;
+	tpHTTP->ProxyGlobal = FALSE;
+	if(ProxyFlag == 2){
+		tpHTTP->ProxyMode = PROXY_NAMED;
+	}else if(ProxyFlag == 0 && Proxy == PROXY_NAMED){
+		tpHTTP->ProxyMode = PROXY_NAMED;
+		tpHTTP->ProxyGlobal = TRUE;
+	}else if(ProxyFlag == 0 && Proxy == PROXY_SYSTEM){
+		tpHTTP->ProxyMode = PROXY_SYSTEM;
+		tpHTTP->ProxyGlobal = TRUE;
+	}
+
+	if(tpHTTP->ProxyMode == PROXY_NAMED){
 		//Proxyのサーバ名とポート番号を取得
 		tpHTTP->SvName = (char *)GlobalAlloc(GPTR, lstrlen(px) + 1);
 		if(tpHTTP->SvName == NULL){
@@ -1698,9 +1710,10 @@ static struct HTTPREQ *CreateRequest(struct TPITEM *tpItemInfo, struct TPHTTP *t
 	req->HTTP.pass = DupString((tpHTTP->pass != NULL) ? tpHTTP->pass : "");
 	req->HTTP.HeadCheckFlag = tpHTTP->HeadCheckFlag;
 	req->HTTP.FilterFlag = tpHTTP->FilterFlag;
+	req->HTTP.ProxyMode = tpHTTP->ProxyMode;
+	req->HTTP.ProxyGlobal = tpHTTP->ProxyGlobal;
 
 	//プロキシの設定 (プロパティで変更されても通信中のリクエストには影響しない)
-	req->Proxy = Proxy;
 	req->pNoCache = pNoCache;
 	req->pUsePass = pUsePass;
 	lstrcpyn(req->pUser, pUser, BUFSIZE);
@@ -1811,19 +1824,21 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	char pass[BUFSIZE];
 	char referer[BUFSIZE];
 	char buf[BUFSIZE];
-	int ProxyFlag;
 	int clen;
 	BOOL ret = FALSE;
 
 	SetLastError(NO_ERROR);
 
-	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
-	if ((ProxyFlag == 0 && req->Proxy == 1) || ProxyFlag == 2) {
+	//プロキシは開始時 (GetServerPort) に決めたもの。以前はアイテムに設定したプロキシが使われていなかった
+	if (tpHTTP->ProxyMode == PROXY_NAMED) {
 		WCHAR wproxy[2048];
 		char proxy[2048];
 		wsprintf(proxy, "http://%.1000s:%d", tpHTTP->SvName, tpHTTP->Port);
 		MultiByteToWideChar(CP_ACP, 0, proxy, -1, wproxy, 2048);
 		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NAMED_PROXY, wproxy, WINHTTP_NO_PROXY_BYPASS, 0);
+	} else if (tpHTTP->ProxyMode == PROXY_SYSTEM) {
+		//Windows のプロキシ設定 (自動検出、自動構成スクリプトを含む)
+		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	} else {
 		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	}
@@ -1886,6 +1901,16 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 			SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
 		WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
 	}
+	//Windows のプロキシ設定では直接接続になることもあるため、プロキシの認証情報は
+	//Proxy-Authorization ヘッダではなく WinHTTP に渡す (プロキシにだけ送られる)
+	if (tpHTTP->ProxyMode == PROXY_SYSTEM && req->pUsePass == 1) {
+		WCHAR wuser[BUFSIZE], wpass[BUFSIZE];
+
+		MultiByteToWideChar(CP_ACP, 0, req->pUser, -1, wuser, BUFSIZE);
+		MultiByteToWideChar(CP_ACP, 0, req->pPass, -1, wpass, BUFSIZE);
+		WinHttpSetCredentials(hRequest, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC, wuser, wpass, NULL);
+		SecureZeroMemory(wpass, sizeof(wpass));
+	}
 
 	*user = '\0';
 	*pass = '\0';
@@ -1893,7 +1918,7 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	if (tpItemInfo->DLLData1 != NULL) {
 		dwSize += lstrlen(tpItemInfo->DLLData1);
 	}
-	if (req->Proxy == 1 && req->pUsePass == 1) {
+	if (tpHTTP->ProxyMode == PROXY_NAMED && tpHTTP->ProxyGlobal == TRUE && req->pUsePass == 1) {
 		dwSize += (lstrlen(req->pUser) + 1 + lstrlen(req->pPass)) * 13 / 10;
 	}
 	if (GetOptionString(tpItemInfo->Option2, referer, OP2_REFERER) == TRUE) {
@@ -1931,11 +1956,11 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 		s = iStrCpyW(s, tpItemInfo->DLLData1);
 	}
 	//キャッシュ制御
-	if (req->Proxy == 1 && req->pNoCache == 1) {
+	if (tpHTTP->ProxyGlobal == TRUE && req->pNoCache == 1) {
 		s = iStrCpyW(s, "\r\nPragma: no-cache\r\nCache-Control: no-cache");
 	}
 	//プロキシ認証
-	if (req->Proxy == 1 && req->pUsePass == 1) {
+	if (tpHTTP->ProxyMode == PROXY_NAMED && tpHTTP->ProxyGlobal == TRUE && req->pUsePass == 1) {
 		wsprintf(BaseStr1, "%s:%s", req->pUser, req->pPass);
 		eBase(BaseStr1, BaseStr2);
 

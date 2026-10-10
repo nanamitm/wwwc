@@ -75,3 +75,60 @@ Test-Case "exit while receiving" {
   Send-Command $e $CMD_ALLCHECK; Start-Sleep 2
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+Test-Case "proxy set in the item properties is used" {
+  $e = New-TestEnv "http-itemproxy" $BinDir
+  # Option2: NOPROXY=0;;SETPROXY=1;;PROXY;;PORT;;... (the host does not exist: only the proxy can answer)
+  Set-Items $e @(ItemLine "viaproxy" "http://wwwc-item-proxy.invalid/x" "0;;1;;127.0.0.1;;$($script:ServerPort);;0;;;;;;;;0")
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET http://wwwc-item-proxy.invalid/x " } 15) "request went through the item's proxy ($(Get-ServerLog $m))"
+  Start-Sleep 1
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-Equal "" (Get-SavedItem $e "viaproxy").ErrStatus "no error"
+}
+
+Test-Case "Windows proxy settings" {
+  $e = New-TestEnv "http-sysproxy" $BinDir
+  # Proxy=2: Windows settings. With no proxy configured for loopback the request goes
+  # directly, and the proxy password must not be sent to the site
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"),
+    "[PROXY]`r`nProxy=2`r`npServer=192.0.2.1`r`npPort=8080`r`npNoCache=0`r`npUsePass=1`r`npUser=pu`r`npPass=$(-join ([Text.Encoding]::ASCII.GetBytes('pp') | ForEach-Object { '{0:x2}' -f ($_ -bxor 0xFF) }))`r`n", $script:Enc)
+  Set-Items $e @(ItemLine "page" (Url "/sysproxy"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /sysproxy " } 15) "page was checked ($(Get-ServerLog $m))"
+  Assert-True ((Get-ServerLog $m) -match "^GET /sysproxy auth=None proxy_auth=None") "no proxy credentials were sent to the site"
+  Start-Sleep 1
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
+$IDC_BUTTON_EDIT = 1011   # WWWC/resource.h: protocol page "Properties"
+
+Test-Case "HTTP settings: choose the Windows proxy settings" {
+  $e = New-TestEnv "http-proxyui" $BinDir
+  Set-Items $e @(ItemLine "page" (Url "/target"))
+  [void](Start-Wwwc $e)
+  Send-Command $e 40090                                         # ID_MENUITEM_OPTION
+  [void](Wait-Until { $script:opt = Get-Dialogs $e | Select-Object -First 1; $null -ne $script:opt } 10)
+  $opt = $script:opt
+  [void][WwwcWin]::SendMessage($opt.Handle, 0x0400 + 101, [IntPtr]2, [IntPtr]::Zero)          # PSM_SETCURSEL: protocol page
+  Start-Sleep -Milliseconds 500
+  $page = [WwwcWin]::SendMessage($opt.Handle, 0x0400 + 118, [IntPtr]::Zero, [IntPtr]::Zero)
+  [WwwcList]::Select([WwwcWin]::GetDlgItem($page, 1007), 0)                                    # IDC_LIST_PROTOCOL: HTTP
+  [void][WwwcWin]::PostMessage($page, 0x0111, [IntPtr]$IDC_BUTTON_EDIT, [IntPtr]::Zero)
+  [void](Wait-Until { $script:http = Get-Dialogs $e | Where-Object { $_.Handle -ne $opt.Handle } | Select-Object -First 1; $null -ne $script:http } 10)
+  $http = $script:http
+  Assert-True ($null -ne $http) "HTTP settings opened"
+  if ($http) {
+    $hp = [WwwcWin]::SendMessage($http.Handle, 0x0400 + 118, [IntPtr]::Zero, [IntPtr]::Zero)
+    [void][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($hp, 1050), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)   # BM_CLICK: Windows settings
+    Assert-True (-not [WwwcWin]::IsWindowEnabled([WwwcWin]::GetDlgItem($hp, 1002))) "the proxy server field is disabled"
+    [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($http.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+    [void](Wait-Until { -not [WwwcWin]::IsWindow($http.Handle) } 5)
+  }
+  [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($opt.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)
+  [void](Wait-Until { -not [WwwcWin]::IsWindow($opt.Handle) } 5)
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-True ((Get-Content (Join-Path $e.Bin "wwwc.ini")) -contains "Proxy=2") "wwwc.ini has Proxy=2"
+}

@@ -58,6 +58,11 @@
 #define OP2_REFERER						7
 #define OP2_IGNORECERT					8
 
+//プロキシの設定 (wwwc.ini の [PROXY] Proxy と TPHTTP の ProxyMode)
+#define PROXY_NONE						0		//使用しない
+#define PROXY_NAMED						1		//指定したプロキシ (サーバとポート)
+#define PROXY_SYSTEM					2		//Windows のプロキシ設定 (自動構成スクリプトを含む)
+
 //ダークモードのヘッダ・ソース表示の色
 #define VIEW_DARK_BACK					RGB(30, 30, 30)
 #define VIEW_DARK_TEXT					RGB(212, 212, 212)
@@ -83,6 +88,9 @@ struct TPHTTP{
 	char *SvName;						/* サーバ名 */
 	char *Path;							/* パス */
 	int Port;							/* ポート番号 */
+
+	int ProxyMode;						/* PROXY_NONE / PROXY_NAMED (SvName:Port) / PROXY_SYSTEM */
+	BOOL ProxyGlobal;					/* プロトコルの設定のプロキシ (キャッシュと認証の設定を使う) */
 
 	char *hSvName;						/* HOSTサーバ名 */
 	int hPort;							/* HOSTポート番号 */
