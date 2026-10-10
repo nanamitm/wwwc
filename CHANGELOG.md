@@ -3,7 +3,7 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
-## Unreleased
+## 1.5.2
 
 ### Fixes
 

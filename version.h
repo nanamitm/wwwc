@@ -14,9 +14,9 @@
 
 #define WWWC_VERSION_MAJOR			1
 #define WWWC_VERSION_MINOR			5
-#define WWWC_VERSION_PATCH			1
+#define WWWC_VERSION_PATCH			2
 
-#define WWWC_VERSION_STR			"1.5.1"
-#define WWWC_VERSION_FILE_STR		"1.5.1.0"
+#define WWWC_VERSION_STR			"1.5.2"
+#define WWWC_VERSION_FILE_STR		"1.5.2.0"
 
 #endif
