@@ -424,8 +424,8 @@ BOOL ExecUndo(HWND hWnd)
 			if((*(tpTreeInfo->ItemList + i)) == NULL){
 				continue;
 			}
-			if(lstrcmp((*(tpTreeInfo->ItemList + i))->Title, CurUndo.NewTitle) == 0 &&
-				lstrcmp((*(tpTreeInfo->ItemList + i))->CheckURL, CurUndo.UndoURL) == 0){
+			if(strcmp((*(tpTreeInfo->ItemList + i))->Title, CurUndo.NewTitle) == 0 &&
+				strcmp((*(tpTreeInfo->ItemList + i))->CheckURL, CurUndo.UndoURL) == 0){
 				GlobalFree((*(tpTreeInfo->ItemList + i))->Title);
 				(*(tpTreeInfo->ItemList + i))->Title = AllocCopy(CurUndo.OldTitle);
 				if((*(tpTreeInfo->ItemList + i))->Title == NULL){

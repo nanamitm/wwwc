@@ -653,7 +653,7 @@ void SetProtocolItemMenu(HWND hWnd, HMENU pMenu, BOOL ItemFlag, BOOL UpWndFlag)
 				strlistcmp(tpProtocol[ProtocolIndex].title, ToolList[j].Protocol, ',') == TRUE &&
 				(ToolList[j].MenuIndex == i || (i >= pMenuCnt && (ToolList[j].MenuIndex > i || ToolList[j].MenuIndex == -1)))){
 
-				if(lstrcmp(ToolList[j].title, "-") == 0){
+				if(strcmp(ToolList[j].title, "-") == 0){
 					InsertMenu(pMenu, ii++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
 				}else{
 					InsertMenu(pMenu, ii++, MF_BYPOSITION | MF_STRING, ID_MENU_TOOL_ACTION + j, ToolList[j].title);
@@ -668,7 +668,7 @@ void SetProtocolItemMenu(HWND hWnd, HMENU pMenu, BOOL ItemFlag, BOOL UpWndFlag)
 		}
 
 		//プロトコルメニュー
-		if(lstrcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
+		if(strcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
 			InsertMenu(pMenu, ii++, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
 		}else{
 			InsertMenu(pMenu, ii++, MF_BYPOSITION | MF_STRING, ID_MENU_ACTION + i,

@@ -1075,11 +1075,11 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 		//テキスト
 		if(hLVItem->mask & LVIF_TEXT){
 			*(hLVItem->pszText) = '\0';
-			if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_NAME) == 0){
+			if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_NAME) == 0){
 				CopyDisplayText(hLVItem->pszText, buf, hLVItem->cchTextMax);
-			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_CHECKURL) == 0){
+			}else if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_CHECKURL) == 0){
 				CopyDisplayText(hLVItem->pszText, FOLDERNAME, hLVItem->cchTextMax);
-			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_COMMENT) == 0){
+			}else if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_COMMENT) == 0){
 				tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 				if(tpTreeInfo != NULL && tpTreeInfo->Comment != NULL){
 					CopyDisplayText(hLVItem->pszText, tpTreeInfo->Comment, hLVItem->cchTextMax);

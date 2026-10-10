@@ -164,7 +164,7 @@ static int section_find(const TCHAR *section_name)
 		if ((section_info + i)->hash != hash) {
 			continue;
 		}
-		if (lstrcmpi((section_info + i)->section_name, section_name) == 0) {
+		if (_stricmp((section_info + i)->section_name, section_name) == 0) {
 			return i;
 		}
 	}
@@ -230,7 +230,7 @@ static int key_find(const SECTION_INFO *si, const TCHAR *key_name)
 			(si->key_info + i)->hash != hash) {
 			continue;
 		}
-		if (lstrcmpi((si->key_info + i)->key_name, key_name) == 0) {
+		if (_stricmp((si->key_info + i)->key_name, key_name) == 0) {
 			return i;
 		}
 	}

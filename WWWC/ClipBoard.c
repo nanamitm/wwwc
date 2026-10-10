@@ -658,7 +658,7 @@ static BOOL CopyFolder(HWND hWnd, HTREEITEM hItem, char *FromPath, char *Name, i
 	}
 
 	//送り側と受け側のフォルダが同じ
-	if(lstrcmp(Path, FromPath) == 0){
+	if(strcmp(Path, FromPath) == 0){
 		if(mode == FLAG_COPY){
 			wsprintf(Msg, EMSG_FOLDERCOPY_CUR, Name);
 			MessageBox(hWnd, Msg, EMSG_FOLDERCOPY_TITLE, MB_ICONSTOP);
@@ -695,7 +695,7 @@ static BOOL CopyFolder(HWND hWnd, HTREEITEM hItem, char *FromPath, char *Name, i
 
 	}else{
 		//移動先と移動元が同じ場合は処理を行わない
-		if(lstrcmp(FromPath, CopyPath) == 0){
+		if(strcmp(FromPath, CopyPath) == 0){
 			return FALSE;
 		}
 
@@ -744,7 +744,7 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 	//移動先と移動元が同じ場合
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, TmpBuf, CuDir);
 	wsprintf(ToPath, "%s\\"DATAFILENAME, TmpBuf);
-	if(lstrcmpi(ToPath, SourcePath) == 0){
+	if(PathCompare(ToPath, SourcePath) == 0){
 		//移動の場合は処理を行わない
 		if(mode == FLAG_CUT){
 			return FALSE;
@@ -772,7 +772,7 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 			for(i = 0;i < tpTreeInfo->ItemListCnt;i++){
 				if(*(tpTreeInfo->ItemList + i) == NULL ||
 					(*(tpTreeInfo->ItemList + i))->Title == NULL ||
-					lstrcmp((*(tpTreeInfo->ItemList + i))->Title, TmpTitle) != 0){
+					strcmp((*(tpTreeInfo->ItemList + i))->Title, TmpTitle) != 0){
 					continue;
 				}
 
@@ -820,13 +820,13 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 		//タイトルの比較
 		p = ((*(tpDeleteItemList + i))->Title == NULL) ? "" : (*(tpDeleteItemList + i))->Title;
 		r = (NewItemInfo->Title == NULL) ? "" : NewItemInfo->Title;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			continue;
 		}
 		//URLの比較
 		p = ((*(tpDeleteItemList + i))->CheckURL == NULL) ? "" : (*(tpDeleteItemList + i))->CheckURL;
 		r = (NewItemInfo->CheckURL == NULL) ? "" : NewItemInfo->CheckURL;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			continue;
 		}
 
@@ -959,7 +959,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 
 		}else{
 			//選択の解除
-			if(SelInitFlag == FALSE && (ret == FLAG_COPY || lstrcmpi(ToPath, SourcePath) != 0)){
+			if(SelInitFlag == FALSE && (ret == FLAG_COPY || PathCompare(ToPath, SourcePath) != 0)){
 				ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_SELECTED);
 				SelInitFlag = TRUE;
 			}

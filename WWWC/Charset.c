@@ -211,7 +211,7 @@ static void ConvertTree(const char *Dir, const char *BackupDir)
 	}
 	do{
 		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ||
-			lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+			strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		if(lstrlen(Dir) + lstrlen(FindData.cFileName) + 2 >= BUFSIZE ||

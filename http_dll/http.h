@@ -31,6 +31,9 @@
 
 //バッファサイズ (UTF-8 では日本語1文字が3バイト。プラグインと共有する構造体は wwwcdll.h の 256 のまま)
 #define BUFSIZE							1024
+
+//文字列の一致は strcmp / _stricmp (ASCII)。lstrcmp は言語に依存した比較のため使わない
+#include <string.h>
 #define PATH_BUFSIZE					(BUFSIZE + 32)		//DLLのディレクトリ (BUFSIZE 未満) + ファイル名
 #define MAXSIZE							32768
 #define RECVSIZE						32768				/* 受信サイズ */

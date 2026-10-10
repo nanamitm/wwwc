@@ -252,7 +252,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 	char *buf = NULL;
 	int rc = -1;
 
-	if(lstrcmp(Action,"open") == 0){
+	if(strcmp(Action,"open") == 0){
 		if(tpItemInfo->CheckURL != NULL){
 			for(buf = tpItemInfo->CheckURL + lstrlen("file:"); *buf == '/' && *buf != '\0'; buf++);
 		}

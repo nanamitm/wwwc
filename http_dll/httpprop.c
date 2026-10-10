@@ -358,7 +358,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				buf = GlobalAlloc(GPTR, len + 1);
 				if(buf != NULL){
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)buf);
-					if(lstrcmp(tpItemInfo->CheckURL, buf) != 0){
+					if(strcmp(tpItemInfo->CheckURL, buf) != 0){
 						if(tpItemInfo->Size != NULL){
 							GlobalFree(tpItemInfo->Size);
 							tpItemInfo->Size = NULL;

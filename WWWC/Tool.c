@@ -156,7 +156,7 @@ void SetToolMenu(HWND hWnd)
 	//ツールのリストからメニューを作成
 	for(i = 0;i < ToolListCnt;i++){
 		if((ToolList[i].Action & TOOL_EXEC_WINDOWMENU) != 0 && ToolList[i].title[0] != '\0'){
-			if(lstrcmp(ToolList[i].title, "-") == 0){
+			if(strcmp(ToolList[i].title, "-") == 0){
 				// メニュー名が "-" だった場合はセパレータにする
 				AppendMenu(ToolMenu, MF_SEPARATOR, 0, NULL);
 			}else{
@@ -992,7 +992,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 				*buf = '\0';
 				SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
-				if(lstrcmp(buf, "*") == 0){
+				if(strcmp(buf, "*") == 0){
 					*buf = '\0';
 				}
 

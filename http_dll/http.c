@@ -666,7 +666,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 	*DateRet = GetHeadContent(tpHTTP->buf, "Last-Modified:", headcontent);
 	if(*DateRet == TRUE){
 		if(CmpOption == 1 && tpItemInfo->DLLData1 != NULL && *tpItemInfo->DLLData1 != '\0' &&
-			lstrcmp(tpItemInfo->DLLData1, headcontent) != 0){
+			strcmp(tpItemInfo->DLLData1, headcontent) != 0){
 			CmpMsg = ST_UP;
 		}
 		if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->DLLData1 == NULL || *tpItemInfo->DLLData1 == '\0'){
@@ -1600,7 +1600,7 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 		if(SvName == NULL) return FALSE;
 		*SvName = '\0';
 		Port = GetURL((*(CheckItemList + i))->CheckURL, SvName, NULL, 80, NULL, NULL);
-		if(Port != -1 && lstrcmp(RealServer, SvName) == 0){
+		if(Port != -1 && strcmp(RealServer, SvName) == 0){
 			HeapFree(GetProcessHeap(), 0, SvName);
 			return TRUE;
 		}
@@ -2569,7 +2569,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 	char URL[MAXSIZE];
 	char *p, *r;
 
-	if(lstrcmpi(FileType,"url") == 0){
+	if(_stricmp(FileType,"url") == 0){
 		GetPrivateProfileString("InternetShortcut", "URL", "", URL, MAXSIZE - 1, FilePath);
 
 		for(r = p = FilePath; *p != '\0'; p++){
@@ -2587,7 +2587,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 			lstrcpy(tpItemInfo->Title, r);
 		}
 		if(lstrlen(tpItemInfo->Title) > 4){
-			if(lstrcmpi((tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4), ".url") == 0){
+			if(_stricmp((tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4), ".url") == 0){
 				*(tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4) = '\0';
 			}
 		}
@@ -2618,7 +2618,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 	char *p = NULL;
 	int rc = -1;
 
-	if(lstrcmp(Action, "open") == 0){
+	if(strcmp(Action, "open") == 0){
 		//開く
 		if(tpItemInfo->ViewURL != NULL){
 			p = tpItemInfo->ViewURL;
@@ -2632,7 +2632,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		}
 		rc = ExecItem(hWnd, p, NULL);
 
-	}else if(lstrcmp(Action, "checkopen") == 0){
+	}else if(strcmp(Action, "checkopen") == 0){
 		//チェックするURLで開く
 		if(tpItemInfo->CheckURL != NULL){
 			p = tpItemInfo->CheckURL;
@@ -2643,17 +2643,17 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		}
 		rc = ExecItem(hWnd, p, NULL);
 
-	}else if(lstrcmp(Action, "header") == 0){
+	}else if(strcmp(Action, "header") == 0){
 		//ヘッダ表示
 		tpItemInfo->Param3 = 1;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
-	}else if(lstrcmp(Action, "source") == 0){
+	}else if(strcmp(Action, "source") == 0){
 		//ソース表示
 		tpItemInfo->Param3 = 2;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
-	}else if(lstrcmp(Action, "gettitle") == 0){
+	}else if(strcmp(Action, "gettitle") == 0){
 		//タイトル取得
 		tpItemInfo->Param3 = 3;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);

@@ -106,71 +106,22 @@ char *iStrCpy(char *ret, char *buf)
 
 /******************************************************************************
 
-	GetStrLen
+	lstrcmpn / lstrcmpni
 
-	比較用の文字列の長さを取得する
-
-******************************************************************************/
-
-static int GetStrLen(const char *buf, int len)
-{
-	int i;
-
-	if(len < 0) return len;
-
-	for(i = 0; i < len; i++){
-		if(*buf == '\0'){
-			break;
-		}
-		buf++;
-	}
-	return i;
-}
-
-
-/******************************************************************************
-
-	lstrcmpn
-
-	２つの文字列を文字数分比較を行う
+	2つの文字列を先頭から len バイトまで比較する (lstrcmpni は ASCII の大文字と小文字を区別しない)
+	HTML やヘッダの解析、識別子の比較に使うため、言語に依存しない比較にする
+	(以前は CompareString を使っていた)
 
 ******************************************************************************/
 
 int lstrcmpn(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		0, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return strncmp(buf1, buf2, (size_t)len);
 }
-
-
-/******************************************************************************
-
-	lstrcmpni
-
-	2つの文字列を大文字、小文字を区別しないで比較を行う
-
-******************************************************************************/
 
 int lstrcmpni(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		NORM_IGNORECASE, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return _strnicmp(buf1, buf2, (size_t)len);
 }
 
 
@@ -651,5 +602,29 @@ void CopyDisplayText(char *ret, const char *buf, int size)
 			ret[i - 1] = '\0';
 		}
 	}
+}
+
+/******************************************************************************
+
+	PathCompare
+
+	パスやフォルダ名の比較 (0 で一致)
+	ファイルシステムと同じく大文字と小文字を区別せず、言語 (ロケール) に依存しない。
+	(lstrcmpi は言語に依存した比較のため、無視される文字があったり、トルコ語の
+	 I と i のように大文字と小文字の対応が異なったりする)
+
+******************************************************************************/
+
+int PathCompare(const char *buf1, const char *buf2)
+{
+	WCHAR w1[BUFSIZE], w2[BUFSIZE];
+	int ret;
+
+	if(MultiByteToWideChar(CP_ACP, 0, buf1, -1, w1, BUFSIZE) == 0 ||
+		MultiByteToWideChar(CP_ACP, 0, buf2, -1, w2, BUFSIZE) == 0){
+		return strcmp(buf1, buf2);
+	}
+	ret = CompareStringOrdinal(w1, -1, w2, -1, TRUE);
+	return (ret == 0) ? strcmp(buf1, buf2) : ret - CSTR_EQUAL;
 }
 /* End of source */

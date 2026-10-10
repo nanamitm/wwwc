@@ -657,12 +657,12 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 		struct TPITEM **tpFromItemInfo;
 		int FromCnt, i;
 
-		if(lstrcmpi(r, "dll") == 0){
+		if(_stricmp(r, "dll") == 0){
 			SelectDll(hWnd, buf);
 			return;
 		}
 
-		if(lstrcmpi(r, "dat") != 0){
+		if(_stricmp(r, "dat") != 0){
 			return;
 		}
 
@@ -798,7 +798,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 			continue;
 		}
 
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		//再帰

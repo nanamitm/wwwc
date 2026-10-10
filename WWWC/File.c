@@ -198,7 +198,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 
 	//コピー先の名前の設定
 	wsprintf(nPath, "%s\\%s", NewPath, name);
-	if(lstrcmpi(nPath, Path) == 0){
+	if(PathCompare(nPath, Path) == 0){
 		wsprintf(buf, STR_COPYNAME"%s", name);
 		while(GetDirSerch(nPath) == TRUE){
 			wsprintf(nPath, "%s\\%s", NewPath, buf);
@@ -229,7 +229,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 	do{
 		//ディレクトリのコピー
 		if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-			if(lstrcmp(FindData.cFileName, ".") != 0 && lstrcmp(FindData.cFileName, "..") != 0){
+			if(strcmp(FindData.cFileName, ".") != 0 && strcmp(FindData.cFileName, "..") != 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				if(CopyDirTree(hWnd, buf, nPath, FindData.cFileName, NULL) == -1){
 					FindClose(hFindFile);
@@ -243,7 +243,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 		wsprintf(buf2, "%s\\%s", nPath, FindData.cFileName);
 
 		//ファイルのコピー
-		if(lstrcmpi(FindData.cFileName, DATAFILENAME) != 0 ||
+		if(_stricmp(FindData.cFileName, DATAFILENAME) != 0 ||
 			lstrcmpni(nPath, CuDir, lstrlen(CuDir)) != 0 || hWnd == NULL){
 			CopyFile(buf, buf2, TRUE);
 			continue;
@@ -319,15 +319,15 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 
 	do{
 		if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-			if(lstrcmp(FindData.cFileName, ".") != 0 && lstrcmp(FindData.cFileName, "..") != 0){
+			if(strcmp(FindData.cFileName, ".") != 0 && strcmp(FindData.cFileName, "..") != 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteDirTree(buf, AllFlag);
 				RemoveDirectory(buf);
 			}
 		}else{
 			if(AllFlag == TRUE ||
-				lstrcmpi(FindData.cFileName, DATAFILENAME) == 0 ||
-				lstrcmpi(FindData.cFileName, FOLDERFILENAME) == 0){
+				_stricmp(FindData.cFileName, DATAFILENAME) == 0 ||
+				_stricmp(FindData.cFileName, FOLDERFILENAME) == 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteFile(buf);
 			}
@@ -365,7 +365,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0){
 			continue;
 		}
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
@@ -441,7 +441,7 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0){
 			continue;
 		}
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		//フォルダ情報の保存
