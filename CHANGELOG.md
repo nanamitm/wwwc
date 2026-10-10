@@ -3,6 +3,25 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## Unreleased
+
+### High DPI
+
+- The toolbar images (16x16 pixel art) are enlarged with Scale2x / Scale3x
+  and then reduced to the size of the DPI, instead of being stretched, so
+  the edges stay sharp.
+- Tray icons use the small icon size of the system DPI, and the check icon
+  in the status bar follows the window DPI.
+- The icon lists in the automatic check, protocol, tool and icon selection
+  settings follow the DPI of the dialog.
+- Image lists are 32-bit instead of 16-bit colors.
+
+### Fixes
+
+- After the second DPI change (for example moving the window between
+  monitors twice) the standard toolbar buttons (cut, copy, paste, views)
+  showed wrong or no images.
+
 ## 1.5.0
 
 ### New

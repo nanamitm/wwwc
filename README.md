@@ -80,8 +80,8 @@ folder can be changed with the command line option `/d:"folder"`.
   sizes, tree width, column widths, status bar parts) are values at 96 DPI
   (100%) and are scaled to the DPI of the monitor; moving the window to a
   monitor with another scale (`WM_DPICHANGED`) resizes the icons, fonts,
-  toolbar and columns. The toolbar bitmaps exist only at 16x16 and are
-  stretched.
+  toolbar and columns. The toolbar bitmaps exist only at 16x16; they are
+  enlarged with Scale2x / Scale3x and reduced to the size of the DPI.
 - HTTPS server certificates are verified. A server with a self-signed or
   otherwise invalid certificate can be allowed per item with "Ignore
   certificate errors" on the Options tab of the item properties. (1.1.3 always

@@ -398,6 +398,8 @@ void TbRecreate(HWND hWnd)
 {
 	if(GetDlgItem(hWnd, WWWC_TB) != NULL){
 		DestroyWindow(GetDlgItem(hWnd, WWWC_TB));
+		//標準のビットマップの番号を足す前の情報に戻す
+		ReTbButtonInfo();
 	}
 	CreateTB(hWnd);
 }

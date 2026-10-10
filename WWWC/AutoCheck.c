@@ -709,10 +709,11 @@ static BOOL InitializeAutoCheckListWindow(HWND hDlg)
 	ListView_InsertColumn(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), 0, &lvc);
 
 	//イメージリストの設定
-	IconList = ImageList_Create(SICONSIZE, SICONSIZE, ILC_COLOR16 | ILC_MASK, 0, 0);
+	i = DpiScaleFor(hDlg, SICONSIZE);
+	IconList = ImageList_Create(i, i, ILC_COLOR32 | ILC_MASK, 0, 0);
 	ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
-	ImageListIconAdd(IconList, IDI_ICON_TIMEOUT, SICONSIZE, "", 0);
-	ImageListIconAdd(IconList, IDI_ICON_NOAUTOTIME, SICONSIZE, "", 0);
+	ImageListIconAdd(IconList, IDI_ICON_TIMEOUT, i, "", 0);
+	ImageListIconAdd(IconList, IDI_ICON_NOAUTOTIME, i, "", 0);
 	ListView_SetImageList(GetDlgItem(hDlg, IDC_LIST_AUTOTIME), IconList, LVSIL_SMALL);
 
 	//スタイルの設定
