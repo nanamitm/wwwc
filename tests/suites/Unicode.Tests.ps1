@@ -162,3 +162,29 @@ Test-Case "Japanese names in the find window and with a font chosen in the setti
   }
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+
+Test-Case "failed Shift_JIS migration preserves data and retries after unlocking" {
+  $e = New-TestEnv "utf8-migrate-locked" $BinDir
+  $original = $script:Sjis.GetBytes((ItemLine $PageJa (Url "/a")) + "`r`n")
+  [IO.File]::WriteAllBytes($e.ItemFile, $original)
+  $held = [IO.File]::Open($e.ItemFile, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+  try {
+    $e.Process = Start-Process (Join-Path $e.Bin "WWWC.exe") -ArgumentList "/d:`"$(Join-Path $e.Dir 'data')`"" -PassThru
+    [void]$script:Started.Add($e.Process)
+    Assert-True (Wait-Until { Get-ProcessWindows $e.Process.Id | Where-Object { $_.Class -eq "#32770" } } 10) "migration failure is reported"
+    Assert-True (-not (Get-ProcessWindows $e.Process.Id | Where-Object Class -eq "WWWCWindowClass")) "failed migration does not load legacy data"
+    Assert-True ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($e.ItemFile), [byte[]]$original)) "locked source is unchanged"
+    $ini = Join-Path $e.Data "user.ini"
+    Assert-True (-not (Test-Path $ini) -or -not ((Read-Utf8 $ini) -match "CharSetUTF8=1")) "failed migration is not marked complete"
+    Get-ProcessWindows $e.Process.Id | Where-Object Class -eq "#32770" | ForEach-Object {
+      [void][WwwcWin]::PostMessage($_.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    }
+    Assert-True ($e.Process.WaitForExit(10000)) "failed startup exits"
+  } finally { $held.Dispose() }
+  [void](Start-Wwwc $e)
+  Assert-True ((Get-ListTitles $e) -contains $PageJa) "retry converts the Japanese item"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code after retry"
+  Assert-True ((Read-Utf8 (Join-Path $e.Data "user.ini")) -match "CharSetUTF8=1") "successful retry is marked complete"
+  Assert-True ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes("$($e.Data)_sjis_backup\Item.dat"), [byte[]]$original)) "retry preserves the original backup"
+}
