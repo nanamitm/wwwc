@@ -18,7 +18,6 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
 #include <process.h>

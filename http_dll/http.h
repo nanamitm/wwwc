@@ -94,20 +94,6 @@ struct TPHTTP{
 	char *pass;
 };
 
-struct TPGETHOSTBYNAME{
-	HWND hWnd;
-	UINT wMsg;
-	char *name;
-	HANDLE hth;
-	BOOL EventFlag;
-};
-
-struct TPHOSTINFO {
-	char *HostName;
-	UINT hash;
-	unsigned long addr;
-};
-
 
 /**************************************************************************
 	Function Prototypes

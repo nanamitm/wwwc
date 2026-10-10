@@ -18,12 +18,8 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
-#ifdef THGHN
-#include <process.h>
-#endif
 #include <time.h>
 #include <winhttp.h>
 
@@ -59,9 +55,6 @@
 **************************************************************************/
 
 static int srcLen;
-
-static struct TPHOSTINFO *tpHostInfo;
-static int HostInfoCnt;
 
 //通信スレッドからの通知
 #define WM_HTTP_DONE				(WM_APP + 1)
@@ -110,7 +103,6 @@ extern char pPass[];
 
 extern char BrowserPath[];
 extern int TimeZone;
-extern int HostNoCache;
 
 extern char DateFormat[];
 extern char TimeFormat[];
@@ -2683,10 +2675,6 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 {
 	int i = 0;
 
-#ifdef THGHN
-	CreateEvent(NULL, TRUE, TRUE, "GHBN_EVENT");
-#endif
-
 	lstrcpy(tpInfo->Scheme, "http://\thttps://");
 	lstrcpy(tpInfo->NewMenu, STR_GETINFO_HTTP_NEWMENU);
 	lstrcpy(tpInfo->FileType, "url");	//	複数ある場合は \t で区切る 例) "txt\tdoc\tdat"
@@ -2742,32 +2730,12 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 __declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
 {
-#ifdef THGHN
-	HANDLE hEvent;
-#endif
 	int i;
 
 	for(i = 0; i < 100; i++){
 		if(hWndList[i] != NULL){
 			SendMessage(hWndList[i], WM_CLOSE, 0, 0);
 		}
-	}
-
-#ifdef THGHN
-	hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "GHBN_EVENT");
-	if(hEvent != NULL){
-		CloseHandle(hEvent);
-	}
-#endif
-
-	if(tpHostInfo != NULL){
-		for(i = 0; i < HostInfoCnt; i++){
-			if((tpHostInfo + i)->HostName != NULL){
-				LocalFree((tpHostInfo + i)->HostName);
-			}
-		}
-		LocalFree(tpHostInfo);
-		tpHostInfo = NULL;
 	}
 
 	FreeFilter();

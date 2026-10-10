@@ -46,10 +46,6 @@
 #define STR_ERR_MSG_URLOPEN				"URLが設定されていません。"
 
 #define STR_ERROR_URL					"URLを展開できませんでした。"
-#define STR_ERROR_GETHOST_TH			"gethostbyname用スレッドの作成に失敗しました。"
-#define STR_ERROR_GETHOST				"IPアドレスの取得に失敗しました。"
-#define STR_ERROR_SOCKET				"soketの作成に失敗しました。"
-#define STR_ERROR_SELECT				"WSAAsyncSelectに失敗しました。"
 #define STR_ERROR_CONNECT				"接続に失敗しました。"
 #define STR_ERROR_SEND					"送信に失敗しました。"
 #define STR_ERROR_RECV					"受信に失敗しました。"
