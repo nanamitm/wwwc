@@ -557,4 +557,68 @@ char *GetIndexToString(struct TPITEM *tpItemInfo, int Index)
 	}
 	return ((p != NULL) ? p : "");
 }
+
+/******************************************************************************
+
+	TextMemToUnicode
+
+	文字列 (UTF-8) のメモリを CF_UNICODETEXT のメモリに変換する (元のメモリは解放する)
+	CF_TEXT は他のアプリケーションではシステムの文字コードとして扱われるため、
+	クリップボードとドラッグ＆ドロップでは CF_UNICODETEXT を使う
+
+******************************************************************************/
+
+HANDLE TextMemToUnicode(HANDLE hText)
+{
+	HANDLE hMem;
+	char *buf;
+	WCHAR *wbuf;
+	int len;
+
+	if(hText == NULL){
+		return NULL;
+	}
+	if((buf = GlobalLock(hText)) == NULL){
+		GlobalFree(hText);
+		return NULL;
+	}
+	len = MultiByteToWideChar(CP_ACP, 0, buf, -1, NULL, 0);
+	hMem = GlobalAlloc(GHND, sizeof(WCHAR) * (len + 1));
+	if(hMem != NULL){
+		if((wbuf = GlobalLock(hMem)) != NULL){
+			MultiByteToWideChar(CP_ACP, 0, buf, -1, wbuf, len);
+			GlobalUnlock(hMem);
+		}
+	}
+	GlobalUnlock(hText);
+	GlobalFree(hText);
+	return hMem;
+}
+
+
+/******************************************************************************
+
+	UnicodeMemToText
+
+	CF_UNICODETEXT のメモリから文字列 (UTF-8) を作成する (戻り値は GlobalFree で解放)
+
+******************************************************************************/
+
+char *UnicodeMemToText(HANDLE hMem)
+{
+	WCHAR *wbuf;
+	char *buf;
+	int len;
+
+	if(hMem == NULL || (wbuf = GlobalLock(hMem)) == NULL){
+		return NULL;
+	}
+	len = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
+	buf = (char *)GlobalAlloc(GPTR, len + 1);
+	if(buf != NULL){
+		WideCharToMultiByte(CP_ACP, 0, wbuf, -1, buf, len, NULL, NULL);
+	}
+	GlobalUnlock(hMem);
+	return buf;
+}
 /* End of source */

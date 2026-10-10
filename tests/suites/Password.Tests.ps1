@@ -20,7 +20,7 @@ Test-Case "item password in the old format is migrated" {
   Set-Items $e @(ItemLine "auth" (Url "/auth") "1;;0;;;;;;1;;tester;;$(Get-LegacyPassword 's3cret!');;;;0")
   $log = Invoke-Check $e "^GET /auth "
   Assert-True ($log -match "auth='tester:s3cret!'") "first check sends the password ($log)"
-  Assert-True ((Get-PassField $e "auth") -like "DP1:*") "password is stored encrypted"
+  Assert-True ((Get-PassField $e "auth") -like "DP2:*") "password is stored encrypted"
   $log = Invoke-Check $e "^GET /auth "
   Assert-True ($log -match "auth='tester:s3cret!'") "second check decrypts the password ($log)"
 }
@@ -28,11 +28,11 @@ Test-Case "item password in the old format is migrated" {
 Test-Case "proxy password in the old format is migrated" {
   $e = New-TestEnv "pass-proxy" $BinDir
   $ini = Join-Path $e.Bin "wwwc.ini"
-  [IO.File]::WriteAllText($ini, "[PROXY]`r`nProxy=1`r`npServer=127.0.0.1`r`npPort=$($script:ServerPort)`r`npNoCache=0`r`npUsePass=1`r`npUser=pu`r`npPass=$(Get-LegacyPassword 'pp@ss')`r`n", $script:Sjis)
+  [IO.File]::WriteAllText($ini, "[PROXY]`r`nProxy=1`r`npServer=127.0.0.1`r`npPort=$($script:ServerPort)`r`npNoCache=0`r`npUsePass=1`r`npUser=pu`r`npPass=$(Get-LegacyPassword 'pp@ss')`r`n", $script:Enc)
   Set-Items $e @(ItemLine "proxied" "http://wwwc-proxy-test.invalid/x")
   $log = Invoke-Check $e "wwwc-proxy-test"
   Assert-True ($log -match "proxy_auth='pu:pp@ss'") "first check sends the proxy password ($log)"
-  Assert-True ((Get-Content $ini) -match "^pPass=DP1:") "proxy password is stored encrypted"
+  Assert-True ((Get-Content $ini) -match "^pPass=DP2:") "proxy password is stored encrypted"
   $log = Invoke-Check $e "wwwc-proxy-test"
   Assert-True ($log -match "proxy_auth='pu:pp@ss'") "second check decrypts the proxy password ($log)"
 }
@@ -61,5 +61,5 @@ Test-Case "password entered in the item properties" {
     Assert-True ((Get-ServerLog $m) -match "auth='newuser:n3w-p@ss'") "check sends the new password"
   }
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
-  Assert-True ((Get-PassField $e "auth") -like "DP1:*") "new password is stored encrypted"
+  Assert-True ((Get-PassField $e "auth") -like "DP2:*") "new password is stored encrypted"
 }

@@ -63,8 +63,6 @@ int HostNoCache;
 char DateFormat[BUFSIZE];
 char TimeFormat[BUFSIZE];
 
-char AppName[30][BUFSIZE];
-int AppCnt;
 
 extern FILTER *FilterInfo;
 
@@ -83,7 +81,6 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	char CuDir[BUFSIZE];
 	char buf[BUFSIZE];
 	char encpass[PASS_ENC_SIZE];
-	int i;
 
 	GetModuleFileName(ghinst, CuDir, BUFSIZE - 1);
 	p = r = CuDir;
@@ -128,21 +125,6 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	}
 
 	GetPrivateProfileString("HTTP", "BrowserPath", "", BrowserPath, BUFSIZE - 1, app_path);
-
-	AppCnt = GetPrivateProfileInt("DDE", "AppCnt", -1, app_path);
-	if(AppCnt < 0){
-		AppCnt = 4;
-		lstrcpy(AppName[0], "IEXPLORE");
-		lstrcpy(AppName[1], "Mozilla");
-		lstrcpy(AppName[2], "Netscape6");
-		lstrcpy(AppName[3], "NETSCAPE");
-	}else{
-		if(AppCnt > 30) AppCnt = 30;
-		for(i = 0; i < AppCnt; i++){
-			wsprintf(buf, "AppName_%d", i);
-			GetPrivateProfileString("DDE", buf, "", AppName[i], BUFSIZE - 1, app_path);
-		}
-	}
 
 	if(FilterInfo == NULL){
 		ReadFilterFile(CuDir);
@@ -246,18 +228,6 @@ __declspec(dllexport) int CALLBACK GetToolList(int cnt, struct TP_TOOLS *tpToolI
 	switch(cnt)
 	{
 	case 0:
-		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_BROWSINFO);
-		tpToolInfo->Action = TOOL_EXEC_WINDOWMENU;
-		lstrcpy(tpToolInfo->func, "GetBrowserInfo");
-		break;
-
-	case 1:
-		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_BROWSINFOLIST);
-		tpToolInfo->Action = TOOL_EXEC_WINDOWMENU;
-		lstrcpy(tpToolInfo->func, "GetBrowserInfoList");
-		break;
-
-	case 2:
 		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_OPENURL);
 		tpToolInfo->Action = TOOL_EXEC_ITEMMENU | TOOL_EXEC_INITITEM;
 		tpToolInfo->MenuIndex = 2;
@@ -265,7 +235,7 @@ __declspec(dllexport) int CALLBACK GetToolList(int cnt, struct TP_TOOLS *tpToolI
 		lstrcpy(tpToolInfo->func, "DDE_OpenURL");
 		break;
 
-	case 3:
+	case 1:
 		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_FILTERRELOAD);
 		tpToolInfo->Action = TOOL_EXEC_CHECKSTART | TOOL_EXEC_WINDOWMENU;
 		lstrcpy(tpToolInfo->func, "FilterReload");

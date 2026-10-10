@@ -538,6 +538,8 @@ char *CodeToEsc(char *buf);
 void GetNumString(char *buf, char *ret);
 void GetDateTime(char *fDay, char *fTime);
 char *GetIndexToString(struct TPITEM *tpItemInfo, int Index);
+HANDLE TextMemToUnicode(HANDLE hText);
+char *UnicodeMemToText(HANDLE hMem);
 
 //--------------------------
 //	File

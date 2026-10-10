@@ -291,12 +291,15 @@ BOOL FilterMatch(char *url)
 	FilterCheck
 
 	フィルタをかける
+	*pbuf (GlobalAlloc) の HeadSize 以降を、変換してフィルタをかけた文字列に置き換える
 
 ******************************************************************************/
 
-BOOL FilterCheck(char *url, char *buf, int Size)
+BOOL FilterCheck(char *url, char **pbuf, int HeadSize)
 {
+	char *buf = *pbuf + HeadSize;
 	char *tmp = NULL;
+	char *newbuf;
 	BOOL rc = TRUE;
 	int i;
 
@@ -309,7 +312,7 @@ BOOL FilterCheck(char *url, char *buf, int Size)
 		if(str_match((FilterInfo + i)->url, url) == TRUE){
 			if(tmp == NULL){
 				//ソース変換
-				tmp = SrcConv(buf, Size);
+				tmp = SrcConv(buf, lstrlen(buf));
 				if(tmp == NULL){
 					break;
 				}
@@ -334,7 +337,16 @@ BOOL FilterCheck(char *url, char *buf, int Size)
 		}
 	}
 	if(tmp != NULL){
-		lstrcpy(buf, tmp);
+		//変換した文字列は元より長くなることがある (Shift_JIS -> UTF-8 など)
+		newbuf = (char *)GlobalAlloc(GMEM_FIXED, HeadSize + lstrlen(tmp) + 1);
+		if(newbuf == NULL){
+			GlobalFree(tmp);
+			return FALSE;
+		}
+		CopyMemory(newbuf, *pbuf, HeadSize);
+		lstrcpy(newbuf + HeadSize, tmp);
+		GlobalFree(*pbuf);
+		*pbuf = newbuf;
 		GlobalFree(tmp);
 		return rc;
 	}

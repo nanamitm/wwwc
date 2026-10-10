@@ -23,6 +23,15 @@ public static class WwwcWin {
   public delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+
+  // window text as Unicode (WM_GETTEXT is marshaled across processes)
+  [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")] static extern IntPtr SendMessageW(IntPtr h, uint m, IntPtr w, StringBuilder l);
+  public static string GetTextW(IntPtr h) {
+    int n = (int)SendMessage(h, 0x000E, IntPtr.Zero, IntPtr.Zero);   // WM_GETTEXTLENGTH
+    var sb = new StringBuilder(n + 1);
+    SendMessageW(h, 0x000D, (IntPtr)(n + 1), sb);                    // WM_GETTEXT
+    return sb.ToString();
+  }
 }
 
 // Cross-process access to WWWC's list view (ANSI, 32-bit or 64-bit WWWC)
@@ -64,7 +73,7 @@ public static class WwwcList {
       r.Write(it, 0); r.Write(new byte[1024], 512);
       SendMessage(lv, 0x1000 + 45, (IntPtr)item, r.mem);   // LVM_GETITEMTEXTA
       var b = r.Read(512, 1024); int n = Array.IndexOf(b, (byte)0); if (n < 0) n = b.Length;
-      return Encoding.ASCII.GetString(b, 0, n);
+      return Encoding.UTF8.GetString(b, 0, n);
     }
   }
 
@@ -81,6 +90,8 @@ public static class WwwcList {
 }
 "@
 
+# WWWC keeps its data files in UTF-8 (Shift_JIS before 1.3.0, converted on first start)
+$script:Enc = New-Object Text.UTF8Encoding($false)
 $script:Sjis = [Text.Encoding]::GetEncoding(932)
 $script:TestRoot = Join-Path ([IO.Path]::GetTempPath()) "wwwc-tests"
 $script:Results = New-Object System.Collections.ArrayList
@@ -134,16 +145,29 @@ function Start-TestServer([int]$Port) {
   Set-Content -Path $script:ServerLog -Value $null
   $py = (Get-Command python -ErrorAction SilentlyContinue).Source
   if (-not $py) { $py = (Get-Command py -ErrorAction Stop).Source }
+  $inUse = try { $c = New-Object Net.Sockets.TcpClient; $c.Connect("127.0.0.1", $Port); $c.Close(); $true } catch { $false }
+  if ($inUse) { throw "port $Port is already in use (another test server still running?)" }
+  # redirect both streams to files: an inherited console or pipe would keep the
+  # caller waiting as long as the server runs
+  $out = Join-Path $script:TestRoot "server.out"
   $err = Join-Path $script:TestRoot "server.err"
-  $script:ServerProcess = Start-Process $py -ArgumentList "-I", "`"$PSScriptRoot\..\server\test_server.py`"", $Port, "`"$script:ServerLog`"" -PassThru -WindowStyle Hidden -RedirectStandardError $err
+  $script:ServerProcess = Start-Process $py -ArgumentList "-I", "`"$PSScriptRoot\..\server\test_server.py`"", $Port, "`"$script:ServerLog`"" -PassThru -WindowStyle Hidden -RedirectStandardOutput $out -RedirectStandardError $err
+  # the first start of Python can take a while (e.g. while it is scanned)
   $ok = Wait-Until {
     try { $c = New-Object Net.Sockets.TcpClient; $c.Connect("127.0.0.5", $Port); $c.Close(); $true } catch { $false }
-  } 15
-  if (-not $ok) { throw "test server did not start on port ${Port}: $(Get-Content $err -Raw)" }
+  } 60
+  if (-not $ok) {
+    Stop-TestServer
+    throw "test server did not start on port ${Port}: $(Get-Content $err -Raw)"
+  }
 }
 
 function Stop-TestServer {
-  if ($script:ServerProcess -and -not $script:ServerProcess.HasExited) { $script:ServerProcess | Stop-Process -Force }
+  if (-not $script:ServerProcess) { return }
+  # python.exe from the Microsoft Store is a launcher that runs the server as a child process
+  $id = $script:ServerProcess.Id
+  Get-CimInstance Win32_Process -Filter "ParentProcessId=$id" -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+  if (-not $script:ServerProcess.HasExited) { $script:ServerProcess | Stop-Process -Force }
 }
 
 function Url([string]$Path, [string]$HostName = "127.0.0.1") { "http://${HostName}:$($script:ServerPort)$Path" }
@@ -171,19 +195,19 @@ function ItemLine([string]$Title, [string]$Url, [string]$Option2 = "0;;0;;;;;;0;
 }
 
 function Set-Items($Env, [string[]]$Lines) {
-  [IO.File]::WriteAllBytes($Env.ItemFile, $script:Sjis.GetBytes(($Lines -join "`r`n") + "`r`n"))
+  [IO.File]::WriteAllBytes($Env.ItemFile, $script:Enc.GetBytes(($Lines -join "`r`n") + "`r`n"))
 }
 
 # Fields of the saved item (read after WWWC exits)
 function Get-SavedItem($Env, [string]$Title) {
-  $line = $script:Sjis.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ -like "$Title`t*" } | Select-Object -First 1
+  $line = $script:Enc.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ -like "$Title`t*" } | Select-Object -First 1
   if ($null -eq $line) { return $null }
   $f = $line -split "`t"
   [pscustomobject]@{ Title = $f[0]; Url = $f[1]; Size = $f[2]; Date = $f[3]; Status = [int]$f[4]; Option2 = $f[10]; ErrStatus = $f[13] }
 }
 
 function Get-SavedTitles($Env) {
-  @($script:Sjis.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ } | ForEach-Object { ($_ -split "`t")[0] })
+  @($script:Enc.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ } | ForEach-Object { ($_ -split "`t")[0] })
 }
 
 ## ---------------------------------------------------------------- windows

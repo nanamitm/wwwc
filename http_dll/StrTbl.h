@@ -28,8 +28,6 @@
 #define STR_ERROR_MEMORY				"メモリの確保に失敗しました。"
 
 //main.c
-#define STR_TOOL_TITLE_BROWSINFO		"ブラウザ情報取得(&B)"
-#define STR_TOOL_TITLE_BROWSINFOLIST	"すべてのブラウザ情報から選択(&A)..."
 #define STR_TOOL_TITLE_OPENURL			"既存のブラウザに開く(&D)"
 #define STR_TOOL_TITLE_FILTERRELOAD		"フィルタ再読み込み(&F)"
 
@@ -82,11 +80,9 @@
 #define STR_TITLE_SETHTTP				"HTTPプロトコルの設定"
 
 //httptools.c
-#define STR_ERR_TITLE_DDEEINIT			"DDE初期化"
-#define STR_ERR_MSG_DDEEINIT			"DDEの初期化に失敗しました。"
 
 #define STR_ERR_TITLE_DDE				"ブラウザ情報の取得"
-#define STR_ERR_MSG_DDE					"ブラウザが起動されていないか、ブラウザ情報の取得に失敗しました。"
+#define STR_ERR_MSG_DDE_REMOVED			"ブラウザから情報を取得する機能は、対応するブラウザ (DDE を使う Internet Explorer など) がなくなったため使用できません。\nURL はブラウザからドラッグ＆ドロップで追加してください。"
 
 #define ST_LV_COL_TITLE					"タイトル"
 #define ST_LV_COL_FLAME					"フレーム"

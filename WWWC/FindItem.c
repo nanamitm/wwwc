@@ -1136,8 +1136,8 @@ INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:	//テキスト
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hDlg, NULL);
+		case CF_UNICODETEXT:	//テキスト
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hDlg, NULL));
 			break;
 
 		case CF_HDROP:	//ドロップファイル

@@ -3,6 +3,46 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## 1.3.0
+
+### New
+
+- Unicode: WWWC handles all text as UTF-8 (the manifest sets the process
+  code page to UTF-8), so page titles and other text with emoji, Chinese,
+  Korean and other characters outside Shift_JIS are shown and saved correctly.
+  Pages in UTF-8, Shift_JIS, EUC-JP and ISO-2022-JP are all converted to
+  UTF-8.
+- Clipboard and drag & drop exchange text and file names with other
+  applications as Unicode (CF_UNICODETEXT, wide CF_HDROP).
+
+### Changed
+
+- Requires Windows 10 version 1903 or later. WWWC shows a message and exits
+  on older systems.
+- Data and settings files (Item.dat, Folder.ini, user.ini, general.ini,
+  wwwc.ini, filter.txt) are stored in UTF-8. Files from older versions
+  (Shift_JIS) are converted on the first start; the original files are kept
+  in `<user>_sjis_backup` and `settings_sjis_backup`. Older versions cannot
+  read the converted files correctly.
+- Strings passed to plugins are UTF-8 (see "Writing plugins" in README.md).
+- Passwords are encrypted as UTF-8 (`DP2:`). Passwords saved by older
+  versions (the old format and 1.2.0's `DP1:`) are still read. Non-ASCII
+  passwords are now sent to servers in UTF-8.
+- The sample files and the manual in `docs/` are UTF-8.
+
+### Removed
+
+- DDE browser integration. No current browser provides the DDE services,
+  and "open URL" waited about 8 seconds before opening the URL. It now opens
+  the URL in the configured or default browser at once. "Get information
+  from the browser" (tools and the button in the item properties) and the
+  DDE settings are removed; existing tool settings show a message.
+
+### Fixes
+
+- A filter on a page that becomes longer when converted could overflow the
+  receive buffer.
+
 ## 1.2.0
 
 ### New

@@ -21,7 +21,6 @@
 #include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
-#include <DDEML.H>
 #include <process.h>
 #include <time.h>
 #include <wincrypt.h>
@@ -103,14 +102,40 @@ void BadNameCheck(char *buf, char NewChar)
 
 	パスワードを暗号化する (DPAPI)
 
-	"DP1:" + Base64 の形式で返す。設定ファイル (wwwc.ini) やアイテム情報は
+	"DP2:" + Base64 の形式で返す。設定ファイル (wwwc.ini) やアイテム情報は
 	複数の Windows ユーザで共有されることがあるため、マシン単位で暗号化する。
 	(別の PC に移したデータでは復号できない)
+	DP2 は UTF-8 のパスワード、DP1 (Ver 1.2.0) は Shift_JIS のパスワード。
 
 ******************************************************************************/
 
-#define PASS_PREFIX			"DP1:"
+#define PASS_PREFIX			"DP2:"
+#define PASS_PREFIX_SJIS	"DP1:"
 #define PASS_ENTROPY		"WWWC password"
+
+static BOOL HasPrefix(const char *str, const char *prefix)
+{
+	for(; *prefix != '\0'; prefix++, str++){
+		if(*str != *prefix){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+//Shift_JIS の文字列をプロセスの文字コードに変換する (以前の形式のパスワード)
+static void SjisToAcpInPlace(char *buf, int size)
+{
+	WCHAR wbuf[BUFSIZE];
+
+	if(GetACP() == 932 || MultiByteToWideChar(932, 0, buf, -1, wbuf, BUFSIZE) == 0){
+		return;
+	}
+	if(WideCharToMultiByte(CP_ACP, 0, wbuf, -1, buf, size, NULL, NULL) == 0){
+		*buf = '\0';
+	}
+	SecureZeroMemory(wbuf, sizeof(wbuf));
+}
 
 BOOL EncodePassword(const char *plain, char *ret, int size)
 {
@@ -153,14 +178,7 @@ BOOL EncodePassword(const char *plain, char *ret, int size)
 
 BOOL IsEncryptedPassword(const char *enc)
 {
-	const char *p = PASS_PREFIX;
-
-	for(; *p != '\0'; p++, enc++){
-		if(*enc != *p){
-			return FALSE;
-		}
-	}
-	return TRUE;
+	return (HasPrefix(enc, PASS_PREFIX) == TRUE || HasPrefix(enc, PASS_PREFIX_SJIS) == TRUE) ? TRUE : FALSE;
 }
 
 
@@ -189,6 +207,8 @@ void DecodePassword(const char *enc, char *ret, int size)
 	}
 
 	if(IsEncryptedPassword(enc) == TRUE){
+		BOOL sjis = HasPrefix(enc, PASS_PREFIX_SJIS);
+
 		p = enc + lstrlen(PASS_PREFIX);
 		len = 0;
 		if(CryptStringToBinaryA(p, 0, CRYPT_STRING_BASE64, NULL, &len, NULL, NULL) == FALSE || len == 0){
@@ -211,6 +231,9 @@ void DecodePassword(const char *enc, char *ret, int size)
 			ret[len] = '\0';
 			SecureZeroMemory(out.pbData, out.cbData);
 			LocalFree(out.pbData);
+			if(sjis == TRUE){
+				SjisToAcpInPlace(ret, size);
+			}
 		}
 		LocalFree(in.pbData);
 		return;
@@ -225,6 +248,7 @@ void DecodePassword(const char *enc, char *ret, int size)
 		ret[i++] = (char)((unsigned char)strtol(tmp, NULL, 16) ^ 0xFF);
 	}
 	ret[i] = '\0';
+	SjisToAcpInPlace(ret, size);
 }
 
 
@@ -1964,26 +1988,18 @@ static char *convUtf8(char *buf) {
 	char *cbuf;
 	int clen;
 
-	wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, NULL, 0);
+	//UTF-8 として正しくない場合は失敗する
+	//(以前は変換し直した文字列を lstrcmp で比べていたが、lstrcmp は文字列としての
+	// 比較のため、プロセスの文字コードが UTF-8 だと不正なバイトと U+FFFD が等しくなる)
+	wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buf, -1, NULL, 0);
 	if (wlen <= 0) {
 		return NULL;
 	}
 	wbuf = (WCHAR *)GlobalAlloc(GMEM_FIXED, (wlen + 1) * sizeof(WCHAR));
-	MultiByteToWideChar(CP_UTF8, 0, buf, -1, wbuf, wlen);
-
-	clen = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
-	if (clen <= 0) {
-		GlobalFree(wbuf);
+	if (wbuf == NULL) {
 		return NULL;
 	}
-	cbuf = (char *)GlobalAlloc(GMEM_FIXED, (clen + 1) * sizeof(char));
-	WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, cbuf, clen, NULL, NULL);
-	if (lstrcmp(buf, cbuf) != 0) {
-		GlobalFree(cbuf);
-		GlobalFree(wbuf);
-		return NULL;
-	}
-	GlobalFree(cbuf);
+	MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buf, -1, wbuf, wlen);
 
 	clen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
 	if (clen <= 0) {
@@ -1998,9 +2014,39 @@ static char *convUtf8(char *buf) {
 
 /******************************************************************************
 
+	SjisToAcp
+
+	Shift_JIS の文字列をプロセスの文字コードに変換する (戻り値は GlobalFree で解放)
+
+******************************************************************************/
+
+static char *SjisToAcp(char *buf)
+{
+	WCHAR *wbuf;
+	char *cbuf;
+	int wlen, clen;
+
+	wlen = MultiByteToWideChar(932, 0, buf, -1, NULL, 0);
+	if(wlen <= 0 || (wbuf = (WCHAR *)GlobalAlloc(GMEM_FIXED, sizeof(WCHAR) * (wlen + 1))) == NULL){
+		return NULL;
+	}
+	MultiByteToWideChar(932, 0, buf, -1, wbuf, wlen);
+	clen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
+	cbuf = (clen > 0) ? (char *)GlobalAlloc(GMEM_FIXED, clen + 1) : NULL;
+	if(cbuf != NULL){
+		WideCharToMultiByte(CP_ACP, 0, wbuf, -1, cbuf, clen, NULL, NULL);
+	}
+	GlobalFree(wbuf);
+	return cbuf;
+}
+
+
+/******************************************************************************
+
 	SrcConv
 
-	ソースをSJISに変換する
+	ソースをプロセスの文字コード (UTF-8) に変換する
+	(UTF-8 のページはそのまま、JIS / EUC-JP / Shift_JIS のページは Shift_JIS を経由して変換する)
 
 ******************************************************************************/
 
@@ -2022,6 +2068,13 @@ char *SrcConv(char *buf, long Size)
 		abort();
 	}
 	ConvStrCode(buf, tmp);
+	if(GetACP() != 932){
+		char *acp = SjisToAcp(tmp);
+		if(acp != NULL){
+			GlobalFree(tmp);
+			tmp = acp;
+		}
+	}
 	return tmp;
 }
 
@@ -2071,6 +2124,56 @@ long DeleteSizeInfo(char *buf, long size)
 		return (long)(r - buf);
 	}
 	return size;
+}
+
+
+/******************************************************************************
+
+	Utf8ToRtf
+
+	UTF-8 の1文字を RTF の \uN? にする (UTF-8 として正しくないバイトは \'xx)
+	戻り値は消費したバイト数、*len は RTF の長さ。ret が NULL の場合は長さだけ求める
+
+******************************************************************************/
+
+static int Utf8ToRtf(const char *p, char *ret, int *len)
+{
+	const unsigned char *s = (const unsigned char *)p;
+	unsigned long c = 0;
+	char tmp[32];
+	int n, i;
+
+	if(s[0] >= 0xF0 && s[0] <= 0xF4){
+		n = 4; c = s[0] & 0x07;
+	}else if(s[0] >= 0xE0 && s[0] <= 0xEF){
+		n = 3; c = s[0] & 0x0F;
+	}else if(s[0] >= 0xC2 && s[0] <= 0xDF){
+		n = 2; c = s[0] & 0x1F;
+	}else{
+		n = 0;
+	}
+	for(i = 1; i < n; i++){
+		if((s[i] & 0xC0) != 0x80){
+			n = 0;
+			break;
+		}
+		c = (c << 6) | (s[i] & 0x3F);
+	}
+	if(n == 0){
+		wsprintf(tmp, "\\'%02x", s[0]);
+		n = 1;
+	}else if(c >= 0x10000){
+		//サロゲートペア
+		c -= 0x10000;
+		wsprintf(tmp, "\\u%d?\\u%d?", (short)(0xD800 + (c >> 10)), (short)(0xDC00 + (c & 0x3FF)));
+	}else{
+		wsprintf(tmp, "\\u%d?", (short)c);
+	}
+	if(ret != NULL){
+		lstrcpy(ret, tmp);
+	}
+	*len = lstrlen(tmp);
+	return n;
 }
 
 
@@ -2195,10 +2298,11 @@ int GetHtml2RtfSize(char *buf, BOOL dark)
 			break;
 
 		default:
-			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
-				//Html2Rtf と同じく2バイト目も消費する
-				p++;
-				len += 8;
+			if((unsigned char)*p >= 0x80){
+				int l;
+
+				p += Utf8ToRtf(p, NULL, &l) - 1;
+				len += l;
 			}else{
 				if(cfFlag == TRUE){
 					len++;
@@ -2350,11 +2454,11 @@ void Html2Rtf(char *buf, char *ret, BOOL dark)
 			break;
 
 		default:
-			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
-				wsprintf(r, "\\'%2x", (unsigned char)*(p++));
-				r += 4;
-				wsprintf(r, "\\'%2x", (unsigned char)*p);
-				r += 4;
+			if((unsigned char)*p >= 0x80){
+				int l;
+
+				p += Utf8ToRtf(p, r, &l) - 1;
+				r += l;
 			}else{
 				if(cfFlag == TRUE){
 					*(r++) = ' ';

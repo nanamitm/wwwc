@@ -2,8 +2,8 @@
 
 Source code of WWWC, a web page update checker for Windows, based on WWWC
 Ver 1.1.3 by Ohno Tomoaki. This version builds for x64 (64-bit) as well as x86
-(32-bit) and adds dark mode, HTTPS certificate verification and encrypted
-password storage. See [CHANGELOG.md](CHANGELOG.md) for all changes.
+(32-bit) and adds Unicode (UTF-8) support, dark mode, HTTPS certificate
+verification and encrypted password storage. See [CHANGELOG.md](CHANGELOG.md) for all changes.
 
 Original: Copyright (C) 1996-2018 by Ohno Tomoaki — https://www.nakka.com/
 
@@ -50,8 +50,17 @@ Output folders:
 Put `WWWC.exe` and `wwwc.dll` in the same folder and run `WWWC.exe`. The data
 folder can be changed with the command line option `/d:"folder"`.
 
-- Windows 10 and 11 are supported. Windows XP is not (the v141_xp toolset is
-  not used).
+- Windows 10 version 1903 or later and Windows 11 are supported.
+- Text is handled as UTF-8: the manifest sets the process code page to UTF-8
+  (`activeCodePage`), so the existing ANSI (`char`) code and the `A` APIs work
+  with all Unicode characters. String literals are compiled as UTF-8
+  (`/execution-charset:utf-8`). WWWC exits with a message if the code page is
+  not UTF-8 (Windows before 10 1903).
+- Data and settings files are UTF-8. Shift_JIS files from older versions are
+  converted on the first start (`WWWC/Charset.c`); the originals are kept in
+  `<user>_sjis_backup` and `settings_sjis_backup`.
+- Clipboard and drag & drop use `CF_UNICODETEXT` and wide `CF_HDROP` lists,
+  because other applications read `CF_TEXT` in the system code page.
 - Dark mode: Options > General > Theme (Light / Dark / Follow Windows), stored
   as `[GENERAL] DarkMode` = 0 / 1 / 2 in user.ini. The default is 2 (follow
   Windows). Requires Windows 10 1809 or later.
@@ -61,8 +70,9 @@ folder can be changed with the command line option `/d:"folder"`.
   ignored certificate errors.)
 - HTTP passwords (item authentication and proxy authentication) are stored
   encrypted with DPAPI (`CryptProtectData`, machine scope) as values starting
-  with `DP1:`. Values saved in the old format are re-encrypted when they are
-  read. Encrypted values cannot be decrypted on another PC, so passwords must
+  with `DP2:` (UTF-8 password). Values saved in the old format are
+  re-encrypted when they are read, and 1.2.0's `DP1:` values (Shift_JIS
+  password) are still accepted. Encrypted values cannot be decrypted on another PC, so passwords must
   be entered again after moving the data to another PC. WWWC 1.1.3 cannot read
   them.
 - Warnings that indicate pointer truncation (C4113, C4133, C4267, C4311,
@@ -86,7 +96,9 @@ pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
   listens only on 127.0.0.1 - 127.0.0.5. Nothing is sent to other hosts.
 - Suites: `Parse` (loading Item.dat and user.ini), `Http` (check, redirects,
   errors, timeout, cancel, exit while checking), `Password` (encryption and
-  migration of passwords), `Tools` (header view, source view, get title).
+  migration of passwords), `Tools` (header view, source view, get title, open
+  URL), `Unicode` (conversion of old data, pages in UTF-8 / Shift_JIS /
+  EUC-JP / ISO-2022-JP, filters, passwords from older versions).
 - The script exits with code 1 when a test fails.
 
 ## CI
@@ -140,6 +152,10 @@ WWWC.exe gets the plugin functions with `GetProcAddress` and calls them.
   - `hItem` (`LONG_PTR`)
   - `Soc1`, `Soc2` (`UINT_PTR`, hold a `SOCKET`)
   - `Param1` - `Param4` (`LONG_PTR`, may hold pointers)
+- **Strings are UTF-8** (since 1.3.0): all `char *` strings that WWWC passes
+  to plugins and reads from them, including `struct TPITEM`, are UTF-8.
+  Plugins that assumed Shift_JIS must be updated. A plugin DLL runs in the
+  WWWC process, so `CP_ACP` and the `A` APIs are UTF-8 there as well.
 - All functions are `CALLBACK` (`__stdcall`). Export them with a `.def` file so
   that the x86 export names are not decorated (see `http_dll/WWWC.def`).
 
@@ -193,11 +209,9 @@ dark mode is on (an older WWWC returns 0).
 ## Notes
 
 - Source files (`.c` `.h` `.rc`) are **UTF-8 without BOM** with CRLF line
-  endings. The compiler options `/source-charset:utf-8
-  /execution-charset:.932` keep the string literals encoded in Shift_JIS
-  (CP932) as before.
-- The files in `docs/` stay in Shift_JIS, because they are shipped to users
-  and the samples are used as configuration files as they are.
+  endings, compiled with `/source-charset:utf-8 /execution-charset:utf-8`.
+- The files in `docs/` are UTF-8 as well (the samples are used as
+  configuration files as they are).
 - For the license terms see `docs/readme.txt` (WWWC is freeware and may be
   redistributed freely; the MD5 code is under the RSA Data Security, Inc.
   license).

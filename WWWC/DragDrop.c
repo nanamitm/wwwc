@@ -895,12 +895,13 @@ LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		}
 		switch(pdtn->cfFormat)
 		{
-		case CF_TEXT:
-			p = GlobalLock(pdtn->hMem);
-			if(GetProtocolIndex(p) != -1){
-				DnDCur = FMT_TEXT;
+		case CF_UNICODETEXT:
+			if((p = UnicodeMemToText(pdtn->hMem)) != NULL){
+				if(GetProtocolIndex(p) != -1){
+					DnDCur = FMT_TEXT;
+				}
+				GlobalFree(p);
 			}
-			GlobalUnlock(pdtn->hMem);
 			break;
 
 		case CF_HDROP:
@@ -980,13 +981,14 @@ LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		}else{
 			switch(pdtn->cfFormat)
 			{
-			case CF_TEXT:
-				p = GlobalLock(pdtn->hMem);
-				if(GetProtocolIndex(p) != -1){
-					_SetForegroundWindow(hWnd);
-					Item_UrlAdd(hWnd, NEWITEMNAME, p, 0, NULL);
+			case CF_UNICODETEXT:
+				if((p = UnicodeMemToText(pdtn->hMem)) != NULL){
+					if(GetProtocolIndex(p) != -1){
+						_SetForegroundWindow(hWnd);
+						Item_UrlAdd(hWnd, NEWITEMNAME, p, 0, NULL);
+					}
+					GlobalFree(p);
 				}
-				GlobalUnlock(pdtn->hMem);
 				break;
 
 			case CF_HDROP:

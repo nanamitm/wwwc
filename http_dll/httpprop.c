@@ -68,8 +68,6 @@ extern int pUsePass;
 extern char pUser[];
 extern char pPass[];
 
-extern char AppName[30][BUFSIZE];
-extern int AppCnt;
 
 
 /**************************************************************************
@@ -415,10 +413,6 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			if(tpItemInfo->Comment != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT, len, (LPARAM)tpItemInfo->Comment);
 			}
-			break;
-
-		case IDC_BUTTON_GETURL:
-			DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_URLLIST), hDlg, URLListroc, (LPARAM)hDlg);
 			break;
 
 		case IDC_BUTTON_CHANGE:		//URLの入れ替え
@@ -963,180 +957,6 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 /******************************************************************************
 
-	AddAppNameProc
-
-	アプリケーション名の追加ダイアログ
-
-******************************************************************************/
-
-static INT_PTR CALLBACK AddAppNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	char *buf;
-
-	switch (uMsg)
-	{
-	case WM_INITDIALOG:
-		if((char *)lParam == NULL){
-			EndDialog(hDlg, FALSE);
-			break;
-		}
-		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
-		SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_SETTEXT, 0, lParam);
-		break;
-
-	case WM_CLOSE:
-		EndDialog(hDlg, FALSE);
-		break;
-
-	case WM_COMMAND:
-		switch(wParam)
-		{
-		case IDOK:
-			buf = (char *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
-			if(buf == NULL){
-				EndDialog(hDlg, FALSE);
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_EDIT_APPNAME), WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
-			EndDialog(hDlg, TRUE);
-			break;
-
-		case IDCANCEL:
-			EndDialog(hDlg, FALSE);
-			break;
-		}
-		break;
-
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-
-/******************************************************************************
-
-	SetDDEAppProc
-
-	DDEのアプリケーション名を登録するダイアログ
-
-******************************************************************************/
-
-static INT_PTR CALLBACK SetDDEAppProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	char buf[BUFSIZE];
-	int i;
-
-	switch (uMsg)
-	{
-	case WM_INITDIALOG:
-		for(i = 0; i < AppCnt; i++){
-			if(*(AppName[i]) != '\0'){
-				SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)AppName[i]);
-			}
-		}
-		ShowWindow(GetDlgItem(hDlg, IDOK), SW_HIDE);
-		ShowWindow(GetDlgItem(hDlg, IDCANCEL), SW_HIDE);
-		break;
-
-	case WM_NOTIFY:
-		return OptionNotifyProc(hDlg, uMsg, wParam, lParam);
-
-	case WM_COMMAND:
-		switch(wParam)
-		{
-		case IDC_BUTTON_ADD:
-			if(SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0) >= 30){
-				break;
-			}
-			*buf = '\0';
-			if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_ADDAPPNAME), hDlg, AddAppNameProc, (LPARAM)buf) == FALSE){
-				break;
-			}
-			if(*buf == '\0'){
-				break;
-			}
-			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_ADDSTRING, 0, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
-			break;
-
-		case IDC_BUTTON_EDIT:
-			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
-			if(i < 0){
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETTEXT, i, (LPARAM)buf);
-			if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_ADDAPPNAME), hDlg, AddAppNameProc, (LPARAM)buf) == FALSE){
-				break;
-			}
-			if(*buf == '\0'){
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_DELETESTRING, i, 0);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_INSERTSTRING, i, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
-			break;
-
-		case IDC_BUTTON_DELETE:
-			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
-			if(i < 0 || MessageBox(hDlg, STR_Q_MSG_DEL, STR_Q_TITLE_DEL, MB_ICONQUESTION | MB_YESNO) == IDNO){
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_DELETESTRING, i, 0);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
-			break;
-
-		case IDC_BUTTON_UP:
-			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
-			if(i <= 0){
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETTEXT, i, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_DELETESTRING, i, 0);
-			i--;
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_INSERTSTRING, i, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
-			break;
-
-		case IDC_BUTTON_DOWN:
-			i = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCURSEL, 0, 0);
-			if(i < 0 || i >= SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0) - 1){
-				break;
-			}
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETTEXT, i, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_DELETESTRING, i, 0);
-			i++;
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_INSERTSTRING, i, (LPARAM)buf);
-			SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_SETCURSEL, i, 0);
-			break;
-
-		case IDOK:
-			AppCnt = (int)SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETCOUNT, 0, 0);
-			if(AppCnt > 30) AppCnt = 30;
-
-			WritePrivateProfileString("DDE", NULL, NULL, app_path);
-
-			wsprintf(buf, "%ld",AppCnt);
-			WritePrivateProfileString("DDE", "AppCnt", buf, app_path);
-
-			for(i = 0; i < AppCnt; i++){
-				SendMessage(GetDlgItem(hDlg, IDC_LIST_APP), LB_GETTEXT, i, (LPARAM)AppName[i]);
-				wsprintf(buf, "AppName_%d", i);
-				WritePrivateProfileString("DDE", buf, AppName[i], app_path);
-			}
-			EndDialog(hDlg, TRUE);
-			break;
-		}
-		break;
-	default:
-		return FALSE;
-	}
-	return TRUE;
-}
-
-
-/******************************************************************************
-
 	ViewProtocolProperties
 
 	プロトコルのプロパティ表示
@@ -1148,7 +968,7 @@ __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 #define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
-	HPROPSHEETPAGE hpsp[2];
+	HPROPSHEETPAGE hpsp[1];
 
 	psp.dwSize = sizeof(PROPSHEETPAGE);
 	psp.dwFlags = PSP_DEFAULT;
@@ -1157,10 +977,6 @@ __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 	psp.pszTemplate = MAKEINTRESOURCE(IDD_DIALOG_PROTOCOLPROP_CHECK);
 	psp.pfnDlgProc = ProtocolPropertyCheckProc;
 	hpsp[0] = CreatePropertySheetPage(&psp);
-
-	psp.pszTemplate = MAKEINTRESOURCE(IDD_DIALOG_SETDDEAPP);
-	psp.pfnDlgProc = SetDDEAppProc;
-	hpsp[1] = CreatePropertySheetPage(&psp);
 
 	ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
 	psh.dwSize = sizeof_PROPSHEETHEADER;
