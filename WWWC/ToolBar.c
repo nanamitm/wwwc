@@ -380,6 +380,45 @@ void CreateTB(HWND hWnd)
 	SetTbBitmap(hWnd, ID_MENUITEM_UNDO, stdid);
 	SetTbBitmap(hWnd, ID_MENUITEM_DELETE, stdid);
 	SetTbBitmap(hWnd, ID_MENUITEM_PROP, stdid);
+
+	//高 DPI ではボタンの画像を拡大する
+	Dpi_ScaleToolbar(GetDlgItem(hWnd, WWWC_TB));
+}
+
+
+/******************************************************************************
+
+	TbRecreate
+
+	ツールバーを作り直す (DPI の変更、高 DPI でのテーマの変更)
+
+******************************************************************************/
+
+void TbRecreate(HWND hWnd)
+{
+	if(GetDlgItem(hWnd, WWWC_TB) != NULL){
+		DestroyWindow(GetDlgItem(hWnd, WWWC_TB));
+	}
+	CreateTB(hWnd);
+}
+
+
+/******************************************************************************
+
+	TbApplyTheme
+
+	表示テーマの変更をツールバーに反映する
+	(拡大した画像はビットマップを差し替えられないため作り直す)
+
+******************************************************************************/
+
+void TbApplyTheme(HWND hWnd)
+{
+	if(g_Dpi == USER_DEFAULT_SCREEN_DPI){
+		TbSetDarkBitmap(hWnd);
+	}else{
+		TbRecreate(hWnd);
+	}
 }
 
 

@@ -190,6 +190,7 @@ static LRESULT NotifyProc(HWND hWnd, LPARAM lParam);
 static BOOL CreateControls(HWND hWnd);
 static void SetControls(HWND hWnd);
 static BOOL InitWindow(HWND hWnd, BOOL StartFlag);
+static void DpiChanged(HWND hWnd, int dpi, const RECT *rc);
 static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag);
 static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void DelLastYen(char *p);
@@ -404,7 +405,7 @@ static void SetOption(HWND hWnd)
 	//表示テーマの変更を反映
 	if(DarkModeType != OldDarkModeType){
 		DarkMode_SetMode(hWnd, DarkModeType);
-		TbSetDarkBitmap(hWnd);
+		TbApplyTheme(hWnd);
 	}
 
 	//設定変更
@@ -552,7 +553,7 @@ static void SaveIniFile(HWND hWnd)
 	wl ^= ABS(LvStyle);
 	SetWindowLong(GetDlgItem(hWnd, WWWC_LIST), GWL_STYLE, wl | LVS_REPORT);
 	for(ret = 0;ret < LvColCnt;ret++){
-		LvColSize[ret] = ListView_GetColumnWidth(GetDlgItem(hWnd, WWWC_LIST), ret);
+		LvColSize[ret] = DpiUnscale(ListView_GetColumnWidth(GetDlgItem(hWnd, WWWC_LIST), ret));
 	}
 	//iniファイルの書き込み
 	PutINI();
@@ -776,11 +777,11 @@ static void SetControls(HWND hWnd)
 	//アニメーション用ダイアログの移動
 	MoveWindow(AniWnd, WinRec.right - STEPSIZE - 2, 0, STEPSIZE + 2, STEPSIZE + 2, TRUE);
 	//TreeViewの位置、サイズの設定
-	MoveWindow(GetDlgItem(hWnd, WWWC_TREE), 0, TBSize, SEPSIZE, WinRec.bottom - SBSize - TBSize, TRUE);
+	MoveWindow(GetDlgItem(hWnd, WWWC_TREE), 0, TBSize, DpiScale(SEPSIZE), WinRec.bottom - SBSize - TBSize, TRUE);
 	UpdateWindow(GetDlgItem(hWnd, WWWC_TREE));
 	//ListViewの位置、サイズの設定
-	MoveWindow(GetDlgItem(hWnd, WWWC_LIST), SEPSIZE + (FRAME_CNT * 2), TBSize,
-		WinRec.right - SEPSIZE - (FRAME_CNT * 2), WinRec.bottom - SBSize - TBSize, TRUE);
+	MoveWindow(GetDlgItem(hWnd, WWWC_LIST), DpiScale(SEPSIZE) + (FRAME_CNT * 2), TBSize,
+		WinRec.right - DpiScale(SEPSIZE) - (FRAME_CNT * 2), WinRec.bottom - SBSize - TBSize, TRUE);
 	UpdateWindow(GetDlgItem(hWnd, WWWC_LIST));
 
 
@@ -791,6 +792,72 @@ static void SetControls(HWND hWnd)
 		InvalidateRect(AniWnd, NULL, FALSE);
 		UpdateWindow(AniWnd);
 	}
+}
+
+
+/******************************************************************************
+
+	DpiChanged
+
+	DPI の変更 (WM_DPICHANGED)
+	アイコン、フォント、ツールバー、カラムの幅をその DPI で作り直し、
+	推奨された位置と大きさにウィンドウを移動する
+
+******************************************************************************/
+
+static void DpiChanged(HWND hWnd, int dpi, const RECT *rc)
+{
+	HWND hList = GetDlgItem(hWnd, WWWC_LIST);
+	int widths[100];
+	int old = g_Dpi;
+	int i;
+	long wl;
+
+	if(dpi <= 0){
+		return;
+	}
+	if(dpi != old && hList != NULL){
+		//カラムの幅を 96 DPI での値にしておく (詳細表示でないと取得できない)
+		wl = GetWindowLong(hList, GWL_STYLE);
+		SetWindowLong(hList, GWL_STYLE, (wl & ~LVS_TYPEMASK) | LVS_REPORT);
+		for(i = 0; i < LvColCnt && i < 100; i++){
+			widths[i] = MulDiv(ListView_GetColumnWidth(hList, i), USER_DEFAULT_SCREEN_DPI, old);
+		}
+
+		g_Dpi = dpi;
+		Dpi_ApplyIconSizes();
+
+		for(i = 0; i < LvColCnt && i < 100; i++){
+			ListView_SetColumnWidth(hList, i, DpiScale(widths[i]));
+		}
+		SetWindowLong(hList, GWL_STYLE, wl);
+
+		//アイコン
+		TreeView_CreateImageList(hWnd);
+		ListView_SetItemImage(hList, LvLIconSize, LVSIL_NORMAL);
+		ListView_SetItemImage(hList, LvSIconSize, LVSIL_SMALL);
+		SetProtocolImage(hWnd);
+
+		//フォント
+		if(ListFont != NULL){
+			DeleteObject(ListFont);
+		}
+		ListFont = (*ListFontName != '\0') ? CreateListFont(ListFontName, ListFontSize, ListFontCharSet) : Dpi_CreateDefaultFont();
+		SendMessage(GetDlgItem(hWnd, WWWC_TREE), WM_SETFONT, (WPARAM)ListFont, MAKELPARAM(TRUE, 0));
+		SendMessage(hList, WM_SETFONT, (WPARAM)ListFont, MAKELPARAM(TRUE, 0));
+
+		//ツールバー
+		TbRecreate(hWnd);
+
+		//ステータスバー
+		Dpi_SetStatusBarFont(GetDlgItem(hWnd, WWWC_SB));
+	}
+	if(rc != NULL){
+		SetWindowPos(hWnd, NULL, rc->left, rc->top, rc->right - rc->left, rc->bottom - rc->top,
+			SWP_NOZORDER | SWP_NOACTIVATE);
+	}
+	SetControls(hWnd);
+	InvalidateRect(hWnd, NULL, TRUE);
 }
 
 
@@ -821,12 +888,22 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	//ウィンドウのタイトルを設定
 	SetWinTitle(hWnd);
 
+	//ウィンドウの DPI (サイズの設定は 96 DPI での値)
+	if(StartFlag == TRUE){
+		g_Dpi = (int)GetDpiForWindow(hWnd);
+		if(g_Dpi == 0) g_Dpi = USER_DEFAULT_SCREEN_DPI;
+		Dpi_ApplyIconSizes();
+	}
+
 	//フォント作成
 	if(*ListFontName != '\0'){
 		if(ListFont != NULL){
 			DeleteObject(ListFont);
 		}
 		ListFont = CreateListFont(ListFontName, ListFontSize, ListFontCharSet);
+	}else if(StartFlag == TRUE){
+		//フォントの設定がない場合、システムと違う DPI ではその DPI のフォントを使う
+		ListFont = Dpi_CreateDefaultFont();
 	}
 
 	//ウィンドウ内のコントロールを作成
@@ -1236,7 +1313,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 			if((ret = FrameDrawEnd(hWnd)) == -1){
 				break;
 			}
-			SEPSIZE = ret;
+			SEPSIZE = DpiUnscale(ret);		//96 DPI での幅
 			SetControls(hWnd);
 		}
 		break;
@@ -2215,6 +2292,11 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		}
 		break;
 
+	//DPI の変更 (別の DPI のモニタへの移動、表示倍率の変更)
+	case WM_DPICHANGED:
+		DpiChanged(hWnd, HIWORD(wParam), (const RECT *)lParam);
+		break;
+
 	//ダークモードで表示しているか
 	case WM_GETDARKMODE:
 		return DarkMode_IsDark();
@@ -2222,7 +2304,7 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	//Windows の設定変更 (表示テーマが「Windows の設定に従う」の場合に追従)
 	case WM_SETTINGCHANGE:
 		if(DarkMode_OnSettingChange(hWnd, lParam) == TRUE){
-			TbSetDarkBitmap(hWnd);
+			TbApplyTheme(hWnd);
 		}
 		break;
 

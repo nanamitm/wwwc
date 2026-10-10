@@ -67,6 +67,8 @@ HWND CreateStatusBar(HWND hWnd)
 	if(sbWnd == NULL){
 		return NULL;
 	}
+	Dpi_SetStatusBarFont(sbWnd);
+
 	//StatusBarを表示する設定の場合
 	if(ViewSb == 1){
 		ShowWindow(sbWnd, SW_SHOW);
@@ -91,8 +93,8 @@ void SBSetParts(HWND hWnd)
 	//ウィンドウサイズからパーツのサイズを計算
 	GetWindowRect(hWnd, &WindowRect);
 	*(Width + 2) = PART_MAXSIZE;
-	*(Width + 1) = WindowRect.right - WindowRect.left - PartsSize2;
-	*(Width + 0) = WindowRect.right - WindowRect.left - (PartsSize1 + PartsSize2);
+	*(Width + 1) = WindowRect.right - WindowRect.left - DpiScale(PartsSize2);
+	*(Width + 0) = WindowRect.right - WindowRect.left - DpiScale(PartsSize1 + PartsSize2);
 
 	SendDlgItemMessage(hWnd, WWWC_SB, SB_SETPARTS,
 		(WPARAM)sizeof(Width) / sizeof(int), (LPARAM)((LPINT)Width));

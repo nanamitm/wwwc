@@ -166,6 +166,7 @@
     <ClCompile Include="Check.c" />
     <ClCompile Include="ClipBoard.c" />
     <ClCompile Include="Dialog.c" />
+    <ClCompile Include="Dpi.c" />
     <ClCompile Include="DragDrop.c" />
     <ClCompile Include="File.c" />
     <ClCompile Include="FindItem.c" />
@@ -263,6 +264,7 @@
     <ClInclude Include="General.h" />
     <ClInclude Include="Charset.h" />
     <ClInclude Include="DarkMode.h" />
+    <ClInclude Include="Dpi.h" />
     <ClInclude Include="Memory.h" />
     <ClInclude Include="OleDragDrop.h" />
     <ClInclude Include="Profile.h" />

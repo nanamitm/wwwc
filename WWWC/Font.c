@@ -32,13 +32,11 @@
 HFONT CreateListFont(char *FontName, int FontSize, int CharSet)
 {
 	LOGFONT lf;
-	HDC hdc;
 
 	ZeroMemory(&lf, sizeof(LOGFONT));
 
-	hdc = GetDC(NULL);
-	lf.lfHeight = -(int)((FontSize * GetDeviceCaps(hdc,LOGPIXELSY)) / 72);
-	ReleaseDC(NULL, hdc);
+	//メインウィンドウの DPI で作成する
+	lf.lfHeight = -MulDiv(FontSize, g_Dpi, 72);
 
 	lf.lfWidth = 0;
 	lf.lfEscapement = 0;

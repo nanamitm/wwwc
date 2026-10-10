@@ -66,6 +66,9 @@
     <ClCompile Include="Dialog.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="Dpi.c">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
     <ClCompile Include="DragDrop.c">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
@@ -117,6 +120,9 @@
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="Charset.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="Dpi.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
     <ClInclude Include="General.h">

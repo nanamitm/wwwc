@@ -3,6 +3,21 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## Unreleased
+
+### New
+
+- Per-Monitor DPI awareness (V2) instead of GDI scaling: text, icons,
+  toolbar, columns and the tree width follow the scale of the monitor, also
+  when the window moves to a monitor with another scale. Sizes in user.ini
+  stay values at 96 DPI (100%), so the settings are the same on every
+  monitor.
+
+### Tests
+
+- New `Features` suite: FILE protocol, delete and undo, find, update message
+  window, dark mode, scheduled check and a simulated DPI change.
+
 ## 1.4.0
 
 ### New

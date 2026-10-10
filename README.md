@@ -76,6 +76,12 @@ folder can be changed with the command line option `/d:"folder"`.
 - Dark mode: Options > General > Theme (Light / Dark / Follow Windows), stored
   as `[GENERAL] DarkMode` = 0 / 1 / 2 in user.ini. The default is 2 (follow
   Windows). Requires Windows 10 1809 or later.
+- High DPI: WWWC is Per-Monitor DPI aware (V2). Sizes in user.ini (icon
+  sizes, tree width, column widths, status bar parts) are values at 96 DPI
+  (100%) and are scaled to the DPI of the monitor; moving the window to a
+  monitor with another scale (`WM_DPICHANGED`) resizes the icons, fonts,
+  toolbar and columns. The toolbar bitmaps exist only at 16x16 and are
+  stretched.
 - HTTPS server certificates are verified. A server with a self-signed or
   otherwise invalid certificate can be allowed per item with "Ignore
   certificate errors" on the Options tab of the item properties. (1.1.3 always
@@ -107,11 +113,14 @@ pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
 - The HTTP tests use a local test server (`tests/server/test_server.py`) that
   listens only on 127.0.0.1 - 127.0.0.5. Nothing is sent to other hosts.
 - Suites: `Parse` (loading Item.dat and user.ini), `Http` (check, redirects,
-  errors, timeout, cancel, exit while checking), `Password` (encryption and
+  errors, timeout, cancel, exit while checking, item proxy, Windows proxy
+  settings), `Password` (encryption and
   migration of passwords), `Tools` (header view, source view, get title, open
   URL), `Unicode` (conversion of old data, pages in UTF-8 / Shift_JIS /
   EUC-JP / ISO-2022-JP, filters, passwords from older versions, long
-  Japanese folder and item names).
+  Japanese folder and item names), `Features` (FILE protocol, delete and
+  undo, find, update message window, dark mode, scheduled check, DPI change
+  simulated with `WM_DPICHANGED`; the scheduled check waits about a minute).
 - The script exits with code 1 when a test fails.
 
 ### AddressSanitizer

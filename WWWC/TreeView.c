@@ -136,13 +136,13 @@ HWND CreateTreeView(HWND hWnd)
 
 /******************************************************************************
 
-	TreeView_Initialize
+	TreeView_CreateImageList
 
-	ツリービューの初期化
+	ツリービューのイメージリストの作成 (DPI が変わったときも作り直す)
 
 ******************************************************************************/
 
-void TreeView_Initialize(HWND hWnd)
+void TreeView_CreateImageList(HWND hWnd)
 {
 	HIMAGELIST IconList;
 	HIMAGELIST TmpIconList;
@@ -219,7 +219,25 @@ void TreeView_Initialize(HWND hWnd)
 	DestroyIcon(TmpIcon);
 	ImageList_Destroy((void *)TmpIconList);
 
-	TreeView_SetImageList(GetDlgItem(hWnd, WWWC_TREE), IconList, TVSIL_NORMAL);
+	IconList = TreeView_SetImageList(GetDlgItem(hWnd, WWWC_TREE), IconList, TVSIL_NORMAL);
+	if(IconList != NULL){
+		//作り直した場合は前のイメージリストを解放する
+		ImageList_Destroy(IconList);
+	}
+}
+
+
+/******************************************************************************
+
+	TreeView_Initialize
+
+	ツリービューの初期化 (アイコンとルート、ごみ箱、フォルダ)
+
+******************************************************************************/
+
+void TreeView_Initialize(HWND hWnd)
+{
+	TreeView_CreateImageList(hWnd);
 
 	//ルートアイテム
 	RootItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE), (HTREEITEM)TVI_ROOT,
