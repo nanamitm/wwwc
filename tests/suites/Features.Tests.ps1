@@ -166,8 +166,11 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
       CutImage = [int][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($e.Window, 102), 0x0400 + 44, [IntPtr]40055, [IntPtr]::Zero)  # TB_GETBITMAP (ID_MENUITEM_CUT)
     }
   }
-  $before = & $measure
+  # Establish a 96 DPI baseline even when the desktop starts at 125% or 150%.
   $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($e.Window, [ref]$r)
+  [WwwcList]::SendDpiChanged($e.Window, 96, $r.L, $r.T, $r.R, $r.B)
+  Start-Sleep -Milliseconds 200
+  $before = & $measure
   [WwwcList]::SendDpiChanged($e.Window, 144, $r.L, $r.T, $r.L + [int](($r.R - $r.L) * 1.5), $r.T + [int](($r.B - $r.T) * 1.5))
   Start-Sleep 1
   $high = & $measure
