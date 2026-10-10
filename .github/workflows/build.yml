@@ -81,8 +81,6 @@ jobs:
     name: AddressSanitizer x64
     runs-on: windows-latest
     timeout-minutes: 30
-    env:
-      WWWC_TEST_ROOT: ${{ runner.temp }}/wwwc-tests
 
     steps:
       - uses: actions/checkout@v4
@@ -105,6 +103,9 @@ jobs:
 
       - name: Test
         shell: pwsh
+        # the runner context cannot be used in a job's env, only in steps
+        env:
+          WWWC_TEST_ROOT: ${{ runner.temp }}/wwwc-tests
         run: ./tests/run-tests.ps1 -BinDir asan-build\x64
 
       - name: Upload AddressSanitizer reports
@@ -112,7 +113,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asan-reports
-          path: ${{ env.WWWC_TEST_ROOT }}/asan/
+          path: ${{ runner.temp }}/wwwc-tests/asan/
           if-no-files-found: ignore
 
   # On a version tag (v1.2.0 etc.): package the tested Release builds and create
