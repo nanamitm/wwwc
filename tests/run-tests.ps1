@@ -54,6 +54,12 @@ try {
 $failed = @($script:Results | Where-Object { -not $_.Passed })
 Write-Host ""
 Write-Host "$($script:Results.Count - $failed.Count) passed, $($failed.Count) failed"
+# the failures with their messages, also when the console output is not kept
+$log = Join-Path $script:TestRoot "last-results.txt"
+@("WWWC: $BinDir", "$(Get-Date -Format s)  $($script:Results.Count - $failed.Count) passed, $($failed.Count) failed") +
+  @($failed | ForEach-Object { "FAIL  $($_.Name)"; $_.Errors | ForEach-Object { "      $_" } }) |
+  Set-Content -Path $log -Encoding utf8
+if ($failed.Count -gt 0) { Write-Host "Failures: $log" }
 if ($env:GITHUB_STEP_SUMMARY) {
   $lines = @("### Tests ($(Split-Path -Leaf (Split-Path $BinDir)) $(Split-Path -Leaf $BinDir))", "", "| Test | Result |", "|---|---|")
   $lines += $script:Results | ForEach-Object { "| $($_.Name) | $(if ($_.Passed) { 'pass' } else { 'FAIL: ' + ($_.Errors -join '; ') }) |" }

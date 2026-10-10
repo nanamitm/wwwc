@@ -23,6 +23,7 @@ void Dpi_SetIconSizeBase(void);
 void Dpi_ApplyIconSizes(void);
 HFONT Dpi_CreateDefaultFont(void);
 void Dpi_SetStatusBarFont(HWND hStatus);
+void Dpi_Uninitialize(void);
 void Dpi_ScaleToolbar(HWND hToolbar);
 
 #endif

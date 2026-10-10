@@ -9,6 +9,8 @@ function Test-Load([string]$Name, [byte[]]$ItemData, [string]$UserIni, [string[]
   $started = Start-Wwwc $e
   Assert-True $started ("WWWC exited at startup (exit code 0x{0:X8})" -f $e.Process.ExitCode)
   if (-not $started) { return }
+  # wait until all items are listed (one read right after the start failed once)
+  [void](Wait-Until { $t = Get-ListTitles $e; @($Expected | Where-Object { $t -notcontains $_ }).Count -eq 0 } 5)
   $titles = Get-ListTitles $e
   foreach ($t in $Expected) { Assert-True ($titles -contains $t) "item '$t' is shown (list: $($titles -join ', '))" }
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"

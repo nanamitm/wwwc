@@ -22,6 +22,7 @@
 
 #include "General.h"
 #include "Dpi.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -149,9 +150,10 @@ HFONT Dpi_CreateDefaultFont(void)
 
 ******************************************************************************/
 
+static HFONT StatusFont = NULL;
+
 void Dpi_SetStatusBarFont(HWND hStatus)
 {
-	static HFONT StatusFont = NULL;
 	NONCLIENTMETRICSW ncm;
 	HFONT hFont = NULL;
 
@@ -173,6 +175,23 @@ void Dpi_SetStatusBarFont(HWND hStatus)
 		DeleteObject(StatusFont);
 	}
 	StatusFont = hFont;
+}
+
+
+/******************************************************************************
+
+	Dpi_Uninitialize
+
+	終了処理 (ステータスバーを破棄した後に呼ぶ)
+
+******************************************************************************/
+
+void Dpi_Uninitialize(void)
+{
+	if(StatusFont != NULL){
+		DeleteObject(StatusFont);
+		StatusFont = NULL;
+	}
 }
 
 
@@ -266,6 +285,31 @@ static void Downscale(const DWORD *src, int sw, DWORD *dst, int dstride, int dw)
 	}
 }
 
+//ダークモードでは、暗い色の画素 (黒の輪郭や細い線、濃い青など) を明るくする
+//(黒は明るい灰色、濃い青は明るい青になる。赤などの鮮やかな色はそのまま)
+static void LightenForDark(DWORD *px)
+{
+#define TB_DARK_LIMIT		100			//これより暗い画素を明るくする (輝度 0 - 255)
+#define TB_DARK_MAXCH		128			//これより明るい成分がある色は明るくしない
+#define TB_DARK_TARGET		190			//明るくした後の輝度
+	int i;
+
+	for(i = 0; i < TB_SRC_SIZE * TB_SRC_SIZE; i++){
+		const DWORD p = px[i];
+		const int r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+		const int lum = (r * 299 + g * 587 + b * 114) / 1000;
+
+		if((p >> 24) < 128 || lum >= TB_DARK_LIMIT || max(r, max(g, b)) > TB_DARK_MAXCH){
+			continue;
+		}
+		//白と混ぜて輝度を TB_DARK_TARGET にする (色合いは残る)
+		px[i] = (p & 0xFF000000) |
+			((DWORD)(r + (255 - r) * (TB_DARK_TARGET - lum) / (255 - lum)) << 16) |
+			((DWORD)(g + (255 - g) * (TB_DARK_TARGET - lum) / (255 - lum)) << 8) |
+			(DWORD)(b + (255 - b) * (TB_DARK_TARGET - lum) / (255 - lum));
+	}
+}
+
 //16x16 の画像を size に拡大する
 static void ScaleImage(const DWORD *src, int size, DWORD *dst, int dstride)
 {
@@ -325,6 +369,8 @@ static void GetImagePixels(HIMAGELIST himl, int index, HDC hdc, const DWORD *bit
 	Dpi_ScaleToolbar
 
 	ツールバーのボタンの画像を DPI に合わせて拡大する
+	ダークモードでは 96 DPI でも作り直して、暗い輪郭を明るくする
+	(標準のボタン (切り取り、元に戻すなど) の画像も含む)
 
 ******************************************************************************/
 
@@ -337,8 +383,9 @@ void Dpi_ScaleToolbar(HWND hToolbar)
 	DWORD *work, *strip;
 	DWORD pixels[TB_SRC_SIZE * TB_SRC_SIZE];
 	int size, cnt, i;
+	BOOL dark = DarkMode_IsDark();
 
-	if(hToolbar == NULL || g_Dpi == USER_DEFAULT_SCREEN_DPI){
+	if(hToolbar == NULL || (g_Dpi == USER_DEFAULT_SCREEN_DPI && dark == FALSE)){
 		return;
 	}
 	src = (HIMAGELIST)SendMessage(hToolbar, TB_GETIMAGELIST, 0, 0);
@@ -368,6 +415,9 @@ void Dpi_ScaleToolbar(HWND hToolbar)
 		hOld = (HBITMAP)SelectObject(hWorkDC, hWork);
 		for(i = 0; i < cnt; i++){
 			GetImagePixels(src, i, hWorkDC, work, pixels);
+			if(dark == TRUE){
+				LightenForDark(pixels);
+			}
 			ScaleImage(pixels, size, strip + i * size, size * cnt);
 		}
 		SelectObject(hWorkDC, hOld);

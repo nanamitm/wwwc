@@ -3,6 +3,22 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## Unreleased
+
+### Fixes
+
+- Dark mode: dark toolbar images (black lines such as refresh and delete,
+  the dark blue standard images such as cut and undo) were hard to see.
+  Dark colors in the toolbar images are lightened (vivid colors such as red
+  are kept), also at 96 DPI.
+- The status bar font for another DPI is deleted at exit.
+
+### Tests
+
+- The runner writes the failures with their messages to
+  `last-results.txt` in the test folder.
+- The Parse tests wait until the items are listed.
+
 ## 1.5.1
 
 ### High DPI

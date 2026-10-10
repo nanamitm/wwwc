@@ -410,17 +410,14 @@ void TbRecreate(HWND hWnd)
 	TbApplyTheme
 
 	表示テーマの変更をツールバーに反映する
-	(拡大した画像はビットマップを差し替えられないため作り直す)
+	(作り直した画像 (高 DPI、ダークモード) はビットマップを差し替えられないため、
+	ツールバーを作り直す)
 
 ******************************************************************************/
 
 void TbApplyTheme(HWND hWnd)
 {
-	if(g_Dpi == USER_DEFAULT_SCREEN_DPI){
-		TbSetDarkBitmap(hWnd);
-	}else{
-		TbRecreate(hWnd);
-	}
+	TbRecreate(hWnd);
 }
 
 
