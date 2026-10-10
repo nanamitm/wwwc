@@ -3,6 +3,7 @@
 ## The tests drive WWWC through window messages (no mouse or keyboard input),
 ## so they do not depend on the foreground window or the system locale.
 
+Add-Type -AssemblyName System.Drawing
 Add-Type -TypeDefinition @"
 using System;
 using System.Runtime.InteropServices;
@@ -24,6 +25,18 @@ public static class WwwcWin {
   public delegate bool EnumProc(IntPtr h, IntPtr l);
   [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc f, IntPtr l);
   [StructLayout(LayoutKind.Sequential)] public struct RECT { public int L, T, R, B; }
+
+  // a descendant window with the given control id (controls on child dialogs)
+  [DllImport("user32.dll")] static extern bool EnumChildWindows(IntPtr h, EnumProc f, IntPtr l);
+  [DllImport("user32.dll")] static extern int GetDlgCtrlID(IntPtr h);
+  public static IntPtr FindChildById(IntPtr parent, int id) {
+    IntPtr found = IntPtr.Zero;
+    EnumChildWindows(parent, (h, l) => { if (GetDlgCtrlID(h) == id) { found = h; return false; } return true; }, IntPtr.Zero);
+    return found;
+  }
+
+  [DllImport("user32.dll")] public static extern bool PrintWindow(IntPtr h, IntPtr dc, uint f);
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
 
   // window text as Unicode (WM_GETTEXT is marshaled across processes)
   [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")] static extern IntPtr SendMessageW(IntPtr h, uint m, IntPtr w, StringBuilder l);
@@ -258,6 +271,15 @@ function Get-ProcessWindows([int]$ProcessId) {
 
 # Windows of WWWC other than the main window
 function Get-Dialogs($Env) { @(Get-ProcessWindows $Env.Process.Id | Where-Object { $_.Handle -ne $Env.Window }) }
+
+# Luminance (0-255) of a pixel of a window, drawn with PrintWindow
+function Get-PixelLuminance([IntPtr]$Window, [int]$X, [int]$Y) {
+  $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($Window, [ref]$r)
+  $bmp = New-Object Drawing.Bitmap ($r.R - $r.L), ($r.B - $r.T)
+  $g = [Drawing.Graphics]::FromImage($bmp); $dc = $g.GetHdc(); [void][WwwcWin]::PrintWindow($Window, $dc, 2); $g.ReleaseHdc($dc); $g.Dispose()
+  $c = $bmp.GetPixel($X, $Y); $bmp.Dispose()
+  [int](($c.R * 299 + $c.G * 587 + $c.B * 114) / 1000)
+}
 
 ## ---------------------------------------------------------------- WWWC
 

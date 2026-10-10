@@ -107,11 +107,14 @@ pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
 - The HTTP tests use a local test server (`tests/server/test_server.py`) that
   listens only on 127.0.0.1 - 127.0.0.5. Nothing is sent to other hosts.
 - Suites: `Parse` (loading Item.dat and user.ini), `Http` (check, redirects,
-  errors, timeout, cancel, exit while checking), `Password` (encryption and
+  errors, timeout, cancel, exit while checking, item proxy, Windows proxy
+  settings), `Password` (encryption and
   migration of passwords), `Tools` (header view, source view, get title, open
   URL), `Unicode` (conversion of old data, pages in UTF-8 / Shift_JIS /
   EUC-JP / ISO-2022-JP, filters, passwords from older versions, long
-  Japanese folder and item names).
+  Japanese folder and item names), `Features` (FILE protocol, delete and
+  undo, find, update message window, dark mode, scheduled check; the
+  scheduled check waits about a minute).
 - The script exits with code 1 when a test fails.
 
 ### AddressSanitizer
