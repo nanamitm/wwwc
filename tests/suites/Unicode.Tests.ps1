@@ -140,3 +140,25 @@ Test-Case "long Japanese folder and item names" {
   Assert-Equal "67" $deepItem[2] "the item in the deep folder is saved with the check result"
   Assert-True ((Get-SavedTitles $e) -contains $longTitle) "the 200-character name is saved in full"
 }
+
+Test-Case "Japanese names in the find window and with a font chosen in the settings" {
+  # list views convert ANSI text with the code page of the character set of their font:
+  # the dialog font and a font chosen in the settings are Japanese (Shift_JIS)
+  $e = New-TestEnv "utf8-listfont" $BinDir
+  Set-Items $e @(ItemLine $PageJa (Url "/a"))
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"), "[WINDOW]`r`nListFontName=MS UI Gothic`r`nListFontSize=9`r`nListFontCharSet=128`r`n", $script:Enc)
+  [void](Start-Wwwc $e)
+  Assert-True ((Get-ListTitles $e) -contains $PageJa) "the Japanese item name is shown with the font (Shift_JIS character set) ($((Get-ListTitles $e) -join ', '))"
+  Send-Command $e 40111                                                    # ID_MENUITEM_SERACH
+  [void](Wait-Until { $script:fw = Get-Dialogs $e | Where-Object { [WwwcWin]::FindChildById($_.Handle, 1116) -ne [IntPtr]::Zero } | Select-Object -First 1; $null -ne $script:fw } 10)
+  $fw = $script:fw
+  Assert-True ($null -ne $fw) "find window opened"
+  if ($fw) {
+    [void][WwwcWin]::SendMessageTextW([WwwcWin]::FindChildById($fw.Handle, 1116), 0x000C, [IntPtr]::Zero, $PageJa)
+    [void][WwwcWin]::PostMessage($fw.Handle, 0x0111, [IntPtr]1, [IntPtr]::Zero)       # IDOK: start
+    $lv = [WwwcWin]::GetDlgItem($fw.Handle, $script:ID_LIST)
+    Assert-True (Wait-Until { [WwwcList]::Count($lv) -ge 1 } 10) "the item is found"
+    Assert-Equal $PageJa ([WwwcList]::GetText($lv, 0, 0)) "the Japanese item name in the find window"
+  }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}

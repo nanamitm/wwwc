@@ -12,6 +12,7 @@ using System.Text;
 public static class WwwcWin {
   [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
   [DllImport("user32.dll", CharSet = CharSet.Ansi, EntryPoint = "SendMessageA")] public static extern IntPtr SendMessageText(IntPtr h, uint m, IntPtr w, string l);
+  [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")] public static extern IntPtr SendMessageTextW(IntPtr h, uint m, IntPtr w, string l);
   [DllImport("user32.dll")] public static extern bool PostMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
   [DllImport("user32.dll")] public static extern IntPtr GetDlgItem(IntPtr h, int id);
   [DllImport("user32.dll")] public static extern bool IsWindow(IntPtr h);
@@ -86,19 +87,21 @@ public static class WwwcList {
     } finally { Marshal.FreeHGlobal(rc); }
   }
 
-  // LVITEMA: mask@0 iItem@4 iSubItem@8 state@12 stateMask@16, pszText@20/24 cchTextMax@24/32 (32/64-bit)
+  // LVITEMW: mask@0 iItem@4 iSubItem@8 state@12 stateMask@16, pszText@20/24 cchTextMax@24/32 (32/64-bit)
+  // The text is read as UTF-16, as the list view shows it: WWWC sets it with ANSI (UTF-8) messages,
+  // and a wrong conversion in the control (for example with the code page of its font) is seen here
   public static string GetText(IntPtr lv, int item, int sub) {
     using (var r = new Remote(lv, 2048)) {
       var it = new byte[88];
       BitConverter.GetBytes(1).CopyTo(it, 0);
       BitConverter.GetBytes(item).CopyTo(it, 4);
       BitConverter.GetBytes(sub).CopyTo(it, 8);
-      if (r.is32) { BitConverter.GetBytes((int)(long)(r.mem + 512)).CopyTo(it, 20); BitConverter.GetBytes(1024).CopyTo(it, 24); }
-      else { BitConverter.GetBytes((long)(r.mem + 512)).CopyTo(it, 24); BitConverter.GetBytes(1024).CopyTo(it, 32); }
-      r.Write(it, 0); r.Write(new byte[1024], 512);
-      SendMessage(lv, 0x1000 + 45, (IntPtr)item, r.mem);   // LVM_GETITEMTEXTA
-      var b = r.Read(512, 1024); int n = Array.IndexOf(b, (byte)0); if (n < 0) n = b.Length;
-      return Encoding.UTF8.GetString(b, 0, n);
+      if (r.is32) { BitConverter.GetBytes((int)(long)(r.mem + 512)).CopyTo(it, 20); BitConverter.GetBytes(768).CopyTo(it, 24); }
+      else { BitConverter.GetBytes((long)(r.mem + 512)).CopyTo(it, 24); BitConverter.GetBytes(768).CopyTo(it, 32); }
+      r.Write(it, 0); r.Write(new byte[1536], 512);
+      SendMessage(lv, 0x1000 + 115, (IntPtr)item, r.mem);  // LVM_GETITEMTEXTW
+      var b = r.Read(512, 1536); int n = 0; while (n + 1 < b.Length && (b[n] != 0 || b[n + 1] != 0)) n += 2;
+      return Encoding.Unicode.GetString(b, 0, n);
     }
   }
 

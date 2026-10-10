@@ -2948,6 +2948,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
 	//ダークモードの初期化
 	DarkMode_Initialize(DarkModeType);
+	//ダイアログのリストビューとツリービューで UTF-8 の文字列が化けないようにする
+	Font_InstallDialogHook();
 
 	//終了処理
 	if(atexit(AppExit)){
@@ -3026,6 +3028,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageFunc(hWnd, &msg);
 	}
 
+	Font_UninstallDialogHook();
 	DarkMode_Uninitialize();
 	DestroyMenu(hPOPUP);
 	if(hMutex != NULL){
