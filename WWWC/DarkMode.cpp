@@ -9,6 +9,7 @@
 **************************************************************************/
 
 #include <windows.h>
+#include <commctrl.h>
 
 #include "Darkmodelib.h"
 #include "DarkMode.h"
@@ -16,6 +17,91 @@
 static HHOOK hDialogHook = nullptr;
 static bool DarkEnabled = false;
 static int CurrentMode = DARKMODE_LIGHT;
+
+/*
+ * IsMessageBox - メッセージボックスか (#32770 で、子が ID 0xFFFF の本文と
+ * アイコンの Static、IDOK - IDCONTINUE のボタンだけのダイアログ)
+ */
+static bool IsMessageBox(HWND hDlg)
+{
+	char cls[16];
+	bool text = false, button = false;
+
+	if (GetClassNameA(hDlg, cls, sizeof(cls)) == 0 || lstrcmpA(cls, "#32770") != 0 ||
+		(GetWindowLongPtr(hDlg, GWL_STYLE) & WS_CHILD) != 0) {
+		return false;
+	}
+	for (HWND hChild = GetWindow(hDlg, GW_CHILD); hChild != nullptr; hChild = GetWindow(hChild, GW_HWNDNEXT)) {
+		const int id = GetDlgCtrlID(hChild);
+		if (GetClassNameA(hChild, cls, sizeof(cls)) == 0) {
+			return false;
+		}
+		if (lstrcmpiA(cls, "Static") == 0) {
+			if (id == 0xFFFF) {
+				text = true;
+			}
+		} else if (lstrcmpiA(cls, "Button") == 0 && id >= IDOK && id <= IDCONTINUE) {
+			button = true;
+		} else {
+			return false;
+		}
+	}
+	return text && button;
+}
+
+/*
+ * MessageBoxSubclass - メッセージボックスの背景を描画する
+ *
+ * メッセージボックスはボタンの部分を WM_PAINT でシステムの色 (ライトモードの色) で
+ * 塗るため、本文とボタンの部分をダークモードの色で塗る。
+ */
+static LRESULT CALLBACK MessageBoxSubclass(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam,
+	UINT_PTR uIdSubclass, DWORD_PTR dwRefData)
+{
+	(void)dwRefData;
+	switch (uMsg) {
+	case WM_PAINT:
+		if (DarkEnabled) {
+			PAINTSTRUCT ps;
+			RECT rc, rcBtn;
+			int top = -1, bottom = 0;
+
+			GetClientRect(hWnd, &rc);
+			for (HWND hChild = GetWindow(hWnd, GW_CHILD); hChild != nullptr; hChild = GetWindow(hChild, GW_HWNDNEXT)) {
+				const int id = GetDlgCtrlID(hChild);
+				if (id >= IDOK && id <= IDCONTINUE && IsWindowVisible(hChild)) {
+					GetWindowRect(hChild, &rcBtn);
+					MapWindowPoints(nullptr, hWnd, reinterpret_cast<POINT *>(&rcBtn), 2);
+					if (top < 0 || rcBtn.top < top) top = rcBtn.top;
+					if (rcBtn.bottom > bottom) bottom = rcBtn.bottom;
+				}
+			}
+			HDC hdc = BeginPaint(hWnd, &ps);
+			FillRect(hdc, &rc, dmlib::getDlgBackgroundBrush());
+			if (top >= 0) {
+				// ボタンの部分 (ボタンの上下の余白を同じにする) は本文より少し明るい色
+				const COLORREF bg = dmlib::getDlgBackgroundColor();
+				const COLORREF ctrl = dmlib::getCtrlBackgroundColor();
+				HBRUSH hBrush = CreateSolidBrush(RGB((GetRValue(bg) + GetRValue(ctrl)) / 2,
+					(GetGValue(bg) + GetGValue(ctrl)) / 2, (GetBValue(bg) + GetBValue(ctrl)) / 2));
+				RECT rcFooter = rc;
+				rcFooter.top = top - (rc.bottom - bottom);
+				if (hBrush != nullptr) {
+					FillRect(hdc, &rcFooter, hBrush);
+					DeleteObject(hBrush);
+				}
+			}
+			EndPaint(hWnd, &ps);
+			return 0;
+		}
+		break;
+
+	case WM_NCDESTROY:
+		RemoveWindowSubclass(hWnd, MessageBoxSubclass, uIdSubclass);
+		break;
+	}
+	return DefSubclassProc(hWnd, uMsg, wParam, lParam);
+}
 
 /*
  * DialogHookProc - スレッド内で作成されるダイアログにダークモードを適用する
@@ -31,6 +117,9 @@ static LRESULT CALLBACK DialogHookProc(int nCode, WPARAM wParam, LPARAM lParam)
 			dmlib::setDarkWndNotifySafe(cwp->hwnd);
 			if ((GetWindowLongPtr(cwp->hwnd, GWL_STYLE) & WS_CHILD) == 0) {
 				dmlib::setDarkTitleBar(cwp->hwnd);
+			}
+			if (IsMessageBox(cwp->hwnd)) {
+				SetWindowSubclass(cwp->hwnd, MessageBoxSubclass, 1, 0);
 			}
 		}
 	}
