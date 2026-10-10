@@ -166,8 +166,11 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
       CutImage = [int][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($e.Window, 102), 0x0400 + 44, [IntPtr]40055, [IntPtr]::Zero)  # TB_GETBITMAP (ID_MENUITEM_CUT)
     }
   }
-  $before = & $measure
+  # Establish a 96 DPI baseline even when the desktop starts at 125% or 150%.
   $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($e.Window, [ref]$r)
+  [WwwcList]::SendDpiChanged($e.Window, 96, $r.L, $r.T, $r.R, $r.B)
+  Start-Sleep -Milliseconds 200
+  $before = & $measure
   [WwwcList]::SendDpiChanged($e.Window, 144, $r.L, $r.T, $r.L + [int](($r.R - $r.L) * 1.5), $r.T + [int](($r.B - $r.T) * 1.5))
   Start-Sleep 1
   $high = & $measure
@@ -192,4 +195,51 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $ini = Read-Utf8Text (Join-Path $e.Data "user.ini")
   Assert-True ($ini -match "(?m)^TvIconSize=16\r?$") "icon size is saved at 96 DPI"
+}
+
+
+Test-Case "delete and undo an item with a clipboard record larger than 32 KiB" {
+  $e = New-TestEnv "feat-longrecord" $BinDir
+  $comment = "`u{3042}" * 12000
+  $fields = (ItemLine "long comment" (Url "/longrecord")).Split("`t")
+  $fields[11] = $comment
+  Set-Items $e @($fields -join "`t")
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "long comment"
+  Send-Command $e $CMD_DELETE
+  [void](Wait-Until { Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } } 5)
+  Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } | ForEach-Object {
+    [void][WwwcWin]::PostMessage($_.Handle, 0x0111, [IntPtr]6, [IntPtr]::Zero)
+  }
+  Assert-True (Wait-Until { -not ((Get-ListTitles $e) -contains "long comment") } 5) "long item moved to recycle bin"
+  Send-Command $e $CMD_UNDO
+  Assert-True (Wait-Until { (Get-ListTitles $e) -contains "long comment" } 5) "undo restored the long item"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $saved = (Read-Utf8Text $e.ItemFile).TrimEnd("`r", "`n").Split("`t")
+  Assert-Equal $comment $saved[11] "the complete comment is preserved"
+}
+
+
+Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
+  $e = New-TestEnv "feat-file64" $BinDir
+  $file = Join-Path $e.Dir "large.bin"
+  [WwwcWin]::CreateSparseFile($file, 2147483655)
+  $fields = (ItemLine "large file" "file:///$file").Split("`t")
+  $fields[2] = "2147483655"
+  $fields[9] = "1;;0"    # FILE: ignore date, compare size
+  Set-Items $e @($fields -join "`t")
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"),
+    "[PROTOCOL]`r`nProtocolCnt=2`r`ntitle-0=HTTP`r`nDLL-0=wwwc.dll`r`nFuncHeader-0=HTTP_`r`nUpIconIndex-0=-1`r`ntitle-1=FILE`r`nDLL-1=wwwc.dll`r`nFuncHeader-1=FILE_`r`nUpIconIndex-1=-1`r`n[UPMSG]`r`nUPSnd=0`r`nUPMsg=0`r`n", $script:Enc)
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK; Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code (above 2 GiB)"
+  $first = Get-SavedItem $e "large file"
+  Assert-Equal "2147483655" $first.Size "size above 2 GiB is positive"
+  Assert-True (($first.Status -band 1) -eq 0) "unchanged size is not marked updated"
+  $stream = [IO.File]::OpenWrite($file)
+  try { $stream.SetLength(6442450951) } finally { $stream.Dispose() }
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK; Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code (above 4 GiB)"
+  $second = Get-SavedItem $e "large file"
+  Assert-Equal "6442450951" $second.Size.TrimEnd("*") "upper 32 bits are preserved"
+  Assert-True (($second.Status -band 1) -ne 0) "a 4 GiB size increase is detected without date comparison"
 }

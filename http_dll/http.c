@@ -235,7 +235,6 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 
 		}else if(tpItemInfo->Param3 == 2){
 			SetCursor(LoadCursor(NULL, IDC_WAIT));
-			DeleteSizeInfo(tpHTTP->buf, tpHTTP->Size);
 
 			filter_title = "";
 			if(tpHTTP->FilterFlag == TRUE){
@@ -1049,8 +1048,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			CmpMsg |= Head_GetSize(tpItemInfo, SizeCheck, SetDate, &SizeRet);
 		}
 		if(SizeRet == 0){
-			//バイト情報の除去
-			tpHTTP->Size = DeleteSizeInfo(tpHTTP->buf, tpHTTP->Size);
+			//WinHTTP が渡す本文にはチャンク情報は含まれない
 			//フィルタ処理
 			if(tpHTTP->FilterFlag == TRUE &&
 				FilterCheck(tpItemInfo->CheckURL, &tpHTTP->buf, HeaderSize(tpHTTP->buf)) == FALSE){
@@ -1811,13 +1809,13 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	URL_COMPONENTS urlComponents;
 	WCHAR szHostName[256], szUrlPath[2048];
 	WCHAR *wp;
-	DWORD dwSize;
+	DWORD dwSize, downloaded;
 	WCHAR *header;
 	WCHAR url[2048];
 	WCHAR *sendHeader;
 	WCHAR *s;
 	BYTE *pszBuffer;
-	char *cbuf, *wkbuf, *oldbuf, *p;
+	char *cbuf, *wkbuf, *oldbuf;
 	char BaseStr1[BUFSIZE * 2 + 2];		//"ユーザ:パスワード"
 	char BaseStr2[PASS_ENC_SIZE];		//暗号化したパスワード、Base64
 	char user[BUFSIZE];
@@ -2042,7 +2040,7 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	HeapFree(GetProcessHeap(), 0, header);
 	EnterCriticalSection(&req->cs);
 	oldbuf = tpHTTP->buf;
-	tpHTTP->Size = clen;
+	tpHTTP->Size = clen - 1;
 	tpHTTP->buf = cbuf;
 	LeaveCriticalSection(&req->cs);
 	if (oldbuf != NULL) GlobalFree((HGLOBAL)oldbuf);
@@ -2064,21 +2062,26 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 		if (pszBuffer == NULL) {
 			break;
 		}
-		if (!WinHttpReadData(hRequest, pszBuffer, dwSize, NULL)) {
+		if (!WinHttpReadData(hRequest, pszBuffer, dwSize, &downloaded)) {
 			SetHttpError(tpItemInfo, STR_ERROR_RECV, "WinHttpReadData");
 			HeapFree(GetProcessHeap(), 0, pszBuffer);
 			goto end;
 		}
-		pszBuffer[dwSize] = '\0';
+		if(downloaded == 0){
+			HeapFree(GetProcessHeap(), 0, pszBuffer);
+			break;
+		}
+		pszBuffer[downloaded] = '\0';
 
-		wkbuf = (char *)GlobalAlloc(GMEM_FIXED, tpHTTP->Size + dwSize + 1);
+		wkbuf = (char *)GlobalAlloc(GMEM_FIXED, tpHTTP->Size + downloaded + 1);
 		if (wkbuf != NULL) {
-			p = iStrCpy(wkbuf, tpHTTP->buf);
-			lstrcpy(p, (char *)pszBuffer);
+			CopyMemory(wkbuf, tpHTTP->buf, tpHTTP->Size);
+			CopyMemory(wkbuf + tpHTTP->Size, pszBuffer, downloaded);
+			wkbuf[tpHTTP->Size + downloaded] = '\0';
 			EnterCriticalSection(&req->cs);
 			oldbuf = tpHTTP->buf;
 			tpHTTP->buf = wkbuf;
-			tpHTTP->Size += dwSize;
+			tpHTTP->Size += downloaded;
 			LeaveCriticalSection(&req->cs);
 			if (oldbuf != NULL) GlobalFree((HGLOBAL)oldbuf);
 		}

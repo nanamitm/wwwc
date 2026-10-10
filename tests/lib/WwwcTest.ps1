@@ -10,6 +10,17 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 public static class WwwcWin {
+  [DllImport("kernel32.dll", SetLastError = true)] static extern bool DeviceIoControl(IntPtr h, uint code, IntPtr input, uint inputSize, IntPtr output, uint outputSize, out uint bytes, IntPtr overlapped);
+  // Sparse test files exercise sizes above 4 GiB without consuming that disk space.
+  public static void CreateSparseFile(string path, long size) {
+    using (var stream = new System.IO.FileStream(path, System.IO.FileMode.Create, System.IO.FileAccess.Write)) {
+      uint bytes;
+      if (!DeviceIoControl(stream.SafeFileHandle.DangerousGetHandle(), 0x000900C4, IntPtr.Zero, 0, IntPtr.Zero, 0, out bytes, IntPtr.Zero))
+        throw new System.ComponentModel.Win32Exception(Marshal.GetLastWin32Error());
+      stream.SetLength(size);
+    }
+  }
+
   [DllImport("user32.dll")] public static extern IntPtr SendMessage(IntPtr h, uint m, IntPtr w, IntPtr l);
   [DllImport("user32.dll", CharSet = CharSet.Ansi, EntryPoint = "SendMessageA")] public static extern IntPtr SendMessageText(IntPtr h, uint m, IntPtr w, string l);
   [DllImport("user32.dll", CharSet = CharSet.Unicode, EntryPoint = "SendMessageW")] public static extern IntPtr SendMessageTextW(IntPtr h, uint m, IntPtr w, string l);

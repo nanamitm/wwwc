@@ -194,7 +194,7 @@ static void DpiChanged(HWND hWnd, int dpi, const RECT *rc);
 static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag);
 static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void DelLastYen(char *p);
-static void GetAppPath(HINSTANCE hinst);
+static BOOL GetAppPath(HINSTANCE hinst);
 static void CommandLineFunc(HWND hWnd, char *StrCmdLine);
 static void StartCommandLine(char *StrCmdLine);
 static BOOL InitApplication(HANDLE hInstance);
@@ -2427,7 +2427,7 @@ static void DelLastYen(char *p)
 
 ******************************************************************************/
 
-static void GetAppPath(HINSTANCE hinst)
+static BOOL GetAppPath(HINSTANCE hinst)
 {
 	char DefItem[BUFSIZE];
 	char gIniFile[BUFSIZE];
@@ -2447,7 +2447,9 @@ static void GetAppPath(HINSTANCE hinst)
 	*r = '\0';
 
 	//以前のバージョン (Shift_JIS) の設定ファイルを UTF-8 に変換
-	Charset_ConvertAppDir(DefDirPath);
+	if(Charset_ConvertAppDir(DefDirPath) == FALSE){
+		return FALSE;
+	}
 
 	//デフォルトアイテム
 	wsprintf(DefItem, "%s\\DefItem", DefDirPath);
@@ -2506,8 +2508,11 @@ static void GetAppPath(HINSTANCE hinst)
 		CopyDirTree(NULL, DefItem, DefDirPath, (*CmdUser != '\0' || *GeneralUser == '\0') ? CurrentUser : GeneralUser, NULL);
 	}
 	//以前のバージョン (Shift_JIS) のアイテム情報と設定を UTF-8 に変換
-	Charset_ConvertDataDir(CuDir);
+	if(Charset_ConvertDataDir(CuDir) == FALSE){
+		return FALSE;
+	}
 	SetEnvironmentVariable("USER_DIR", CuDir);
+	return TRUE;
 }
 
 
@@ -2914,7 +2919,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	g_hinst = hInstance;
 
 	StartCommandLine(lpCmdLine);
-	GetAppPath(hInstance);
+	if(GetAppPath(hInstance) == FALSE){
+		MessageBoxW(NULL, L"データの文字コードを変換できませんでした。\nファイルへのアクセス権、空き容量、他のアプリで開かれていないかを確認してから再起動してください。",
+			L"WWWC", MB_OK | MB_ICONERROR);
+		if(hMutex != NULL) CloseHandle(hMutex);
+		return 1;
+	}
 
 	// CommonControlの初期化を行う
 	InitCommonControls();

@@ -38,6 +38,7 @@ TITLE_UTF8 = TITLE_JA + " \U0001F600 中文 한국어"   # + emoji, Chinese, Kor
 def page(title, charset):
     return ("<html><head><title>%s</title></head><body>%s</body></html>" % (title, title)).encode(charset)
 TITLE_PAGES = {
+    "entities": b"<html><head><title>&#26085;&#26412; &#x1F600; &#128512; &#xD800; &#0; &#1114112; &#x;</title></head></html>",
     "utf8": page(TITLE_UTF8, "utf-8"),
     "sjis": page(TITLE_JA, "cp932"),
     "euc": page(TITLE_JA, "euc_jp"),
@@ -69,6 +70,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = self.path
         if "://" in path:
             path = "/" + path.split("://", 1)[1].split("/", 1)[-1]
+        if path == "/chunked":
+            self.protocol_version = "HTTP/1.1"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Transfer-Encoding", "chunked")
+            self.end_headers()
+            if send_body:
+                for chunk in (b"abc\n", b"body"):
+                    self.wfile.write(b"%x\r\n" % len(chunk) + chunk + b"\r\n")
+                self.wfile.write(b"0\r\n\r\n")
+                self.wfile.flush()
+            return
         if path.startswith("/r302"):
             self.send_response(302)
             self.send_header("Location", "/target")

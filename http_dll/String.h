@@ -61,7 +61,6 @@ char *EUC_SJIS(char *buf, char *ret);
 int GetKanjiType(unsigned char *str);
 char *ConvStrCode(char *buf, char *ret);
 char *SrcConv(char *buf, long Size);
-long DeleteSizeInfo(char *buf, long size);
 int GetHtml2RtfSize(char *buf, BOOL dark);
 void Html2Rtf(char *buf, char *ret, BOOL dark);
 

@@ -10,8 +10,8 @@
 #define _INC_CHARSET_H
 
 BOOL Charset_Check(void);
-void Charset_ConvertAppDir(const char *AppDir);
-void Charset_ConvertDataDir(const char *Dir);
+BOOL Charset_ConvertAppDir(const char *AppDir);
+BOOL Charset_ConvertDataDir(const char *Dir);
 
 #endif
 /* End of source */

@@ -162,3 +162,81 @@ Test-Case "Japanese names in the find window and with a font chosen in the setti
   }
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+
+Test-Case "failed Shift_JIS migration preserves data and retries after unlocking" {
+  $e = New-TestEnv "utf8-migrate-locked" $BinDir
+  $original = $script:Sjis.GetBytes((ItemLine $PageJa (Url "/a")) + "`r`n")
+  [IO.File]::WriteAllBytes($e.ItemFile, $original)
+  $held = [IO.File]::Open($e.ItemFile, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+  try {
+    $e.Process = Start-Process (Join-Path $e.Bin "WWWC.exe") -ArgumentList "/d:`"$(Join-Path $e.Dir 'data')`"" -PassThru
+    [void]$script:Started.Add($e.Process)
+    Assert-True (Wait-Until { Get-ProcessWindows $e.Process.Id | Where-Object { $_.Class -eq "#32770" } } 10) "migration failure is reported"
+    Assert-True (-not (Get-ProcessWindows $e.Process.Id | Where-Object Class -eq "WWWCWindowClass")) "failed migration does not load legacy data"
+    Assert-True ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes($e.ItemFile), [byte[]]$original)) "locked source is unchanged"
+    $ini = Join-Path $e.Data "user.ini"
+    Assert-True (-not (Test-Path $ini) -or -not ((Read-Utf8 $ini) -match "CharSetUTF8=1")) "failed migration is not marked complete"
+    Get-ProcessWindows $e.Process.Id | Where-Object Class -eq "#32770" | ForEach-Object {
+      [void][WwwcWin]::PostMessage($_.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
+    }
+    Assert-True ($e.Process.WaitForExit(10000)) "failed startup exits"
+  } finally { $held.Dispose() }
+  [void](Start-Wwwc $e)
+  Assert-True ((Get-ListTitles $e) -contains $PageJa) "retry converts the Japanese item"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code after retry"
+  Assert-True ((Read-Utf8 (Join-Path $e.Data "user.ini")) -match "CharSetUTF8=1") "successful retry is marked complete"
+  Assert-True ([Linq.Enumerable]::SequenceEqual([byte[]][IO.File]::ReadAllBytes("$($e.Data)_sjis_backup\Item.dat"), [byte[]]$original)) "retry preserves the original backup"
+}
+
+
+Test-Case "Unicode numeric HTML entities and invalid references in page titles" {
+  $e = New-TestEnv "utf8-entities" $BinDir
+  Set-Items $e @(ItemLine "entities" (Url "/title-entities"))
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "entities"; Send-Command $e ($CMD_ACTION + 5)
+  $expected = "`u{65E5}`u{672C} `u{1F600} `u{1F600} &#xD800; &#0; &#1114112; &#x;"
+  Assert-True (Wait-Until { (Get-ListTitles $e) -contains $expected } 10) "numeric references decode to Unicode while invalid references stay literal"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-True ((Get-SavedTitles $e) -contains $expected) "decoded Unicode title is saved"
+}
+
+
+Test-Case "migration keeps file attributes and removes stale temporary files" {
+  $e = New-TestEnv "utf8-migrate-attrs" $BinDir
+  [IO.File]::WriteAllBytes($e.ItemFile, $script:Sjis.GetBytes((ItemLine $PageJa (Url "/a")) + "`r`n"))
+  $created = [datetime]::new(2001, 2, 3, 4, 5, 6, [DateTimeKind]::Utc)
+  [IO.File]::SetCreationTimeUtc($e.ItemFile, $created)
+  [IO.File]::SetAttributes($e.ItemFile, [IO.FileAttributes]::Archive -bor [IO.FileAttributes]::NotContentIndexed)
+  # Left by an interrupted conversion, by a conversion still running elsewhere, and a user's file
+  $stale = Join-Path $e.Data "wcuAB12.tmp"; $fresh = Join-Path $e.Data "wcuCD34.tmp"; $other = Join-Path $e.Data "wcunote.tmp"
+  foreach ($f in $stale, $fresh, $other) { [IO.File]::WriteAllText($f, "x") }
+  [IO.File]::SetLastWriteTimeUtc($stale, (Get-Date).ToUniversalTime().AddHours(-1))
+  [IO.File]::SetLastWriteTimeUtc($other, (Get-Date).ToUniversalTime().AddHours(-1))
+
+  [void](Start-Wwwc $e)
+  Assert-True ((Get-ListTitles $e) -contains $PageJa) "the Japanese item is converted"
+  $attrs = [IO.File]::GetAttributes($e.ItemFile)
+  Assert-True (($attrs -band [IO.FileAttributes]::NotContentIndexed) -ne 0) "attributes of the converted file are kept ($attrs)"
+  Assert-Equal $created ([IO.File]::GetCreationTimeUtc($e.ItemFile)) "creation time of the converted file is kept"
+  Assert-True (-not (Test-Path $stale)) "stale temporary file is removed"
+  Assert-True (Test-Path $fresh) "recent temporary file of another conversion is kept"
+  Assert-True (Test-Path $other) "file that only resembles a temporary file is kept"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
+
+Test-Case "an unwritable completion mark does not stop the start when no conversion is needed" {
+  $e = New-TestEnv "utf8-migrate-readonly-ini" $BinDir
+  Set-Items $e @(ItemLine $PageJa (Url "/a"))
+  $ini = Join-Path $e.Bin "general.ini"
+  [IO.File]::WriteAllText($ini, "[GENERAL]`r`nUser=`r`n", $script:Enc)
+  [IO.File]::SetAttributes($ini, [IO.FileAttributes]::ReadOnly)
+  try {
+    Assert-True (Start-Wwwc $e) "WWWC starts although general.ini is read-only"
+    Assert-True ((Get-ListTitles $e) -contains $PageJa) "UTF-8 items are loaded"
+    Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+    Assert-True (-not ((Read-Utf8 $ini) -match "CharSetUTF8=1")) "read-only general.ini is not changed"
+    Assert-True (@(Get-ChildItem $e.Bin -Filter "wcu*.tmp").Count -eq 0) "no temporary file is left"
+  } finally { [IO.File]::SetAttributes($ini, [IO.FileAttributes]::Normal) }
+}

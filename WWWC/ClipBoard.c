@@ -851,7 +851,8 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 {
 	struct TPITEM *tpItemInfo;
-	char buf[MAXSIZE];
+	char *buf;
+	size_t len;
 	char FromPath[BUFSIZE];
 	char SourcePath[BUFSIZE];
 	char Name[BUFSIZE];
@@ -863,6 +864,12 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 	int TreeFolderCnt;
 	int i;
 	BOOL SelInitFlag = FALSE;
+
+	//アイテムの1行はタイトル・URL・コメントなどを合計すると MAXSIZE を超える
+	buf = (char *)GlobalAlloc(GMEM_FIXED, (SIZE_T)lstrlen(Data) + 1);
+	if(buf == NULL){
+		return -1;
+	}
 
 	*SourcePath = '\0';
 	tpDeleteItemList = NULL;
@@ -889,11 +896,14 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 			//編集フラグ + 移動元ファイル
 			t = buf + 1;
 			//パス
-			r = SourcePath;
-			for(;*t != '\t' && *t != '\0';t++, r++){
-				*r = *t;
+			len = strcspn(t, "\t");
+			if(len >= sizeof(SourcePath)){
+				ret = -1;
+				break;
 			}
-			*r = '\0';
+			CopyMemory(SourcePath, t, len);
+			SourcePath[len] = '\0';
+			t += len;
 
 			if(*buf == FLAG_COPY || DnDFlag & DND_COPY){
 				//*SourcePath = '\0';
@@ -910,20 +920,26 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 			//フォルダフラグ + 移動元ディレクトリ + フォルダ名
 			t = buf + 1;
 
-			r = FromPath;
-			for(;*t != '\t' && *t != '\0';t++, r++){
-				*r = *t;
+			len = strcspn(t, "\t");
+			if(len >= sizeof(FromPath)){
+				ret = -1;
+				break;
 			}
-			*r = '\0';
+			CopyMemory(FromPath, t, len);
+			FromPath[len] = '\0';
+			t += len;
 			if(*t == '\t'){
 				t++;
 			}
 			//名前
-			r = Name;
-			for(;*t != '\0';t++, r++){
-				*r = *t;
+			len = lstrlen(t);
+			if(len >= sizeof(Name)){
+				ret = -1;
+				break;
 			}
-			*r = '\0';
+			CopyMemory(Name, t, len);
+			Name[len] = '\0';
+			t += len;
 
 			//コピー、切り取り
 			if(CopyFolder(hWnd, hItem, FromPath, Name, ret, DnDFlag) == FALSE){
@@ -987,6 +1003,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 		FreeItemList(tpDeleteItemList, tpDeleteItemListCnt, FALSE);
 		GlobalFree(tpDeleteItemList);
 	}
+	GlobalFree(buf);
 	return ret;
 }
 

@@ -1275,9 +1275,51 @@ int DelTagSize(char *buf)
 
 ******************************************************************************/
 
+//数値文字参照を Unicode として読み、UTF-8 を出力する。
+//不正な値は元の表記を残す。正しい参照の出力は参照そのものより短い。
+static int NumericEntityToUtf8(const char *p, char *ret, const char **end)
+{
+	const char *s = p + 1;
+	unsigned long value = 0;
+	int base = 10, digit, count = 0, len;
+	BOOL invalid = FALSE;
+	WCHAR w[2];
+
+	if(*s == 'x' || *s == 'X'){
+		base = 16;
+		s++;
+	}
+	for(; *s != '\0'; s++){
+		if(*s >= '0' && *s <= '9') digit = *s - '0';
+		else if(base == 16 && *s >= 'a' && *s <= 'f') digit = *s - 'a' + 10;
+		else if(base == 16 && *s >= 'A' && *s <= 'F') digit = *s - 'A' + 10;
+		else break;
+		if(value > (0x10FFFFUL - digit) / base) invalid = TRUE;
+		if(invalid == FALSE) value = value * base + digit;
+		count++;
+	}
+	if(*s != ';' || count == 0 || invalid || value == 0 || (value >= 0xD800 && value <= 0xDFFF)){
+		return 0;
+	}
+	if(value <= 0xFFFF){
+		w[0] = (WCHAR)value;
+		count = 1;
+	}else{
+		value -= 0x10000;
+		w[0] = (WCHAR)(0xD800 + (value >> 10));
+		w[1] = (WCHAR)(0xDC00 + (value & 0x3FF));
+		count = 2;
+	}
+	len = WideCharToMultiByte(CP_UTF8, 0, w, count, ret, 4, NULL, NULL);
+	if(len != 0) *end = s + 1;
+	return len;
+}
+
 void ConvHTMLChar(char *buf)
 {
-	char *r, *t, *s;
+	char *r, *t;
+	const char *end;
+	int len;
 
 	r = t = buf;
 
@@ -1320,13 +1362,13 @@ void ConvHTMLChar(char *buf)
 				r += lstrlen("copy;");
 				*(t++) = 'c';
 			}else if(*r == '#'){
-				for(s = r + 1; *s >= '0' && *s <= '9'; s++);
-				if(*s != ';'){
+				len = NumericEntityToUtf8(r, t, &end);
+				if(len == 0){
 					r--;
 					*(t++) = *(r++);
 				}else{
-					*(t++) = atoi(r + 1);
-					r = s + 1;
+					t += len;
+					r = (char *)end;
 				}
 			}else{
 				r--;
@@ -2024,54 +2066,6 @@ char *SrcConv(char *buf, long Size)
 		}
 	}
 	return tmp;
-}
-
-
-/******************************************************************************
-
-	DeleteSizeInfo
-
-	HTTP1.1のサイズ情報を除去
-
-******************************************************************************/
-
-long DeleteSizeInfo(char *buf, long size)
-{
-	char *p, *r;
-	long len, i;
-
-	if(lstrcmpni(buf, "HTTP/1.1", 8) != 0 ||
-		GetHeadContentSize(buf, "Content-Length:") > 0){
-		return size;
-	}
-
-	p = buf + HeaderSize(buf);
-	r = p;
-
-	while(*p != '\0'){
-		for(; *p == '\r' || *p == '\n'; p++);
-		len = x2d(p);
-		if(len == 0) break;
-
-		for(; *p != '\0' && *p != '\r' && *p != '\n'; p++);
-		if(*p == '\0'){
-			break;
-		}
-		if(*p == '\r' && *(p + 1) == '\n'){
-			p += 2;
-		}else{
-			p++;
-		}
-
-		for(i = 0; *p != '\0' && i < len; i++, p++, r++){
-			*r = *p;
-		}
-		*r = '\0';
-	}
-	if(r != (buf + HeaderSize(buf))){
-		return (long)(r - buf);
-	}
-	return size;
 }
 
 
