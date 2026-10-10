@@ -36,6 +36,10 @@ foreach ($f in "WWWC.exe", "wwwc.dll") {
 Write-Host "WWWC: $BinDir"
 
 $ErrorActionPreference = "Continue"
+if (Get-ChildItem $BinDir -Filter "clang_rt.asan*.dll") {
+  Write-Host "AddressSanitizer build: memory errors fail the test"
+  Enable-AsanReports
+}
 Start-TestServer $Port
 try {
   foreach ($s in $Suite) {

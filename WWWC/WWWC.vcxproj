@@ -154,6 +154,12 @@
       <AdditionalManifestFiles>$(ProjectDir)\manifest.xml %(AdditionalManifestFiles)</AdditionalManifestFiles>
     </Manifest>
   </ItemDefinitionGroup>
+  <!-- AddressSanitizer build (-p:EnableASAN=true): route lstrcpy/wsprintf through instrumented code -->
+  <ItemDefinitionGroup Condition="'$(EnableASAN)'=='true'">
+    <ClCompile>
+      <ForcedIncludeFiles>$(MSBuildThisFileDirectory)..\tools\asan\asan_shims.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AutoCheck.c" />
     <ClCompile Include="Charset.c" />

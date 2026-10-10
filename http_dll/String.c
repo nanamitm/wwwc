@@ -754,28 +754,26 @@ int GetOptionInt(char *buf, int num)
 	char *p, *r;
 	int i = 0;
 
-	*ret = '\0';
 	if(buf == NULL){
 		return 0;
 	}
-	r = ret;
-	for(p = buf; *p != '\0'; p++){
+	//num 番目の項目の先頭まで読み飛ばす
+	//(以前は前の項目もすべて ret にコピーしていたため、長い項目 (暗号化したパスワード
+	// など) の後ろの項目を読むとあふれていた)
+	for(p = buf; *p != '\0' && i < num; p++){
 		if(*p == ';' && *(p + 1) == ';'){
-			*r = '\0';
-
-			if(i == num){
-				return atoi(ret);
-			}
 			i++;
 			p++;
-			*ret = '\0';
-			r = ret;
-		}else{
-			*(r++) = *p;
 		}
 	}
+	if(i != num){
+		return 0;
+	}
+	for(r = ret; *p != '\0' && !(*p == ';' && *(p + 1) == ';') && r - ret < BUFSIZE - 1; p++, r++){
+		*r = *p;
+	}
 	*r = '\0';
-	return ((i == num) ? atoi(ret) : 0);
+	return atoi(ret);
 }
 
 

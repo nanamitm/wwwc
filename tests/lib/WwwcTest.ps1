@@ -93,7 +93,8 @@ public static class WwwcList {
 # WWWC keeps its data files in UTF-8 (Shift_JIS before 1.3.0, converted on first start)
 $script:Enc = New-Object Text.UTF8Encoding($false)
 $script:Sjis = [Text.Encoding]::GetEncoding(932)
-$script:TestRoot = Join-Path ([IO.Path]::GetTempPath()) "wwwc-tests"
+# WWWC_TEST_ROOT: folder for the test copies, logs and ASan reports (default %TEMP%\wwwc-tests)
+$script:TestRoot = if ($env:WWWC_TEST_ROOT) { $env:WWWC_TEST_ROOT } else { Join-Path ([IO.Path]::GetTempPath()) "wwwc-tests" }
 $script:Results = New-Object System.Collections.ArrayList
 
 # WWWC command ids (WWWC/resource.h, WWWC/General.h)
@@ -110,6 +111,7 @@ function Test-Case([string]$Name, [scriptblock]$Body) {
   $sw = [Diagnostics.Stopwatch]::StartNew()
   try { & $Body } catch { [void]$script:CaseErrors.Add("exception: $($_.Exception.Message) at $($_.InvocationInfo.PositionMessage)") }
   finally { Stop-AllWwwc }
+  foreach ($r in Get-AsanReports) { [void]$script:CaseErrors.Add("AddressSanitizer: $r") }
   $ok = $script:CaseErrors.Count -eq 0
   [void]$script:Results.Add([pscustomobject]@{ Name = $Name; Passed = $ok; Errors = @($script:CaseErrors); Seconds = [int]$sw.Elapsed.TotalSeconds })
   if ($ok) { Write-Host "  PASS  $Name ($([int]$sw.Elapsed.TotalSeconds)s)" -ForegroundColor Green }
@@ -134,6 +136,32 @@ function Wait-Until([scriptblock]$Condition, [int]$TimeoutSeconds = 15) {
     Start-Sleep -Milliseconds 200
   }
   return [bool](& $Condition)
+}
+
+## ---------------------------------------------------------------- AddressSanitizer
+
+# With an ASan build (built with -p:EnableASAN=true), WWWC writes a report to
+# a file and stops at the first memory error. The reports are collected after
+# each test and fail it. WWWC allocates with GlobalAlloc, so the RTL heap
+# allocators are hooked as well.
+function Enable-AsanReports {
+  $script:AsanDir = Join-Path $script:TestRoot "asan"
+  if (Test-Path $script:AsanDir) { Remove-Item -Recurse -Force $script:AsanDir }
+  New-Item -ItemType Directory -Force $script:AsanDir | Out-Null
+  # the path is quoted: ':' also separates the options
+  $env:ASAN_OPTIONS = "log_path='$(Join-Path $script:AsanDir 'report')':windows_hook_rtl_allocators=true:detect_leaks=0"
+}
+
+# Summary lines of the reports written since the last call
+function Get-AsanReports {
+  if (-not $script:AsanDir -or -not (Test-Path $script:AsanDir)) { return }
+  foreach ($f in Get-ChildItem $script:AsanDir -File -Filter "report*") {
+    $lines = Get-Content $f.FullName
+    $summary = ($lines | Where-Object { $_ -match "^SUMMARY: AddressSanitizer|ERROR: AddressSanitizer" } | Select-Object -First 2) -join " / "
+    $frames = ($lines | Where-Object { $_ -match "^\s+#\d+ .* in " } | Select-Object -First 4 | ForEach-Object { ($_ -replace "^\s+#\d+ 0x[0-9a-f]+ in ", "").Trim() }) -join " <- "
+    "$summary [$frames] (full report: $($f.Name))"
+    Move-Item $f.FullName (Join-Path $script:AsanDir "seen-$($f.Name)") -Force
+  }
 }
 
 ## ---------------------------------------------------------------- test server
@@ -185,6 +213,8 @@ function New-TestEnv([string]$Name, [string]$BinDir) {
   $data = Join-Path $dir "data\$env:USERNAME"
   New-Item -ItemType Directory -Force (Join-Path $dir "bin"), $data | Out-Null
   Copy-Item (Join-Path $BinDir "WWWC.exe"), (Join-Path $BinDir "wwwc.dll") (Join-Path $dir "bin")
+  # AddressSanitizer runtime of an ASan build (see Enable-AsanReports)
+  Get-ChildItem $BinDir -Filter "clang_rt.asan*.dll" | Copy-Item -Destination (Join-Path $dir "bin")
   [pscustomobject]@{ Dir = $dir; Bin = (Join-Path $dir "bin"); Data = $data; ItemFile = (Join-Path $data "Item.dat"); Process = $null; Window = [IntPtr]::Zero }
 }
 
