@@ -18,6 +18,13 @@ users is in `docs/readme.txt`.
 
 ### Fixes
 
+- Japanese text was garbled in the lists of the find window, the update
+  message window and the settings (automatic check, protocol, tool), and in
+  the main tree and list with a font chosen in the settings (since 1.3.0).
+  List views and tree views convert ANSI text with the code page of the
+  character set of their font (Shift_JIS for the Japanese dialog font), not
+  with the process code page (UTF-8). Their fonts now use
+  `DEFAULT_CHARSET`. The tests read list texts as UTF-16, as they are shown.
 - After the second DPI change (for example moving the window between
   monitors twice) the standard toolbar buttons (cut, copy, paste, views)
   showed wrong or no images.

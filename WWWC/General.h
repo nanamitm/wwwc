@@ -905,6 +905,8 @@ void CheckEndProc(HWND hWnd);
 //	Font
 //--------------------------
 HFONT CreateListFont(char *FontName, int FontSize, int CharSet);
+void Font_InstallDialogHook(void);
+void Font_UninstallDialogHook(void);
 
 //--------------------------
 //	main
