@@ -26,11 +26,11 @@ jobs:
         platform: [x86, x64]
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v3
 
       # The projects use the VS 2026 toolset (v145). When the runner image does not
       # have it yet, build with the newest installed toolset instead.
@@ -67,7 +67,7 @@ jobs:
 
       - name: Upload binaries
         if: matrix.configuration == 'Release'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: wwwc-${{ matrix.platform }}
           path: |
@@ -83,11 +83,11 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: microsoft/setup-msbuild@v2
+      - uses: microsoft/setup-msbuild@v3
 
       - name: Build with AddressSanitizer
         shell: pwsh
@@ -110,7 +110,7 @@ jobs:
 
       - name: Upload AddressSanitizer reports
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: asan-reports
           path: ${{ runner.temp }}/wwwc-tests/asan/
@@ -128,11 +128,11 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: recursive
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: artifacts
 

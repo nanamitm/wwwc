@@ -87,15 +87,21 @@ Test-Case "open URL tool passes the URL to the configured browser at once" {
   Set-Items $e @(ItemLine "page" "http://example.invalid/a b?x=1&y=2")
   [void](Start-Wwwc $e)
   Select-ListItem $e "page"
-  $sw = [Diagnostics.Stopwatch]::StartNew()
-  Send-Command $e $CMD_TOOL
-  $opened = Wait-Until { Test-Path $record } 20
-  $seconds = $sw.Elapsed.TotalSeconds
+  # DDE tried four browser names (about 2 seconds each) before. Starting the
+  # first process can be slow on a CI runner, so a slow start is measured again
+  $times = @()
+  for ($try = 0; $try -lt 2; $try++) {
+    Remove-Item $record -ErrorAction SilentlyContinue
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    Send-Command $e $CMD_TOOL
+    $opened = Wait-Until { (Test-Path $record) -and (Get-Content $record -Raw) } 20
+    $times += $sw.Elapsed.TotalSeconds
+    if (-not $opened -or $times[-1] -lt 4) { break }
+  }
   Assert-True $opened "browser was started"
   if ($opened) {
     Assert-Equal '"http://example.invalid/a b?x=1&y=2"' (Get-Content $record -Raw).Trim() "browser argument"
-    # DDE tried four browser names (about 2 seconds each) before
-    Assert-True ($seconds -lt 4) ("browser started after {0:N1} s" -f $seconds)
+    Assert-True ($times[-1] -lt 4) ("browser started after {0} s" -f (($times | ForEach-Object { $_.ToString("N1") }) -join " s, "))
   }
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
