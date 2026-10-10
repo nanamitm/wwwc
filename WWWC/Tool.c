@@ -918,7 +918,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 			}
 			tpSetTool = (struct TP_TOOLS *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
-			lstrcpy(tpSetTool->title, buf);
+			lstrcpyn(tpSetTool->title, buf, sizeof(tpSetTool->title));
 			*tpSetTool->FileName = '\0';
 			SendDlgItemMessage(hDlg, IDC_EDIT_FILENAME, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->FileName);
 
@@ -946,7 +946,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 			tpSetTool->Action += CHECKITEMCNT(IDC_CHECK_SAVEFOLDER, TOOL_EXEC_SAVEFOLDER);
 
 			*tpSetTool->Protocol = '\0';
-			SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->Protocol);
+			SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, sizeof(tpSetTool->Protocol), (LPARAM)tpSetTool->Protocol);
 
 			SendDlgItemMessage(hDlg, IDC_EDIT_MENUINDEX, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 			if(*buf == '\0'){
@@ -957,7 +957,7 @@ static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 			*tpSetTool->CommandLine = '\0';
 			*tpSetTool->func = '\0';
 			if(str_match("*.dll", tpSetTool->FileName) == TRUE){
-				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->func);
+				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, sizeof(tpSetTool->func), (LPARAM)tpSetTool->func);
 			}else{
 				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->CommandLine);
 			}

@@ -1076,13 +1076,13 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 		if(hLVItem->mask & LVIF_TEXT){
 			*(hLVItem->pszText) = '\0';
 			if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_NAME) == 0){
-				lstrcpyn(hLVItem->pszText, buf, BUFSIZE - 1);
+				CopyDisplayText(hLVItem->pszText, buf, hLVItem->cchTextMax);
 			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_CHECKURL) == 0){
-				lstrcpy(hLVItem->pszText, FOLDERNAME);
+				CopyDisplayText(hLVItem->pszText, FOLDERNAME, hLVItem->cchTextMax);
 			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_COMMENT) == 0){
 				tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 				if(tpTreeInfo != NULL && tpTreeInfo->Comment != NULL){
-					lstrcpyn(hLVItem->pszText, tpTreeInfo->Comment, BUFSIZE - 1);
+					CopyDisplayText(hLVItem->pszText, tpTreeInfo->Comment, hLVItem->cchTextMax);
 				}
 			}
 		}
@@ -1097,8 +1097,9 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 	//テキスト
 	if(hLVItem->mask & LVIF_TEXT){
 		if(*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)) != NULL){
-			lstrcpyn(hLVItem->pszText,
-				*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)), BUFSIZE - 1);
+			//バッファの大きさは cchTextMax (リストビューが用意する)
+			CopyDisplayText(hLVItem->pszText,
+				*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)), hLVItem->cchTextMax);
 		}else{
 			*(hLVItem->pszText) = '\0';
 		}

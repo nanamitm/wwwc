@@ -818,13 +818,14 @@ static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 			if(IsTreeItem(WWWCWnd, tpItemInfo->hItem) == TRUE){
 				TreeView_GetItemInfo(GetDlgItem(WWWCWnd, WWWC_TREE), RootItem, tmp1);
 				wsprintf(tmp2, "\\\\%s", tmp1);
-				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, lvItem->pszText, tmp2);
+				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, tmp1, tmp2);
+				CopyDisplayText(lvItem->pszText, tmp1, lvItem->cchTextMax);
 			}
 
 		}else if(*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)) != NULL){
 			//アイテム情報とカラム情報からテキストを設定
-			lstrcpyn(lvItem->pszText,
-				*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
+			CopyDisplayText(lvItem->pszText,
+				*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), lvItem->cchTextMax);
 
 		}else{
 			*(lvItem->pszText) = '\0';

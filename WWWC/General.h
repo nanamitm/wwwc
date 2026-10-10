@@ -29,7 +29,10 @@
 
 #include "../version.h"
 
-#define BUFSIZE						256					// バッファサイズ
+//バッファサイズ。UTF-8 では日本語1文字が3バイトになるため、パス (MAX_PATH 文字) が入る大きさにする
+#define BUFSIZE						1024
+//プラグイン (http_dll/wwwcdll.h) と共有する構造体の文字列の大きさ (変更しないこと)
+#define PLUGIN_STRSIZE				256
 #define MAXSIZE						32768				// バッファサイズ
 
 #define APP_NAME					"WWWC"
@@ -395,8 +398,8 @@ struct TPTREE{
 
 //プロトコルメニュー
 struct TPPROTOCOLMENU{
-	char name[BUFSIZE];
-	char Action[BUFSIZE];
+	char name[PLUGIN_STRSIZE];
+	char Action[PLUGIN_STRSIZE];
 	BOOL Default;
 	int Flag;
 };
@@ -405,11 +408,11 @@ struct TPPROTOCOLMENU{
 struct TPPROTOCOLSET{
 	long iSize;							/* 構造体のサイズ */
 
-	char Title[BUFSIZE];
-	char FuncHeader[BUFSIZE];
-	char IconFile[BUFSIZE];
+	char Title[PLUGIN_STRSIZE];
+	char FuncHeader[PLUGIN_STRSIZE];
+	char IconFile[PLUGIN_STRSIZE];
 	int IconIndex;
-	char UpIconFile[BUFSIZE];
+	char UpIconFile[PLUGIN_STRSIZE];
 	int UpIconIndex;
 };
 
@@ -417,9 +420,9 @@ struct TPPROTOCOLSET{
 struct TPPROTOCOLINFO{
 	long iSize;							/* 構造体のサイズ */
 
-	char scheme[BUFSIZE];
-	char NewMenu[BUFSIZE];
-	char FileType[BUFSIZE];
+	char scheme[PLUGIN_STRSIZE];
+	char NewMenu[PLUGIN_STRSIZE];
+	char FileType[PLUGIN_STRSIZE];
 	struct TPPROTOCOLMENU *tpMenu;
 	int tpMenuCnt;
 };
@@ -490,9 +493,9 @@ struct TPLVCOLUMN{
 struct TP_GETTOOL{
 	long iSize;				/* 構造体のサイズ */
 
-	char title[BUFSIZE];
-	char func[BUFSIZE];
-	char Protocol[BUFSIZE];
+	char title[PLUGIN_STRSIZE];
+	char func[PLUGIN_STRSIZE];
+	char Protocol[PLUGIN_STRSIZE];
 	int MenuIndex;
 	int Action;
 };
@@ -501,9 +504,9 @@ struct TP_GETTOOL{
 struct TP_TOOLS{
 	long iSize;				/* 構造体のサイズ */
 
-	char title[BUFSIZE];
-	char func[BUFSIZE];
-	char Protocol[BUFSIZE];
+	char title[PLUGIN_STRSIZE];
+	char func[PLUGIN_STRSIZE];
+	char Protocol[PLUGIN_STRSIZE];
 	int MenuIndex;
 	int Action;
 
@@ -540,6 +543,7 @@ void GetDateTime(char *fDay, char *fTime);
 char *GetIndexToString(struct TPITEM *tpItemInfo, int Index);
 HANDLE TextMemToUnicode(HANDLE hText);
 char *UnicodeMemToText(HANDLE hMem);
+void CopyDisplayText(char *ret, const char *buf, int size);
 
 //--------------------------
 //	File

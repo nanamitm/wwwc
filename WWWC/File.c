@@ -184,10 +184,10 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
 	HTREEITEM hItem;
-	char sPath[MAX_PATH];
-	char nPath[MAX_PATH];
-	char buf[MAX_PATH];
-	char buf2[MAX_PATH];
+	char sPath[BUFSIZE];
+	char nPath[BUFSIZE];
+	char buf[BUFSIZE];
+	char buf2[BUFSIZE];
 	char *ItemPath;
 	int cnt = 1;
 	int FromCnt, i;
@@ -305,8 +305,8 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[MAX_PATH];
-	char buf[MAX_PATH];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 
 	if(Path == NULL || *Path == '\0'){
 		return FALSE;
@@ -351,8 +351,8 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[MAX_PATH];
-	char buf[MAX_PATH];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 	HTREEITEM pItem;
 
 	wsprintf(sPath, "%s\\*", Path);
@@ -427,8 +427,8 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[MAX_PATH];
-	char buf[MAX_PATH];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 	HTREEITEM pItem;
 
 	wsprintf(sPath, "%s\\*", Path);
@@ -468,12 +468,12 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 void mkDirStr(char *buf)
 {
-	char tmp[MAX_PATH];
+	char tmp[BUFSIZE];
 	char *p, *r;
 
 	p = buf;
 	r = tmp;
-	while(*p != '\0' && r - tmp < MAX_PATH - 2){
+	while(*p != '\0' && r - tmp < BUFSIZE - 2){
 		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *(p++);
@@ -741,8 +741,8 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 {
 	struct TPTREE *tpTreeInfo;
-	char buf[MAX_PATH];
-	char FileName[MAX_PATH];
+	char buf[BUFSIZE];
+	char FileName[BUFSIZE];
 
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
@@ -999,8 +999,8 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem)
 {
 	struct TPTREE *tpTreeInfo;
-	char FileName[MAX_PATH];
-	char buf[MAX_PATH];
+	char FileName[BUFSIZE];
+	char buf[BUFSIZE];
 	int ret, f;
 
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(hTreeView, hItem);
@@ -1086,7 +1086,7 @@ void FreeGetDiskFreeSpaceEx()
 int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, char *def, int Index)
 {
 	OPENFILENAME of;
-	char tmp[MAX_PATH];
+	char tmp[BUFSIZE];
 
 	lstrcpy(tmp, oFile);
 
@@ -1099,7 +1099,7 @@ int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, c
 	of.nMaxCustFilter = 40;
 	of.nFilterIndex = Index;
 	of.lpstrFile = tmp;
-	of.nMaxFile = MAX_PATH - 1;
+	of.nMaxFile = BUFSIZE - 1;
 	of.lpstrFileTitle = NULL;
 	of.nMaxFileTitle = 0;
 	of.lpstrInitialDir = NULL;
@@ -1129,7 +1129,7 @@ int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, c
 
 static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *tpItemInfo)
 {
-	char FolderPath[MAX_PATH];
+	char FolderPath[BUFSIZE];
 	char *p, *r, *t;
 
 	if(buf == NULL){
@@ -1237,7 +1237,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 			case 'F':
 				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
 					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
-				GetShortPathName(FolderPath, FolderPath, MAX_PATH - 1);
+				GetShortPathName(FolderPath, FolderPath, BUFSIZE - 1);
 				t = FolderPath;
 				break;
 
@@ -1248,7 +1248,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 
 			//ユーザディレクトリのパス (短い形式)
 			case 'P':
-				GetShortPathName(CuDir, FolderPath, MAX_PATH - 1);
+				GetShortPathName(CuDir, FolderPath, BUFSIZE - 1);
 				t = FolderPath;
 				break;
 			}
@@ -1273,7 +1273,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tpItemInfo, int SyncFlag)
 {
 	SHELLEXECUTEINFO sei;
-	char buf[MAX_PATH];
+	char buf[BUFSIZE];
 	char *ExeFilePath;
 	char *CommnadLineString;
 	int ret;

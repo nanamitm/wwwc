@@ -119,3 +119,24 @@ Test-Case "Japanese passwords saved by older versions" {
   Assert-True ($log -match [regex]::Escape("GET /auth-dp1 auth='tester:$PassJa'")) "1.2.0 format password ($log)"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+Test-Case "long Japanese folder and item names" {
+  $e = New-TestEnv "utf8-long" $BinDir
+  # three nested folders of 50 Japanese characters: about 450 bytes in UTF-8
+  # (the folder path used to be limited to 240 bytes). Windows still limits a path to
+  # MAX_PATH (260) characters, so the folders are not longer
+  $name = -join (1..50 | ForEach-Object { [char](0x3042 + ($_ % 80)) })
+  $deep = $e.Data
+  foreach ($i in 1..3) { $deep = Join-Path $deep "$i$name"; New-Item -ItemType Directory -Force $deep | Out-Null }
+  $longTitle = -join (1..200 | ForEach-Object { [char](0x4E00 + $_) })        # 200 characters, 600 bytes
+  [IO.File]::WriteAllBytes((Join-Path $deep "Item.dat"), $script:Enc.GetBytes((ItemLine "deep" (Url "/deep-item")) + "`r`n"))
+  Set-Items $e @(ItemLine $longTitle (Url "/long-title"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { @((Get-ServerLog $m) -match "^GET /(deep-item|long-title) ").Count -ge 2 } 20) "items in the deep folder and with the long name are checked ($(Get-ServerLog $m))"
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $deepItem = (Read-Utf8 (Join-Path $deep "Item.dat")) -split "`t"
+  Assert-Equal "67" $deepItem[2] "the item in the deep folder is saved with the check result"
+  Assert-True ((Get-SavedTitles $e) -contains $longTitle) "the 200-character name is saved in full"
+}

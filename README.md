@@ -56,6 +56,10 @@ folder can be changed with the command line option `/d:"folder"`.
   with all Unicode characters. String literals are compiled as UTF-8
   (`/execution-charset:utf-8`). WWWC exits with a message if the code page is
   not UTF-8 (Windows before 10 1903).
+- `BUFSIZE` is 1024 bytes, so that a path of MAX_PATH characters fits in
+  UTF-8 (up to 3 bytes per character). Structures shared with plugins keep
+  their 256-byte strings (`PLUGIN_STRSIZE`). Windows still limits a path to
+  MAX_PATH characters.
 - Data and settings files are UTF-8. Shift_JIS files from older versions are
   converted on the first start (`WWWC/Charset.c`); the originals are kept in
   `<user>_sjis_backup` and `settings_sjis_backup`.
@@ -88,7 +92,7 @@ pwsh tests\run-tests.ps1 -BinDir x64\Release
 pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
 ```
 
-- Each test copies WWWC to `%TEMP%\wwwc-tests`, prepares the data files,
+- Each test copies WWWC to `%TEMP%\wwwc-tests` (or `WWWC_TEST_ROOT`), prepares the data files,
   drives WWWC with window messages and checks the result. No mouse or keyboard
   input is used, but WWWC windows are shown, so run the tests in a desktop
   session.
@@ -98,8 +102,28 @@ pwsh tests\run-tests.ps1 -BinDir Release -Suite Http,Password
   errors, timeout, cancel, exit while checking), `Password` (encryption and
   migration of passwords), `Tools` (header view, source view, get title, open
   URL), `Unicode` (conversion of old data, pages in UTF-8 / Shift_JIS /
-  EUC-JP / ISO-2022-JP, filters, passwords from older versions).
+  EUC-JP / ISO-2022-JP, filters, passwords from older versions, long
+  Japanese folder and item names).
 - The script exits with code 1 when a test fails.
+
+### AddressSanitizer
+
+The same tests can run on an AddressSanitizer build, which stops WWWC at the
+first memory error (buffer overflow, use after free) and fails the test:
+
+```bat
+MSBuild WWWC.sln -p:Configuration=Release -p:Platform=x64 -p:EnableASAN=true -p:OutDir=%CD%\asan-build\x64\ -p:IntDir=asan-build\x64\
+copy "%VCToolsInstallDir%bin\Hostx64\x64\clang_rt.asan_dynamic-x86_64.dll" asan-build\x64\
+pwsh tests\run-tests.ps1 -BinDir asan-build\x64
+```
+
+- The runner notices the ASan runtime DLL, writes the reports to
+  `wwwc-tests\asan` and adds a summary to the failed test.
+- `lstrcpy`, `lstrcat`, `lstrcpyn`, `lstrlen` and `wsprintf` are implemented in
+  Windows and not instrumented, so an ASan build force-includes
+  `tools/asan/asan_shims.h`, which replaces them with instrumented versions.
+- WWWC allocates with `GlobalAlloc`; the runner enables
+  `windows_hook_rtl_allocators` so that heap errors are found as well.
 
 ## CI
 
@@ -108,6 +132,8 @@ configurations (Debug / Release, x86 / x64) on every push to `main` and every
 pull request, and runs the tests on the Release builds.
 
 - Warnings are errors (`-warnAsError`).
+- The job "AddressSanitizer x64" runs the tests on an ASan build; on failure
+  the reports are kept as the artifact `asan-reports`.
 - If the runner does not have v145 (VS 2026), it builds with v143 (VS 2022)
   and shows a notice.
 - The Release binaries are kept as artifacts (`wwwc-x86` / `wwwc-x64`) for 14
@@ -156,6 +182,9 @@ WWWC.exe gets the plugin functions with `GetProcAddress` and calls them.
   to plugins and reads from them, including `struct TPITEM`, are UTF-8.
   Plugins that assumed Shift_JIS must be updated. A plugin DLL runs in the
   WWWC process, so `CP_ACP` and the `A` APIs are UTF-8 there as well.
+- `WM_WWWC_GETINIPATH` takes the buffer size in `wParam` (since 1.3.1); 0
+  means 256 bytes, as older plugins assume. The path can be longer than 255
+  bytes in UTF-8.
 - All functions are `CALLBACK` (`__stdcall`). Export them with a `.def` file so
   that the x86 export names are not decorated (see `http_dll/WWWC.def`).
 
