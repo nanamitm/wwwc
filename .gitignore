@@ -23,3 +23,6 @@ Win32/
 *.log
 *.exe
 *.dll
+
+# AddressSanitizer build (-p:EnableASAN=true, see README)
+asan-build/

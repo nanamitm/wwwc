@@ -3,6 +3,25 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## 1.3.1
+
+### Fixes
+
+- Every check of an item with a password overflowed a stack buffer: reading
+  the option after the encrypted password (about 310 characters) copied it
+  into a 256-byte buffer. Found by the new AddressSanitizer tests.
+- Long Japanese folder and item names: with UTF-8 a 256-byte buffer holds
+  only about 85 Japanese characters, so paths of nested folders hit the
+  limit and failed, and long names could crash WWWC. Buffers are now 1024
+  bytes (a MAX_PATH path in UTF-8); the list views no longer write more than
+  the control's buffer size, and a cut name does not end in half a
+  character.
+
+### Development
+
+- AddressSanitizer build and CI job running all tests on it.
+- `WM_WWWC_GETINIPATH` takes the buffer size in `wParam`.
+
 ## 1.3.0
 
 ### New

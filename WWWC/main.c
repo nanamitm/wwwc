@@ -2239,7 +2239,8 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 	//INIファイルの保存先のパスを取得
 	case WM_WWWC_GETINIPATH:
 		if(lParam != 0){
-			lstrcpy((char *)lParam, CuDir);
+			//wParam はバッファのサイズ (0 の場合は以前のプラグインと同じ 256)
+			lstrcpyn((char *)lParam, CuDir, (wParam > 0) ? (int)wParam : PLUGIN_STRSIZE);
 		}
 		break;
 

@@ -31,8 +31,6 @@
 	Define
 **************************************************************************/
 
-#define BUFSIZE					256
-
 #define NOCMP_SIZE				1
 #define NOCMP_DATE				2
 

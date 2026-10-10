@@ -621,4 +621,35 @@ char *UnicodeMemToText(HANDLE hMem)
 	GlobalUnlock(hMem);
 	return buf;
 }
+
+/******************************************************************************
+
+	CopyDisplayText
+
+	表示用に文字列を size バイト (終端を含む) までコピーする
+	収まらない場合は UTF-8 の文字の途中で切らない
+
+******************************************************************************/
+
+void CopyDisplayText(char *ret, const char *buf, int size)
+{
+	int len, i, need;
+
+	if(size <= 0){
+		return;
+	}
+	lstrcpyn(ret, (buf != NULL) ? buf : "", size);
+	len = lstrlen(ret);
+	if(buf == NULL || buf[len] == '\0'){
+		return;
+	}
+	//切り詰めた場合は末尾の不完全な文字を除く
+	for(i = len; i > 0 && ((unsigned char)ret[i - 1] & 0xC0) == 0x80; i--);
+	if(i > 0 && (unsigned char)ret[i - 1] >= 0xC0){
+		need = ((unsigned char)ret[i - 1] >= 0xF0) ? 4 : (((unsigned char)ret[i - 1] >= 0xE0) ? 3 : 2);
+		if(len - (i - 1) < need){
+			ret[i - 1] = '\0';
+		}
+	}
+}
 /* End of source */

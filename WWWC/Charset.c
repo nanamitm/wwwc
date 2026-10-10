@@ -117,7 +117,7 @@ static void ConvertFile(const char *Path, const char *BackupPath)
 	unsigned char *buf;
 	WCHAR *wbuf;
 	char *cbuf;
-	char dir[MAX_PATH], *p;
+	char dir[BUFSIZE], *p;
 	int wlen, clen;
 
 	hFile = CreateFile(Path, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -159,7 +159,7 @@ static void ConvertFile(const char *Path, const char *BackupPath)
 	GlobalFree(wbuf);
 
 	//変換前の内容を保存してから書き換える
-	lstrcpyn(dir, BackupPath, MAX_PATH);
+	lstrcpyn(dir, BackupPath, BUFSIZE);
 	for(p = dir + lstrlen(dir); p > dir && *p != '\\'; p--);
 	if(p > dir){
 		*p = '\0';
@@ -189,12 +189,12 @@ static void ConvertTree(const char *Dir, const char *BackupDir)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFind;
-	char path[MAX_PATH], backup[MAX_PATH];
+	char path[BUFSIZE], backup[BUFSIZE];
 	int i;
 
 	for(i = 0; DataFileNames[i] != NULL; i++){
-		if(lstrlen(Dir) + lstrlen(DataFileNames[i]) + 2 >= MAX_PATH ||
-			lstrlen(BackupDir) + lstrlen(DataFileNames[i]) + 2 >= MAX_PATH){
+		if(lstrlen(Dir) + lstrlen(DataFileNames[i]) + 2 >= BUFSIZE ||
+			lstrlen(BackupDir) + lstrlen(DataFileNames[i]) + 2 >= BUFSIZE){
 			continue;
 		}
 		wsprintf(path, "%s\\%s", Dir, DataFileNames[i]);
@@ -202,7 +202,7 @@ static void ConvertTree(const char *Dir, const char *BackupDir)
 		ConvertFile(path, backup);
 	}
 
-	if(lstrlen(Dir) + 3 >= MAX_PATH){
+	if(lstrlen(Dir) + 3 >= BUFSIZE){
 		return;
 	}
 	wsprintf(path, "%s\\*", Dir);
@@ -214,8 +214,8 @@ static void ConvertTree(const char *Dir, const char *BackupDir)
 			lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
-		if(lstrlen(Dir) + lstrlen(FindData.cFileName) + 2 >= MAX_PATH ||
-			lstrlen(BackupDir) + lstrlen(FindData.cFileName) + 2 >= MAX_PATH){
+		if(lstrlen(Dir) + lstrlen(FindData.cFileName) + 2 >= BUFSIZE ||
+			lstrlen(BackupDir) + lstrlen(FindData.cFileName) + 2 >= BUFSIZE){
 			continue;
 		}
 		wsprintf(path, "%s\\%s", Dir, FindData.cFileName);
@@ -265,10 +265,10 @@ static void SetConverted(const char *IniFile)
 
 void Charset_ConvertAppDir(const char *AppDir)
 {
-	char ini[MAX_PATH], path[MAX_PATH], backup[MAX_PATH], backupDir[MAX_PATH];
+	char ini[BUFSIZE], path[BUFSIZE], backup[BUFSIZE], backupDir[BUFSIZE];
 	int i;
 
-	if(lstrlen(AppDir) + 32 >= MAX_PATH){
+	if(lstrlen(AppDir) + 32 >= BUFSIZE){
 		return;
 	}
 	wsprintf(ini, "%s\\%s", AppDir, GENERAL_INI);
@@ -299,9 +299,9 @@ void Charset_ConvertAppDir(const char *AppDir)
 
 void Charset_ConvertDataDir(const char *Dir)
 {
-	char ini[MAX_PATH], backupDir[MAX_PATH];
+	char ini[BUFSIZE], backupDir[BUFSIZE];
 
-	if(lstrlen(Dir) + 32 >= MAX_PATH){
+	if(lstrlen(Dir) + 32 >= BUFSIZE){
 		return;
 	}
 	wsprintf(ini, "%s\\%s", Dir, USER_INI);

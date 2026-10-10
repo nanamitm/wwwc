@@ -29,7 +29,8 @@
 #define ID_MENUITEM_COPY				40056
 #define ID_MENUITEM_ALLSELECT			40057
 
-#define BUFSIZE							256
+//バッファサイズ (UTF-8 では日本語1文字が3バイト。プラグインと共有する構造体は wwwcdll.h の 256 のまま)
+#define BUFSIZE							1024
 #define PATH_BUFSIZE					(BUFSIZE + 32)		//DLLのディレクトリ (BUFSIZE 未満) + ファイル名
 #define MAXSIZE							32768
 #define RECVSIZE						32768				/* 受信サイズ */

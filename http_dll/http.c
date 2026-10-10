@@ -2527,6 +2527,10 @@ __declspec(dllexport) BOOL CALLBACK HTTP_CreateDropItem(struct TPITEM *tpItemInf
 		return FALSE;
 	}
 
+	//パスが長すぎる場合は作成しない (ret も BUFSIZE)
+	if(lstrlen(fPath) + 1 + ((iPath != NULL) ? lstrlen(iPath) : 0) + 1 + 1 + 4 >= BUFSIZE){
+		return FALSE;
+	}
 	if(iPath != NULL){
 		p = iStrCpy(buf, fPath);
 		p = iStrCpy(p, "\\");
@@ -2537,7 +2541,7 @@ __declspec(dllexport) BOOL CALLBACK HTTP_CreateDropItem(struct TPITEM *tpItemInf
 
 	URL = NULL;
 
-	lstrcpyn(ItemName, tpItemInfo->Title, BUFSIZE - lstrlen(buf) - 6);
+	lstrcpyn(ItemName, (tpItemInfo->Title != NULL) ? tpItemInfo->Title : "", BUFSIZE - lstrlen(buf) - 6);
 	BadNameCheck(ItemName, '-');
 
 	p = iStrCpy(ret, buf);

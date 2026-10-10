@@ -934,7 +934,7 @@ void GetToolList(void)
 		for(i = 0;i < ToolItemCnt;i++){
 			ToolList[i].iSize = sizeof(struct TP_TOOLS);
 			wsprintf(buf, "title-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].title, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].title, sizeof(ToolList[i].title), app_path);
 			wsprintf(buf, "FileName-%d", i);
 			profile_get_string("TOOLS", buf, "", ToolList[i].FileName, BUFSIZE - 1, app_path);
 			wsprintf(buf, "Action-%d", i);
@@ -942,11 +942,11 @@ void GetToolList(void)
 			wsprintf(buf, "MenuIndex-%d", i);
 			ToolList[i].MenuIndex = profile_get_int("TOOLS", buf, -1, app_path);
 			wsprintf(buf, "Protocol-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].Protocol, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].Protocol, sizeof(ToolList[i].Protocol), app_path);
 			wsprintf(buf, "CommandLine-%d", i);
 			profile_get_string("TOOLS", buf, "", ToolList[i].CommandLine, BUFSIZE - 1, app_path);
 			wsprintf(buf, "func-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].func, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].func, sizeof(ToolList[i].func), app_path);
 
 			wsprintf(buf, "Ctrl-%d", i);
 			ToolList[i].Ctrl = profile_get_int("TOOLS", buf, 0, app_path);

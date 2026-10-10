@@ -157,6 +157,12 @@
       <SubSystem>Windows</SubSystem>
     </Link>
   </ItemDefinitionGroup>
+  <!-- AddressSanitizer build (-p:EnableASAN=true): route lstrcpy/wsprintf through instrumented code -->
+  <ItemDefinitionGroup Condition="'$(EnableASAN)'=='true'">
+    <ClCompile>
+      <ForcedIncludeFiles>$(MSBuildThisFileDirectory)..\tools\asan\asan_shims.h;%(ForcedIncludeFiles)</ForcedIncludeFiles>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="file.c" />
     <ClCompile Include="http.c" />

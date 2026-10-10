@@ -50,7 +50,7 @@
 /* INIファイル処理メッセージ */
 #define WM_WWWC_GETINI				(WM_USER + 20)		/* INIファイルから設定を読み直す */
 #define WM_WWWC_PUTINI				(WM_USER + 21)		/* INIファイルに設定を書き込む */
-#define WM_WWWC_GETINIPATH			(WM_USER + 22)		/* INIファイルの保存先のパスを取得 */
+#define WM_WWWC_GETINIPATH			(WM_USER + 22)		/* INIファイルの保存先のパスを取得 (lParam: バッファ, wParam: バッファのサイズ。0 の場合は 256) */
 
 /* フォルダ操作メッセージ */
 #define WM_FOLDER_SAVE				(WM_USER + 31)		/* 開いているフォルダの内容を保存 */
