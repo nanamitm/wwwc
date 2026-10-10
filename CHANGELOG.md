@@ -13,9 +13,15 @@ users is in `docs/readme.txt`.
   the first backup, and records completion only after all conversions succeed.
   If conversion fails, startup stops with a message so legacy data is not
   loaded or saved as UTF-8; starting again retries the conversion.
+  Converted files keep their attributes, permissions and creation time, and
+  temporary files left by an interrupted conversion are removed on the next
+  start. If every file is already UTF-8 but the completion mark cannot be
+  written (for example, in a read-only folder), WWWC still starts.
 - HTTP/1.1 response bodies are no longer decoded as chunked data a second
   time. Received sizes use the actual bytes read and exclude the header's
-  terminating NUL.
+  terminating NUL. Because the saved size changes, an HTTP item without a
+  Content-Length header that compares the size or MD5 digest may be reported
+  as updated once after upgrading.
 - Decimal and hexadecimal HTML numeric character references decode to UTF-8,
   including supplementary characters such as emoji. Invalid references stay
   literal instead of corrupting or truncating a title.

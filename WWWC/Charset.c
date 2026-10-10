@@ -23,6 +23,7 @@
 #include "Profile.h"
 #include "Charset.h"
 #include <limits.h>
+#include <ctype.h>
 
 
 /**************************************************************************
@@ -33,6 +34,10 @@
 #define CHARSET_KEY					"CharSetUTF8"
 //変換前のファイルを保存するフォルダの名前に付ける文字列
 #define BACKUP_SUFFIX				"_sjis_backup"
+//変換中の一時ファイルの名前の先頭 (3文字)
+#define TEMP_PREFIX					"wcu"
+//これより古い一時ファイルは中断した変換の残りとみなす (10分, FILETIME の単位)
+#define STALE_TEMP_AGE				(10ULL * 60 * 10000000)
 
 static const char *DataFileNames[] = { DATAFILENAME, FOLDERFILENAME, USER_INI, NULL };
 static const char *AppFileNames[] = { GENERAL_INI, "wwwc.ini", "filter.txt", NULL };
@@ -88,7 +93,70 @@ static BOOL CreateConversionTemp(const char *Path, char *TempPath)
 	}else{
 		*(p + 1) = '\0';
 	}
-	return GetTempFileName(dir, "wcu", 0, TempPath) != 0;
+	return GetTempFileName(dir, TEMP_PREFIX, 0, TempPath) != 0;
+}
+
+//一時ファイルで元ファイルを置き換える
+//既存のファイルは ReplaceFile で属性・アクセス権・作成日時を引き継ぐ
+static BOOL ReplaceWithTemp(const char *TempPath, const char *Path)
+{
+	if(GetFileAttributes(Path) == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND){
+		return MoveFileEx(TempPath, Path, MOVEFILE_WRITE_THROUGH);
+	}
+	return ReplaceFile(Path, TempPath, NULL, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, NULL, NULL);
+}
+
+//GetTempFileName が作る名前 (TEMP_PREFIX + 16進数4桁まで + ".tmp") か
+static BOOL IsConversionTempName(const char *Name)
+{
+	int len = lstrlen(Name), i;
+
+	if(len < 9 || len > 11 || _strnicmp(Name, TEMP_PREFIX, 3) != 0 || lstrcmpi(Name + len - 4, ".tmp") != 0){
+		return FALSE;
+	}
+	for(i = 3; i < len - 4; i++){
+		if(isxdigit((unsigned char)Name[i]) == 0){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+//中断した変換で残った一時ファイルを削除する
+//(同じフォルダを変換中の別のプロセスの一時ファイルは消さないよう、古いものだけ)
+static void DeleteStaleTemps(const char *Dir)
+{
+	WIN32_FIND_DATA FindData;
+	HANDLE hFind;
+	FILETIME ft;
+	ULARGE_INTEGER now, t;
+	char path[BUFSIZE];
+
+	if(lstrlen(Dir) + 16 >= BUFSIZE){
+		return;
+	}
+	wsprintf(path, "%s\\%s*.tmp", Dir, TEMP_PREFIX);
+	if((hFind = FindFirstFile(path, &FindData)) == INVALID_HANDLE_VALUE){
+		return;
+	}
+	GetSystemTimeAsFileTime(&ft);
+	now.LowPart = ft.dwLowDateTime;
+	now.HighPart = ft.dwHighDateTime;
+	do{
+		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0 ||
+			IsConversionTempName(FindData.cFileName) == FALSE ||
+			lstrlen(Dir) + lstrlen(FindData.cFileName) + 2 >= BUFSIZE){
+			continue;
+		}
+		t.LowPart = FindData.ftLastWriteTime.dwLowDateTime;
+		t.HighPart = FindData.ftLastWriteTime.dwHighDateTime;
+		if(now.QuadPart < t.QuadPart + STALE_TEMP_AGE){
+			continue;
+		}
+		wsprintf(path, "%s\\%s", Dir, FindData.cFileName);
+		DeleteFile(path);
+	}while(FindNextFile(hFind, &FindData) == TRUE);
+	FindClose(hFind);
 }
 
 /******************************************************************************
@@ -168,7 +236,7 @@ static BOOL ConvertFile(const char *Path, const char *BackupPath)
 				ok = WriteFile(hFile, cbuf, clen, &ret, NULL) && ret == (DWORD)clen && FlushFileBuffers(hFile);
 				CloseHandle(hFile);
 				if(ok == TRUE){
-					ok = MoveFileEx(temp, Path, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+					ok = ReplaceWithTemp(temp, Path);
 				}
 			}
 			if(ok == FALSE) DeleteFile(temp);
@@ -196,6 +264,7 @@ static BOOL ConvertTree(const char *Dir, const char *BackupDir)
 	BOOL ok = TRUE;
 	DWORD err;
 
+	DeleteStaleTemps(Dir);
 	for(i = 0; DataFileNames[i] != NULL; i++){
 		if(lstrlen(Dir) + lstrlen(DataFileNames[i]) + 2 >= BUFSIZE ||
 			lstrlen(BackupDir) + lstrlen(DataFileNames[i]) + 2 >= BUFSIZE){
@@ -264,7 +333,7 @@ static BOOL SetConverted(const char *IniFile)
 	ok = profile_write_int("GENERAL", CHARSET_KEY, 1, IniFile);
 	if(ok == TRUE && CreateConversionTemp(IniFile, temp) == TRUE){
 		ok = profile_flush(temp);
-		if(ok == TRUE) ok = MoveFileEx(temp, IniFile, MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+		if(ok == TRUE) ok = ReplaceWithTemp(temp, IniFile);
 		if(ok == FALSE) DeleteFile(temp);
 	}else{
 		ok = FALSE;
@@ -295,6 +364,7 @@ BOOL Charset_ConvertAppDir(const char *AppDir)
 	if(IsConverted(ini) == TRUE){
 		return TRUE;
 	}
+	DeleteStaleTemps(AppDir);
 	wsprintf(backupDir, "%s\\settings%s", AppDir, BACKUP_SUFFIX);
 	for(i = 0; AppFileNames[i] != NULL; i++){
 		wsprintf(path, "%s\\%s", AppDir, AppFileNames[i]);
@@ -304,7 +374,10 @@ BOOL Charset_ConvertAppDir(const char *AppDir)
 	wsprintf(path, "%s\\DefItem", AppDir);
 	wsprintf(backup, "%s\\DefItem%s", AppDir, BACKUP_SUFFIX);
 	if(ConvertTree(path, backup) == FALSE) return FALSE;
-	return SetConverted(ini);
+	//変換は済んでいるので、記録できなくても (書き込めないフォルダなど) 起動は続ける
+	//次回の起動で変換済みかを確かめ直す
+	SetConverted(ini);
+	return TRUE;
 }
 
 
@@ -330,6 +403,8 @@ BOOL Charset_ConvertDataDir(const char *Dir)
 	}
 	wsprintf(backupDir, "%s%s", Dir, BACKUP_SUFFIX);
 	if(ConvertTree(Dir, backupDir) == FALSE) return FALSE;
-	return SetConverted(ini);
+	//変換は済んでいるので、記録できなくても起動は続ける
+	SetConverted(ini);
+	return TRUE;
 }
 /* End of source */

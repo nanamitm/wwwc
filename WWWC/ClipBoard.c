@@ -932,7 +932,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 				t++;
 			}
 			//名前
-			len = strcspn(t, "");
+			len = lstrlen(t);
 			if(len >= sizeof(Name)){
 				ret = -1;
 				break;
