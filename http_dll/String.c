@@ -2029,54 +2029,6 @@ char *SrcConv(char *buf, long Size)
 
 /******************************************************************************
 
-	DeleteSizeInfo
-
-	HTTP1.1のサイズ情報を除去
-
-******************************************************************************/
-
-long DeleteSizeInfo(char *buf, long size)
-{
-	char *p, *r;
-	long len, i;
-
-	if(lstrcmpni(buf, "HTTP/1.1", 8) != 0 ||
-		GetHeadContentSize(buf, "Content-Length:") > 0){
-		return size;
-	}
-
-	p = buf + HeaderSize(buf);
-	r = p;
-
-	while(*p != '\0'){
-		for(; *p == '\r' || *p == '\n'; p++);
-		len = x2d(p);
-		if(len == 0) break;
-
-		for(; *p != '\0' && *p != '\r' && *p != '\n'; p++);
-		if(*p == '\0'){
-			break;
-		}
-		if(*p == '\r' && *(p + 1) == '\n'){
-			p += 2;
-		}else{
-			p++;
-		}
-
-		for(i = 0; *p != '\0' && i < len; i++, p++, r++){
-			*r = *p;
-		}
-		*r = '\0';
-	}
-	if(r != (buf + HeaderSize(buf))){
-		return (long)(r - buf);
-	}
-	return size;
-}
-
-
-/******************************************************************************
-
 	Utf8ToRtf
 
 	UTF-8 の1文字を RTF の \uN? にする (UTF-8 として正しくないバイトは \'xx)

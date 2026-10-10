@@ -132,3 +132,23 @@ Test-Case "HTTP settings: choose the Windows proxy settings" {
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   Assert-True ((Get-Content (Join-Path $e.Bin "wwwc.ini")) -contains "Proxy=2") "wwwc.ini has Proxy=2"
 }
+
+
+Test-Case "HTTP/1.1 chunked body is not decoded twice" {
+  $e = New-TestEnv "http-chunked" $BinDir
+  # Force GET, size comparison only, and an MD5 check to read the complete body.
+  $fields = (ItemLine "chunked" (Url "/chunked")).Split("`t")
+  $fields[2] = "8"
+  $fields[9] = (@("2", "1", "0", "0", "0", "", "", "", "1") -join ";;")
+  $fields[15] = "41390559c58a863397c1d503bc92a264"
+  Set-Items $e @($fields -join "`t")
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  [void](Wait-Until { (Get-ServerLog) -match "^GET /chunked " } 10)
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $item = Get-SavedItem $e "chunked"
+  Assert-Equal "8" $item.Size "decoded body length excludes the header and NUL"
+  Assert-Equal "" $item.ErrStatus "chunked request succeeded"
+  $fields = ($script:Enc.GetString([IO.File]::ReadAllBytes($e.ItemFile))).TrimEnd("`r", "`n").Split("`t")
+  Assert-Equal "41390559c58a863397c1d503bc92a264" $fields[15] "digest includes the first body line"
+}

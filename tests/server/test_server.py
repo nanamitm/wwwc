@@ -69,6 +69,18 @@ class Handler(http.server.BaseHTTPRequestHandler):
         path = self.path
         if "://" in path:
             path = "/" + path.split("://", 1)[1].split("/", 1)[-1]
+        if path == "/chunked":
+            self.protocol_version = "HTTP/1.1"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.send_header("Transfer-Encoding", "chunked")
+            self.end_headers()
+            if send_body:
+                for chunk in (b"abc\n", b"body"):
+                    self.wfile.write(b"%x\r\n" % len(chunk) + chunk + b"\r\n")
+                self.wfile.write(b"0\r\n\r\n")
+                self.wfile.flush()
+            return
         if path.startswith("/r302"):
             self.send_response(302)
             self.send_header("Location", "/target")
