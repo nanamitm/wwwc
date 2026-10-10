@@ -3,6 +3,33 @@
 Changes from the original WWWC 1.1.3 by Ohno Tomoaki. The Japanese summary for
 users is in `docs/readme.txt`.
 
+## Unreleased
+
+### Fixes
+
+- Copying, moving, deleting or restoring an item whose combined text exceeds
+  32 KiB no longer overflows the clipboard parser's stack buffer.
+- Shift_JIS migration writes converted files through temporary files, keeps
+  the first backup, and records completion only after all conversions succeed.
+  If conversion fails, startup stops with a message so legacy data is not
+  loaded or saved as UTF-8; starting again retries the conversion.
+- HTTP/1.1 response bodies are no longer decoded as chunked data a second
+  time. Received sizes use the actual bytes read and exclude the header's
+  terminating NUL.
+- Decimal and hexadecimal HTML numeric character references decode to UTF-8,
+  including supplementary characters such as emoji. Invalid references stay
+  literal instead of corrupting or truncating a title.
+- FILE protocol checks use the complete 64-bit file size, including files
+  larger than 2 GiB or 4 GiB.
+
+### Development
+
+- Resource scripts use Windows SDK headers instead of requiring MFC headers.
+- Regression tests cover long item records, failed migration and retry,
+  HTTP/1.1 chunked responses, Unicode character references and sparse files
+  larger than 4 GiB. The DPI test establishes a 96 DPI baseline independently
+  of the desktop's initial scaling.
+
 ## 1.5.2
 
 ### Fixes
