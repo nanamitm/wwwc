@@ -1349,14 +1349,15 @@ HDROP CreateDropFileMem(char **FileName, int cnt)
 {
 	HDROP hDrop;
 	LPDROPFILES lpDropFile;
-	char *buf;
-	int flen = 0;
+	WCHAR *buf;
+	int wlen = 0;
 	int i;
 
+	//ファイル名は UTF-16 で渡す (ANSI だと受け取る側の文字コードで解釈される)
 	for (i = 0; i < cnt; i++) {
-		flen += lstrlen(*(FileName + i)) + 1;
+		wlen += MultiByteToWideChar(CP_ACP, 0, *(FileName + i), -1, NULL, 0);
 	}
-	hDrop = (HDROP)GlobalAlloc(GHND, sizeof(DROPFILES) + flen + 1);
+	hDrop = (HDROP)GlobalAlloc(GHND, sizeof(DROPFILES) + sizeof(WCHAR) * (wlen + 1));
 	if(hDrop == NULL){
 		return NULL;
 	}
@@ -1366,15 +1367,14 @@ HDROP CreateDropFileMem(char **FileName, int cnt)
 	lpDropFile->pt.x = 0;
 	lpDropFile->pt.y = 0;
 	lpDropFile->fNC = FALSE;
-	lpDropFile->fWide = FALSE;
+	lpDropFile->fWide = TRUE;
 
 	//構造体の後ろにファイル名のリストをコピー(ファイル名\0ファイル名\0ファイル名\0\0)
-	buf = (char *)(lpDropFile + 1);
+	buf = (WCHAR *)(lpDropFile + 1);
 	for (i = 0; i < cnt; i++) {
-		lstrcpy(buf, *(FileName + i));
-		buf += lstrlen(*(FileName + i)) + 1;
+		buf += MultiByteToWideChar(CP_ACP, 0, *(FileName + i), -1, buf, wlen);
 	}
-	buf = '\0';
+	*buf = L'\0';
 	GlobalUnlock(hDrop);
 	return(hDrop);
 }

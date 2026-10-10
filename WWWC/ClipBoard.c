@@ -536,8 +536,8 @@ static BOOL Clipboard_SetTreeData(HWND hWnd, int mode)
 
 	//フォルダのパス
 	hMemText = Clipboard_Set_TEXT(hWnd, HiTestItem);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 
 	CloseClipboard();
@@ -624,8 +624,8 @@ BOOL Clipboard_SetItemData(HWND hWnd, int mode)
 
 	//アイテム情報の文字列のハンドル
 	hMemText = Clipboard_Set_TEXT(hWnd, NULL);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 
 	CloseClipboard();
@@ -1045,7 +1045,7 @@ int Clipboard_CheckFormat(void)
 
 	ClipFormat[0] = WWWC_ClipFormat;
 	ClipFormat[1] = CF_HDROP;
-	ClipFormat[2] = CF_TEXT;
+	ClipFormat[2] = CF_UNICODETEXT;
 	return GetPriorityClipboardFormat(ClipFormat, CLIPFORMAT_CNT);
 }
 
@@ -1077,9 +1077,9 @@ void Clipboard_GetData(HWND hWnd)
 
 	switch(ret)
 	{
-	case CF_TEXT:		//テキスト
-		hClip = GetClipboardData(CF_TEXT);
-		if((buf = GlobalLock(hClip)) == NULL){
+	case CF_UNICODETEXT:		//テキスト
+		hClip = GetClipboardData(CF_UNICODETEXT);
+		if((buf = UnicodeMemToText(hClip)) == NULL){
 			break;
 		}
 		//プロトコルを識別できた場合はアイテムとして追加
@@ -1087,7 +1087,7 @@ void Clipboard_GetData(HWND hWnd)
 			SetFocus(GetDlgItem(hWnd, WWWC_LIST));
 			Item_UrlAdd(hWnd, NEWITEMNAME, buf, 0, NULL);
 		}
-		GlobalUnlock(hClip);
+		GlobalFree(buf);
 		break;
 
 	case CF_HDROP:		//ドロップファイル

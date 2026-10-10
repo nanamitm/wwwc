@@ -34,7 +34,7 @@ typedef struct _FILTER {
 **************************************************************************/
 
 BOOL FilterMatch(char *url);
-BOOL FilterCheck(char *url, char *buf, int Size);
+BOOL FilterCheck(char *url, char **pbuf, int HeadSize);
 BOOL ReadFilterFile(char *cpath);
 void FreeFilter(void);
 

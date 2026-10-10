@@ -45,7 +45,7 @@ Test-Case "connection error is stored on the item" {
 
 Test-Case "timeout" {
   $e = New-TestEnv "http-timeout" $BinDir
-  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[CHECK]`r`nTimeOut=3`r`n", $script:Sjis)
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[CHECK]`r`nTimeOut=3`r`n", $script:Enc)
   Set-Items $e @(ItemLine "slow" (Url "/slow-timeout"))
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Start-Sleep 8

@@ -17,7 +17,7 @@
 #>
 param(
   [string]$BinDir = (Join-Path $PSScriptRoot "..\x64\Release"),
-  [string[]]$Suite = @("Parse", "Http", "Password", "Tools"),
+  [string[]]$Suite = @("Parse", "Http", "Password", "Tools", "Unicode"),
   [int]$Port = 18769
 )
 

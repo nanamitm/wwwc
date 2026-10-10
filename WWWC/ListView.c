@@ -1430,7 +1430,7 @@ void ListView_StartDragItem(HWND hWnd)
 
 	//クリップボードフォーマットを設定
 	cf[0] = WWWC_ClipFormat;
-	cf[1] = CF_TEXT;
+	cf[1] = CF_UNICODETEXT;
 	cf[2] = CF_HDROP;
 	cfcnt = (NoFileFlag == FALSE) ? CLIPFORMAT_CNT : CLIPFORMAT_CNT - 1;
 

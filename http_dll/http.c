@@ -249,7 +249,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			filter_title = "";
 			if(tpHTTP->FilterFlag == TRUE){
 				//Shiftが押されている場合はフィルタを処理
-				tpHTTP->FilterFlag = FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
+				tpHTTP->FilterFlag = FilterCheck(tpItemInfo->CheckURL, &tpHTTP->buf, HeaderSize(tpHTTP->buf));
 				if(tpHTTP->FilterFlag == TRUE){
 					filter_title = STR_TITLE_FILTER;
 				}else if(FilterMatch(tpItemInfo->CheckURL) == TRUE){
@@ -1062,7 +1062,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			tpHTTP->Size = DeleteSizeInfo(tpHTTP->buf, tpHTTP->Size);
 			//フィルタ処理
 			if(tpHTTP->FilterFlag == TRUE &&
-				FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size) == FALSE){
+				FilterCheck(tpItemInfo->CheckURL, &tpHTTP->buf, HeaderSize(tpHTTP->buf)) == FALSE){
 				tpHTTP->FilterFlag = FALSE;
 				if(tpItemInfo->Date != NULL){
 					GlobalFree(tpItemInfo->Date);

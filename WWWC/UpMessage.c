@@ -383,8 +383,8 @@ BOOL SetSubItemClipboardData(HWND hWnd)
 
 	//フォルダのパス
 	hMemText = Clipboard_Set_TEXT(hWnd, NULL);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 	CloseClipboard();
 	return TRUE;
@@ -422,7 +422,7 @@ void StartDragSubItem(HWND hWnd)
 
 	//クリップボードフォーマットの設定
 	cf[0] = WWWC_ClipFormat;
-	cf[1] = CF_TEXT;
+	cf[1] = CF_UNICODETEXT;
 	cf[2] = CF_HDROP;
 	cfcnt = (NoFileFlag == FALSE) ? CLIPFORMAT_CNT : CLIPFORMAT_CNT - 1;
 
@@ -1604,8 +1604,8 @@ INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:	//テキスト
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hDlg, NULL);
+		case CF_UNICODETEXT:	//テキスト
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hDlg, NULL));
 			break;
 
 		case CF_HDROP:	//ドロップファイル

@@ -1,4 +1,4 @@
-# Sources (.c/.h/.rc) are UTF-8 without BOM; docs/ stays Shift_JIS (CP932). Normalize EOL to CRLF.
+# Sources (.c/.h/.rc) and docs/ are UTF-8 without BOM. Normalize EOL to CRLF.
 *.c       text eol=crlf
 *.h       text eol=crlf
 *.rc      text eol=crlf

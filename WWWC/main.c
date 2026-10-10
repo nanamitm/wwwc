@@ -22,6 +22,7 @@
 #include <winsock.h>
 
 #include "General.h"
+#include "Charset.h"
 #include "OleDragDrop.h"
 #include "Profile.h"
 #include "DarkMode.h"
@@ -814,7 +815,7 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	//ドラッグターゲットに登録
 	cf[0] = WWWC_ClipFormat;
 	cf[1] = CF_HDROP;
-	cf[2] = CF_TEXT;
+	cf[2] = CF_UNICODETEXT;
 	OLE_IDropTarget_RegisterDragDrop(hWnd, WM_DRAGMSG, cf, CLIPFORMAT_CNT);
 
 	//ウィンドウのタイトルを設定
@@ -2072,8 +2073,8 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hWnd, DgdpItem);
+		case CF_UNICODETEXT:
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hWnd, DgdpItem));
 			break;
 
 		case CF_HDROP:
@@ -2349,6 +2350,9 @@ static void GetAppPath(HINSTANCE hinst)
 	}
 	*r = '\0';
 
+	//以前のバージョン (Shift_JIS) の設定ファイルを UTF-8 に変換
+	Charset_ConvertAppDir(DefDirPath);
+
 	//デフォルトアイテム
 	wsprintf(DefItem, "%s\\DefItem", DefDirPath);
 
@@ -2405,6 +2409,8 @@ static void GetAppPath(HINSTANCE hinst)
 		CreateDirectory(CuDir, NULL);
 		CopyDirTree(NULL, DefItem, DefDirPath, (*CmdUser != '\0' || *GeneralUser == '\0') ? CurrentUser : GeneralUser, NULL);
 	}
+	//以前のバージョン (Shift_JIS) のアイテム情報と設定を UTF-8 に変換
+	Charset_ConvertDataDir(CuDir);
 	SetEnvironmentVariable("USER_DIR", CuDir);
 }
 
@@ -2794,6 +2800,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	INITCOMMONCONTROLSEX iccex;
 	HINSTANCE hLib;
 	BOOL (WINAPI *_InitCommonControlsEx)(const INITCOMMONCONTROLSEX *picce);
+
+	//文字列は UTF-8 で扱う (マニフェストの activeCodePage)
+	if(Charset_Check() == FALSE){
+		return 0;
+	}
 
 	if((hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, MUTEX)) == NULL){
 		hMutex = CreateMutex(NULL, TRUE, MUTEX);

@@ -12,6 +12,10 @@ Routes:
     /r301...   301 to http://127.0.0.1:<port>/target (absolute)
     /slow...   waits 30 seconds, then answers like /target
     /drip...   200, sends the body slowly (100 bytes every 0.5 seconds for 30 seconds)
+    /title-utf8, /title-sjis, /title-euc, /title-jis
+               a Japanese page in that character set
+    /filter-sjis
+               a long Shift_JIS page for the filter test
     anything else: a small HTML page titled "target page" (67 bytes)
 
 usage: test_server.py <port> <logfile>
@@ -28,11 +32,29 @@ ADDRESSES = ["127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.4", "127.0.0.5"]
 BODY = b"<html><head><title>target page</title></head><body>ok</body></html>"
 lock = threading.Lock()
 
+# /title-<charset>: a page titled TITLE_JA (TITLE_UTF8 for utf8) in that character set
+TITLE_JA = "日本語のタイトル"            # 日本語のタイトル
+TITLE_UTF8 = TITLE_JA + " \U0001F600 中文 한국어"   # + emoji, Chinese, Korean
+def page(title, charset):
+    return ("<html><head><title>%s</title></head><body>%s</body></html>" % (title, title)).encode(charset)
+TITLE_PAGES = {
+    "utf8": page(TITLE_UTF8, "utf-8"),
+    "sjis": page(TITLE_JA, "cp932"),
+    "euc": page(TITLE_JA, "euc_jp"),
+    "jis": page(TITLE_JA, "iso2022_jp"),
+}
+# /filter-sjis: Shift_JIS page whose UTF-8 form is much longer than the received data
+FILTER_PAGE = ("<html><body><div>" + "あ" * 3000 + "</div><p>終わり</p></body></html>").encode("cp932")
+
 
 def basic(value):
     if not value or not value.startswith("Basic "):
         return None
-    return base64.b64decode(value[6:]).decode("latin-1")
+    raw = base64.b64decode(value[6:])
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return raw.decode("latin-1")
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
@@ -56,6 +78,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(301)
             self.send_header("Location", "http://127.0.0.1:%d/target" % PORT)
             self.end_headers()
+            return
+        if path.startswith("/title-") and path[7:] in TITLE_PAGES:
+            # the same Japanese page in several character sets
+            body = TITLE_PAGES[path[7:]]
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if send_body:
+                self.wfile.write(body)
+            return
+        if path.startswith("/filter-sjis"):
+            body = FILTER_PAGE
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if send_body:
+                self.wfile.write(body)
             return
         if path.startswith("/slow"):
             time.sleep(30)

@@ -69,7 +69,7 @@ function Set-Tools($Env, [object[]]$Tools) {
     $lines += "title-$i=$($t.Title)", "FileName-$i=$(Join-Path $Env.Bin 'wwwc.dll')", "Action-$i=$($t.Action)",
       "MenuIndex-$i=-1", "Protocol-$i=$($t.Protocol)", "CommandLine-$i=", "func-$i=$($t.Func)", "Ctrl-$i=0", "Key-$i="
   }
-  [IO.File]::WriteAllText((Join-Path $Env.Data "user.ini"), ($lines -join "`r`n") + "`r`n", $script:Sjis)
+  [IO.File]::WriteAllText((Join-Path $Env.Data "user.ini"), ($lines -join "`r`n") + "`r`n", $script:Enc)
 }
 $CMD_TOOL = 54000    # ID_MENU_TOOL_ACTION + index (item menu)
 $CMD_WTOOL = 55000   # ID_WMENU_TOOL_ACTION + index (window menu)
@@ -77,9 +77,12 @@ $CMD_WTOOL = 55000   # ID_WMENU_TOOL_ACTION + index (window menu)
 Test-Case "open URL tool passes the URL to the configured browser at once" {
   $e = New-TestEnv "tool-openurl" $BinDir
   # a "browser" that records its arguments
+  # in a folder with a Japanese name: wwwc.ini (UTF-8) is read with GetPrivateProfileStringA
+  $dir = Join-Path $e.Dir "`u{30D6}`u{30E9}`u{30A6}`u{30B6}"
+  New-Item -ItemType Directory -Force $dir | Out-Null
   $record = Join-Path $e.Dir "opened.txt"
-  Set-Content -Path (Join-Path $e.Dir "browser.cmd") -Value "@echo %*>> `"$record`"" -Encoding ascii
-  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[HTTP]`r`nBrowserPath=$(Join-Path $e.Dir 'browser.cmd')`r`n", $script:Sjis)
+  Set-Content -Path (Join-Path $dir "browser.cmd") -Value "@echo %*>> `"$record`"" -Encoding ascii
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[HTTP]`r`nBrowserPath=$(Join-Path $dir 'browser.cmd')`r`n", $script:Enc)
   Set-Tools $e @([pscustomobject]@{ Title = "open"; Action = 1; Protocol = "HTTP"; Func = "DDE_OpenURL" })
   Set-Items $e @(ItemLine "page" "http://example.invalid/a b?x=1&y=2")
   [void](Start-Wwwc $e)

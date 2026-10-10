@@ -23,6 +23,8 @@
 	<application xmlns="urn:schemas-microsoft-com:asm.v3">
 		<windowsSettings>
 			<gdiScaling xmlns="http://schemas.microsoft.com/SMI/2017/WindowsSettings">true</gdiScaling>
+			<!-- A (ANSI) API の文字コードを UTF-8 にする (Windows 10 1903 以降)。文字列はすべて UTF-8 で扱う -->
+			<activeCodePage xmlns="http://schemas.microsoft.com/SMI/2019/WindowsSettings">UTF-8</activeCodePage>
 		</windowsSettings>
 	</application>
 </assembly>
