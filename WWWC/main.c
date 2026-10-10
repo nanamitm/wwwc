@@ -3029,6 +3029,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	}
 
 	Font_UninstallDialogHook();
+	Dpi_Uninitialize();
 	DarkMode_Uninitialize();
 	DestroyMenu(hPOPUP);
 	if(hMutex != NULL){
