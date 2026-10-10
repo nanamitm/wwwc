@@ -6,6 +6,7 @@ param([string]$BinDir)
 $CMD_DELETE = 40010         # ID_MENUITEM_DELETE
 $CMD_UNDO = 40119           # ID_MENUITEM_UNDO
 $CMD_FIND = 40111           # ID_MENUITEM_SERACH
+$ID_MENUITEM_ABOUT = 40038
 $IDC_COMBO_FINDSTRING = 1116
 $WM_GETDARKMODE = 0x0400 + 16
 
@@ -121,6 +122,20 @@ Test-Case "dark mode on and off" {
     $lum = Get-PixelLuminance $lv ($r.R - 20) ($r.B - 10)
     if ($mode -eq 1) { Assert-True ($lum -lt 80) "list background is dark (luminance $lum)" }
     else { Assert-True ($lum -gt 180) "list background is light (luminance $lum)" }
+    # the button area at the bottom of a message box (version information)
+    Send-Command $e $ID_MENUITEM_ABOUT
+    $shown = Wait-Until { (Get-Dialogs $e).Count -gt 0 } 10
+    Assert-True $shown "version information is shown (DarkMode=$mode)"
+    if ($shown) {
+      Start-Sleep -Milliseconds 500
+      $d = (Get-Dialogs $e)[0].Handle
+      $wr = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($d, [ref]$wr)
+      $lum = Get-PixelLuminance $d 20 ($wr.B - $wr.T - 20)
+      if ($mode -eq 1) { Assert-True ($lum -lt 80) "message box button area is dark (luminance $lum)" }
+      else { Assert-True ($lum -gt 180) "message box button area is light (luminance $lum)" }
+      [void][WwwcWin]::PostMessage($d, 0x0111, [IntPtr]2, [IntPtr]::Zero)   # the OK button of MB_OK is IDCANCEL
+      [void](Wait-Until { (Get-Dialogs $e).Count -eq 0 } 5)
+    }
     Assert-Equal 0 (Stop-Wwwc $e) "exit code (DarkMode=$mode)"
   }
 }

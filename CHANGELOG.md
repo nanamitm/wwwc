@@ -13,6 +13,11 @@ users is in `docs/readme.txt`.
   stay values at 96 DPI (100%), so the settings are the same on every
   monitor.
 
+### Fixes
+
+- Dark mode: the button area at the bottom of message boxes (for example
+  the version information) was light.
+
 ### Tests
 
 - New `Features` suite: FILE protocol, delete and undo, find, update message
