@@ -323,9 +323,11 @@ static void SetProtocolListIcon(HWND hListView)
 	char IconFile[BUFSIZE];
 	int IconIndex;
 	char IconPath[BUFSIZE];
-	HICON hLIcon, hSIcon;
+	HICON hLIcon, hSIcon, hIcon;
+	int IconSize = SICONSIZE;
 
 	IconList = ListView_GetImageList(hListView, LVSIL_SMALL);
+	ImageList_GetIconSize(IconList, &IconSize, &IconSize);
 
 	ImageList_Remove(IconList, -1);
 
@@ -345,13 +347,16 @@ static void SetProtocolListIcon(HWND hListView)
 			lstrcpy(IconPath, dll);
 		}
 		ExtractIconEx(IconPath, IconIndex, &hLIcon, &hSIcon, 1);
-		if(hSIcon == NULL){
-			hSIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_NO), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+		//高 DPI では大きいアイコンを縮小する
+		hIcon = (IconSize > SICONSIZE && hLIcon != NULL) ? hLIcon : hSIcon;
+		if(hIcon == NULL){
+			hIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_NO), IMAGE_ICON, IconSize, IconSize, 0);
 		}
 
-		ImageList_AddIcon(IconList, hSIcon);
-		DestroyIcon(hSIcon);
-		DestroyIcon(hLIcon);
+		ImageList_AddIcon(IconList, hIcon);
+		if(hIcon != hSIcon && hIcon != hLIcon) DestroyIcon(hIcon);
+		if(hSIcon != NULL) DestroyIcon(hSIcon);
+		if(hLIcon != NULL) DestroyIcon(hLIcon);
 
 		ListView_SetItemIcon(hListView, i, i);
 
@@ -791,7 +796,7 @@ INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			LVS_EX_ONECLICKACTIVATE | LVS_EX_FULLROWSELECT |
 			SendDlgItemMessage(hDlg, IDC_LIST_PROTOCOL, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
 
-		IconList = ImageList_Create(SICONSIZE, SICONSIZE, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hDlg, SICONSIZE), DpiScaleFor(hDlg, SICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 		ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
 		ListView_SetImageList(GetDlgItem(hDlg, IDC_LIST_PROTOCOL), IconList, LVSIL_SMALL);
 

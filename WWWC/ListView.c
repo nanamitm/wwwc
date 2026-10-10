@@ -153,7 +153,7 @@ void ListView_SetItemImage(HWND hListView, int IconSize, int LVFLag)
 	//イメージリストの作成
 	IconList = ListView_GetImageList(hListView, LVFLag);
 	if(IconList == NULL){
-		IconList = ImageList_Create(IconSize, IconSize, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(IconSize, IconSize, ILC_COLOR32 | ILC_MASK, 0, 0);
 	}else{
 		//DPI が変わった場合もあるのでサイズを設定し直す (画像はすべて削除される)
 		ImageList_SetIconSize(IconList, IconSize, IconSize);

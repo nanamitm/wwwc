@@ -148,7 +148,7 @@ void TreeView_CreateImageList(HWND hWnd)
 	HIMAGELIST TmpIconList;
 	HICON TmpIcon;
 
-	IconList = ImageList_Create(TvIconSize, TvIconSize, ILC_COLOR16 | ILC_MASK, 0, 0);
+	IconList = ImageList_Create(TvIconSize, TvIconSize, ILC_COLOR32 | ILC_MASK, 0, 0);
 	if(*TvBkColor != '\0'){
 		ImageList_SetBkColor(IconList, strtol(TvBkColor, NULL, 0));
 	}else{

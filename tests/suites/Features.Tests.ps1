@@ -163,6 +163,7 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
       Row = [int][WwwcWin]::SendMessage($tree, 0x111C, [IntPtr]::Zero, [IntPtr]::Zero)                    # TVM_GETITEMHEIGHT
       Button = ([int64][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($e.Window, 102), 0x0400 + 58, [IntPtr]::Zero, [IntPtr]::Zero)) -band 0xFFFF  # TB_GETBUTTONSIZE (width)
       Column = [int][WwwcWin]::SendMessage($lv, 0x1000 + 29, [IntPtr]0, [IntPtr]::Zero)                    # LVM_GETCOLUMNWIDTH
+      CutImage = [int][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($e.Window, 102), 0x0400 + 44, [IntPtr]40055, [IntPtr]::Zero)  # TB_GETBITMAP (ID_MENUITEM_CUT)
     }
   }
   $before = & $measure
@@ -184,6 +185,9 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
   Assert-Equal $before.Row $back.Row "tree row height back at 96 DPI"
   Assert-Equal $before.Button $back.Button "toolbar button size back at 96 DPI"
   Assert-True ([Math]::Abs($back.Column - $before.Column) -le 1) "column width back at 96 DPI ($($before.Column) -> $($back.Column))"
+  # the toolbar is rebuilt twice: the standard images must keep their index
+  Assert-Equal $before.CutImage $high.CutImage "image of the cut button at 144 DPI"
+  Assert-Equal $before.CutImage $back.CutImage "image of the cut button back at 96 DPI"
   Assert-True (-not $e.Process.HasExited) "WWWC is running"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $ini = Read-Utf8Text (Join-Path $e.Data "user.ini")

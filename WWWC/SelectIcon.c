@@ -82,7 +82,7 @@ static int SetListIcon(HWND hListView, char *path, int index)
 	//イメージリストの作成、設定
 	IconList = ListView_GetImageList(hListView, LVSIL_NORMAL);
 	if(IconList == NULL){
-		IconList = ImageList_Create(32, 32, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hListView, LICONSIZE), DpiScaleFor(hListView, LICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 		ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
 		ListView_SetImageList(hListView, IconList, LVSIL_NORMAL);
 	}else{

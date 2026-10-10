@@ -1157,7 +1157,7 @@ static void SetLvToolIcon(HWND hListView)
 
 	IconList = ListView_GetImageList(hListView, LVSIL_SMALL);
 	if(IconList == NULL){
-		IconList = ImageList_Create(16, 16, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hListView, SICONSIZE), DpiScaleFor(hListView, SICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 	}else{
 		ImageList_Remove(IconList, -1);
 	}
@@ -1168,9 +1168,9 @@ static void SetLvToolIcon(HWND hListView)
 		*buf = '\0';
 		ListView_GetItemText(hListView, i, 1, buf, BUFSIZE - 1);
 		if(*buf == '\0'){
-			ImageListIconAdd(IconList, IDI_ICON_NON, 16, "", 0);
+			ImageListIconAdd(IconList, IDI_ICON_NON, DpiScaleFor(hListView, SICONSIZE), "", 0);
 		}else{
-			ImageListFileIconAdd(IconList, buf, 0, 16, "", 0);
+			ImageListFileIconAdd(IconList, buf, 0, DpiScaleFor(hListView, SICONSIZE), "", 0);
 		}
 		ListView_SetItemIcon(hListView, i, i);
 	}

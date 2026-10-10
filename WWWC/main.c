@@ -809,6 +809,7 @@ static void DpiChanged(HWND hWnd, int dpi, const RECT *rc)
 {
 	HWND hList = GetDlgItem(hWnd, WWWC_LIST);
 	int widths[100];
+	HICON hIcon;
 	int old = g_Dpi;
 	int i;
 	long wl;
@@ -849,8 +850,16 @@ static void DpiChanged(HWND hWnd, int dpi, const RECT *rc)
 		//ツールバー
 		TbRecreate(hWnd);
 
-		//ステータスバー
+		//ステータスバー (チェック中はアイコンも差し替える)
 		Dpi_SetStatusBarFont(GetDlgItem(hWnd, WWWC_SB));
+		hIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, DpiScale(SICONSIZE), DpiScale(SICONSIZE), 0);
+		if(hIcon != NULL){
+			if(SendDlgItemMessage(hWnd, WWWC_SB, SB_GETICON, 0, 0) != 0){
+				SendDlgItemMessage(hWnd, WWWC_SB, SB_SETICON, 0, (LPARAM)hIcon);
+			}
+			DestroyIcon(StCheckIcon);
+			StCheckIcon = hIcon;
+		}
 	}
 	if(rc != NULL){
 		SetWindowPos(hWnd, NULL, rc->left, rc->top, rc->right - rc->left, rc->bottom - rc->top,
@@ -920,13 +929,17 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	WindowFlag = TRUE;
 
 	//アイコンをロード
-	TrayIcon_Main = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
-	TrayIcon_Chaeck = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
-	TrayIcon_Up = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_UP), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+	//タスクトレイのアイコンはシステムの DPI の小さいアイコンのサイズ
+	TrayIcon_Main = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	TrayIcon_Chaeck = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	TrayIcon_Up = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_UP), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 	TrayIcon_Main_Win = LoadIcon(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN));
 	TrayIcon_Chaeck_Win = LoadIcon(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK));
 
-	StCheckIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+	StCheckIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, DpiScale(SICONSIZE), DpiScale(SICONSIZE), 0);
 
 	//タスクトレイにアイコンを追加
 	GetWindowText(hWnd, buf, BUFSIZE - 1);
