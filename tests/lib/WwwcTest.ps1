@@ -75,6 +75,17 @@ public static class WwwcList {
 
   public static int Count(IntPtr lv) { return (int)SendMessage(lv, 0x1000 + 4, IntPtr.Zero, IntPtr.Zero); }
 
+  // WM_DPICHANGED with the suggested rectangle in the target process (simulates moving to another DPI)
+  public static void SendDpiChanged(IntPtr hwnd, int dpi, int left, int top, int right, int bottom) {
+    // the system marshals the RECT of WM_DPICHANGED from the sending process
+    IntPtr rc = Marshal.AllocHGlobal(16);
+    try {
+      Marshal.WriteInt32(rc, 0, left); Marshal.WriteInt32(rc, 4, top);
+      Marshal.WriteInt32(rc, 8, right); Marshal.WriteInt32(rc, 12, bottom);
+      SendMessage(hwnd, 0x02E0, (IntPtr)((dpi << 16) | dpi), rc);
+    } finally { Marshal.FreeHGlobal(rc); }
+  }
+
   // LVITEMA: mask@0 iItem@4 iSubItem@8 state@12 stateMask@16, pszText@20/24 cchTextMax@24/32 (32/64-bit)
   public static string GetText(IntPtr lv, int item, int sub) {
     using (var r = new Remote(lv, 2048)) {

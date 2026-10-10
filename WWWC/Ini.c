@@ -290,6 +290,8 @@ void GetINI(void)
 	profile_get_string("LISTVIEW", "LvTextColor", "", LvTextColor, BUFSIZE - 1, app_path);
 	LvLIconSize = profile_get_int("LISTVIEW", "LvLIconSize", LICONSIZE, app_path);
 	LvSIconSize = profile_get_int("LISTVIEW", "LvSIconSize", SICONSIZE, app_path);
+	//アイコンのサイズは 96 DPI での値。表示には DPI に合わせたサイズを使う
+	Dpi_SetIconSizeBase();
 	profile_get_string("LISTVIEW", "LvColumn", "2,3,1,10,", LvColumn, BUFSIZE - 1, app_path);
 	ZeroMemory(LvColSize, sizeof(LvColSize));
 
@@ -530,7 +532,7 @@ void PutINI(void)
 	profile_write_int("TREEVIEW", "TvWndStyle", TvWndStyle, app_path);
 	profile_write_string("TREEVIEW", "TvBkColor", TvBkColor, app_path);
 	profile_write_string("TREEVIEW", "TvTextColor", TvTextColor, app_path);
-	profile_write_int("TREEVIEW", "TvIconSize", TvIconSize, app_path);
+	profile_write_int("TREEVIEW", "TvIconSize", TvIconSizeBase, app_path);
 
 	profile_write_int("LISTVIEW", "LvStyle", LvStyle, app_path);
 	profile_write_int("LISTVIEW", "LvSortFlag", LvSortFlag, app_path);
@@ -543,8 +545,8 @@ void PutINI(void)
 	profile_write_string("LISTVIEW", "LvBkColor", LvBkColor, app_path);
 	profile_write_string("LISTVIEW", "LvTextBkColor", LvTextBkColor, app_path);
 	profile_write_string("LISTVIEW", "LvTextColor", LvTextColor, app_path);
-	profile_write_int("LISTVIEW", "LvLIconSize", LvLIconSize, app_path);
-	profile_write_int("LISTVIEW", "LvSIconSize", LvSIconSize, app_path);
+	profile_write_int("LISTVIEW", "LvLIconSize", LvLIconSizeBase, app_path);
+	profile_write_int("LISTVIEW", "LvSIconSize", LvSIconSizeBase, app_path);
 	profile_write_string("LISTVIEW", "LvColumn", LvColumn, app_path);
 
 	profile_write_int("LISTVIEW", "LvColSize-0", *LvColSize, app_path);

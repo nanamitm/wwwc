@@ -155,7 +155,8 @@ void ListView_SetItemImage(HWND hListView, int IconSize, int LVFLag)
 	if(IconList == NULL){
 		IconList = ImageList_Create(IconSize, IconSize, ILC_COLOR16 | ILC_MASK, 0, 0);
 	}else{
-		ImageList_Remove(IconList, -1);
+		//DPI が変わった場合もあるのでサイズを設定し直す (画像はすべて削除される)
+		ImageList_SetIconSize(IconList, IconSize, IconSize);
 	}
 
 	if(*LvBkColor != '\0'){
@@ -388,7 +389,7 @@ int ListView_AddColumn(HWND hListView, char *chLvColumn, int *lColSize, struct T
 		if(lColSize[i] == 0){
 			lColSize[i] = DEFAULT_COLSIZE;
 		}
-		lvc.cx = lColSize[i];
+		lvc.cx = DpiScaleFor(hListView, lColSize[i]);		//設定は 96 DPI での幅
 		lvc.pszText = ColInfo[i].Title;
 		lvc.iSubItem = i;
 		ListView_InsertColumn(hListView, i, &lvc);

@@ -506,7 +506,7 @@ static void CloseFindWindow(HWND hDlg)
 
 	//リストビューのカラムのサイズを取得
 	for(i = 0;i < LvFindColCnt;i++){
-		LvFindColSize[i] = ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i);
+		LvFindColSize[i] = DpiUnscaleFor(GetDlgItem(hDlg, WWWC_LIST), ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i));
 	}
 
 	FreeFindItemList();

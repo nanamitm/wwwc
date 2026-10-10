@@ -10,6 +10,8 @@ $IDC_COMBO_FINDSTRING = 1116
 $WM_GETDARKMODE = 0x0400 + 16
 
 # Titles of all items saved in the data folder and its subfolders: @{ folder = titles }
+function Read-Utf8Text([string]$Path) { $script:Enc.GetString([IO.File]::ReadAllBytes($Path)) }
+
 function Get-AllSavedTitles($Env) {
   $r = @{}
   foreach ($f in Get-ChildItem $Env.Data -Recurse -Filter "Item.dat") {
@@ -134,4 +136,41 @@ Test-Case "scheduled check (every minute)" {
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /scheduled " } 90) "the item is checked without a command"
   Start-Sleep 1
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
+Test-Case "DPI change (simulated with WM_DPICHANGED)" {
+  $e = New-TestEnv "feat-dpi" $BinDir
+  Set-Items $e @((ItemLine "page" (Url "/target")), (ItemLine "other" (Url "/other")))
+  [void](Start-Wwwc $e)
+  $tree = [WwwcWin]::GetDlgItem($e.Window, 1114); $lv = Get-ListHandle $e   # WWWC_TREE (the toolbar is rebuilt: get it each time)
+  $measure = {
+    [pscustomobject]@{
+      Row = [int][WwwcWin]::SendMessage($tree, 0x111C, [IntPtr]::Zero, [IntPtr]::Zero)                    # TVM_GETITEMHEIGHT
+      Button = ([int64][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($e.Window, 102), 0x0400 + 58, [IntPtr]::Zero, [IntPtr]::Zero)) -band 0xFFFF  # TB_GETBUTTONSIZE (width)
+      Column = [int][WwwcWin]::SendMessage($lv, 0x1000 + 29, [IntPtr]0, [IntPtr]::Zero)                    # LVM_GETCOLUMNWIDTH
+    }
+  }
+  $before = & $measure
+  $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($e.Window, [ref]$r)
+  [WwwcList]::SendDpiChanged($e.Window, 144, $r.L, $r.T, $r.L + [int](($r.R - $r.L) * 1.5), $r.T + [int](($r.B - $r.T) * 1.5))
+  Start-Sleep 1
+  $high = & $measure
+  if ($env:WWWC_DPI_SHOT) {
+    $wr = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($e.Window, [ref]$wr)
+    $bmp = New-Object Drawing.Bitmap ($wr.R - $wr.L), ($wr.B - $wr.T); $g = [Drawing.Graphics]::FromImage($bmp); $dc = $g.GetHdc()
+    [void][WwwcWin]::PrintWindow($e.Window, $dc, 2); $g.ReleaseHdc($dc); $g.Dispose(); $bmp.Save($env:WWWC_DPI_SHOT); $bmp.Dispose()
+  }
+  Assert-True ($high.Row -ge $before.Row * 1.3) "tree rows are taller at 144 DPI ($($before.Row) -> $($high.Row))"
+  Assert-True ($high.Button -ge $before.Button * 1.3) "toolbar buttons are larger at 144 DPI ($($before.Button) -> $($high.Button))"
+  Assert-True ([Math]::Abs($high.Column - $before.Column * 1.5) -le 2) "column width scales by 1.5 ($($before.Column) -> $($high.Column))"
+  [WwwcList]::SendDpiChanged($e.Window, 96, $r.L, $r.T, $r.R, $r.B)
+  Start-Sleep 1
+  $back = & $measure
+  Assert-Equal $before.Row $back.Row "tree row height back at 96 DPI"
+  Assert-Equal $before.Button $back.Button "toolbar button size back at 96 DPI"
+  Assert-True ([Math]::Abs($back.Column - $before.Column) -le 1) "column width back at 96 DPI ($($before.Column) -> $($back.Column))"
+  Assert-True (-not $e.Process.HasExited) "WWWC is running"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $ini = Read-Utf8Text (Join-Path $e.Data "user.ini")
+  Assert-True ($ini -match "(?m)^TvIconSize=16\r?$") "icon size is saved at 96 DPI"
 }

@@ -32,6 +32,7 @@
 //文字列の比較: 識別子・URL・タイトルの一致は strcmp / _stricmp (ASCII)、パスは PathCompare、
 //表示用の並べ替えだけ lstrcmp (言語に依存した比較)
 #include <string.h>
+#include "Dpi.h"
 
 //バッファサイズ。UTF-8 では日本語1文字が3バイトになるため、パス (MAX_PATH 文字) が入る大きさにする
 #define BUFSIZE						1024
@@ -634,6 +635,7 @@ int ImageListFileIconAdd(HIMAGELIST IconList, char *FileName, UINT uFlags, int I
 //--------------------------
 void CallTreeItem(HWND hWnd, HTREEITEM hItem, TREEITEM_FUNC Func, LPARAM Param);
 HWND CreateTreeView(HWND hWnd);
+void TreeView_CreateImageList(HWND hWnd);
 void TreeView_Initialize(HWND hWnd);
 HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, char *Title, int Icon, int IconSel);
 BOOL TreeView_NewFolderItem(HWND hWnd);
@@ -712,6 +714,8 @@ LRESULT ListView_NotifyProc(HWND hWnd, LPARAM lParam);
 //ToolBar
 void ReTbButtonInfo(void);
 void CreateTB(HWND hWnd);
+void TbRecreate(HWND hWnd);
+void TbApplyTheme(HWND hWnd);
 void TbSetDarkBitmap(HWND hWnd);
 LRESULT ToolBar_NotifyProc(HWND hWnd, LPARAM lParam);
 void ShowTbMenu(HWND hWnd, HMENU hMenu, int cmd);

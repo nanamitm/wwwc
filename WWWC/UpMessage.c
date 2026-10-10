@@ -815,7 +815,7 @@ static void CloseUpMessage(HWND hDlg)
 
 	//リストビューのカラムのサイズを取得
 	for(i = 0; i < LvUPColCnt; i++){
-		LvUPColSize[i] = ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i);
+		LvUPColSize[i] = DpiUnscaleFor(GetDlgItem(hDlg, WWWC_LIST), ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i));
 	}
 
 	FreeViewUpItemList();
