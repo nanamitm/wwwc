@@ -193,3 +193,25 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
   $ini = Read-Utf8Text (Join-Path $e.Data "user.ini")
   Assert-True ($ini -match "(?m)^TvIconSize=16\r?$") "icon size is saved at 96 DPI"
 }
+
+
+Test-Case "delete and undo an item with a clipboard record larger than 32 KiB" {
+  $e = New-TestEnv "feat-longrecord" $BinDir
+  $comment = "`u{3042}" * 12000
+  $fields = (ItemLine "long comment" (Url "/longrecord")).Split("`t")
+  $fields[11] = $comment
+  Set-Items $e @($fields -join "`t")
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "long comment"
+  Send-Command $e $CMD_DELETE
+  [void](Wait-Until { Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } } 5)
+  Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } | ForEach-Object {
+    [void][WwwcWin]::PostMessage($_.Handle, 0x0111, [IntPtr]6, [IntPtr]::Zero)
+  }
+  Assert-True (Wait-Until { -not ((Get-ListTitles $e) -contains "long comment") } 5) "long item moved to recycle bin"
+  Send-Command $e $CMD_UNDO
+  Assert-True (Wait-Until { (Get-ListTitles $e) -contains "long comment" } 5) "undo restored the long item"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $saved = (Read-Utf8Text $e.ItemFile).TrimEnd("`r", "`n").Split("`t")
+  Assert-Equal $comment $saved[11] "the complete comment is preserved"
+}
