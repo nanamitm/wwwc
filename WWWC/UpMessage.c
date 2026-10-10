@@ -152,8 +152,8 @@ BOOL AddUpItem(struct TPITEM *NewItemInfo)
 		}
 		//既に同じアイテムが存在している場合は上書きを行う
 		if((*(UpItemList + i))->hItem == NewItemInfo->hItem &&
-			lstrcmp((*(UpItemList + i))->Title, NewItemInfo->Title) == 0 &&
-			lstrcmp((*(UpItemList + i))->CheckURL, NewItemInfo->CheckURL) == 0){
+			strcmp((*(UpItemList + i))->Title, NewItemInfo->Title) == 0 &&
+			strcmp((*(UpItemList + i))->CheckURL, NewItemInfo->CheckURL) == 0){
 
 			FreeItemInfo(*(UpItemList + i), FALSE);
 			GlobalFree(*(UpItemList + i));
@@ -212,8 +212,8 @@ static BOOL CopyUPItem(void)
 			}
 			//既に同じアイテムが存在している場合は上書きを行う
 			if((*(ViewUpItemList + i))->hItem == (*(UpItemList + j))->hItem &&
-				lstrcmp((*(ViewUpItemList + i))->Title, (*(UpItemList + j))->Title) == 0 &&
-				lstrcmp((*(ViewUpItemList + i))->CheckURL, (*(UpItemList + j))->CheckURL) == 0){
+				strcmp((*(ViewUpItemList + i))->Title, (*(UpItemList + j))->Title) == 0 &&
+				strcmp((*(ViewUpItemList + i))->CheckURL, (*(UpItemList + j))->CheckURL) == 0){
 
 				FreeItemInfo(*(ViewUpItemList + i), FALSE);
 				GlobalFree(*(ViewUpItemList + i));
@@ -551,8 +551,8 @@ BOOL FindInitSubIcon(HWND hDlg, struct TPITEM *tpItemInfo)
 			continue;
 		}
 		if(tpItemInfo == TmpItemInfo || (tpItemInfo->hItem == TmpItemInfo->hItem &&
-			lstrcmp(tpItemInfo->Title, TmpItemInfo->Title) == 0 &&
-			lstrcmp(tpItemInfo->CheckURL, TmpItemInfo->CheckURL) == 0)){
+			strcmp(tpItemInfo->Title, TmpItemInfo->Title) == 0 &&
+			strcmp(tpItemInfo->CheckURL, TmpItemInfo->CheckURL) == 0)){
 			InitSubIcon(hDlg, i);
 			return TRUE;
 		}
@@ -1044,7 +1044,7 @@ static void SetUpMessageControls(HWND hDlg)
 
 	//ウィンドウの高さ設定
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(strcmp(buf, BTN_UPINFO_OFF) == 0){
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_MSG), (LPRECT)&StRect);
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_BANNER), (LPRECT)&BnRect);
 		BnSize = (BnRect.bottom - BnRect.top < 32) ? 32 : BnRect.bottom - BnRect.top;
@@ -1092,7 +1092,7 @@ static void SizeUpMessage(HWND hDlg, WPARAM wParam)
 		return;
 	}
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && strcmp(buf, BTN_UPINFO_OFF) == 0){
 		//詳細表示で元のサイズに戻った場合
 		MaxWndFlag = FALSE;
 		GetWindowRect(hDlg, (LPRECT)&WindowRect);
@@ -1105,7 +1105,7 @@ static void SizeUpMessage(HWND hDlg, WPARAM wParam)
 			lvRect.bottom - WindowRect.top + GetSystemMetrics(SM_CYSIZEFRAME),
 			SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
 
-	}else if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && lstrcmp(buf, BTN_UPINFO_ON) == 0){
+	}else if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && strcmp(buf, BTN_UPINFO_ON) == 0){
 		//詳細非表示で元のサイズに戻った場合
 		MaxWndFlag = FALSE;
 		GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);
@@ -1164,7 +1164,7 @@ static void ViewUpInfo(HWND hDlg)
 	GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);	//リストビューのサイズ
 
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(strcmp(buf, BTN_UPINFO_OFF) == 0){
 		//詳細を隠す
 		SetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), BTN_UPINFO_ON);
 		ShowWindow(GetDlgItem(hDlg, WWWC_LIST), SW_HIDE);
@@ -1362,7 +1362,7 @@ INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPara
 	case WM_SIZING:
 		//詳細が隠されている場合はサイズを制限
 		GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-		if(lstrcmp(buf, BTN_UPINFO_ON) == 0){
+		if(strcmp(buf, BTN_UPINFO_ON) == 0){
 			GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);
 			((LPRECT)lParam)->bottom = lvRect.top + GetSystemMetrics(SM_CYSIZEFRAME);
 		}

@@ -18,7 +18,6 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
 #include <process.h>
@@ -307,71 +306,22 @@ UINT str2hash(const TCHAR *str)
 
 /******************************************************************************
 
-	GetStrLen
+	lstrcmpn / lstrcmpni
 
-	比較用の文字列の長さを取得する
-
-******************************************************************************/
-
-static int GetStrLen(const char *buf, int len)
-{
-	int i;
-
-	if(len < 0) return len;
-
-	for(i = 0; i < len; i++){
-		if(*buf == '\0'){
-			break;
-		}
-		buf++;
-	}
-	return i;
-}
-
-
-/******************************************************************************
-
-	lstrcmpn
-
-	指定文字数で比較
+	2つの文字列を先頭から len バイトまで比較する (lstrcmpni は ASCII の大文字と小文字を区別しない)
+	HTML やヘッダの解析、識別子の比較に使うため、言語に依存しない比較にする
+	(以前は CompareString を使っていた)
 
 ******************************************************************************/
 
 int lstrcmpn(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		0, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return strncmp(buf1, buf2, (size_t)len);
 }
-
-
-/******************************************************************************
-
-	lstrcmpni
-
-	大文字と小文字を区別しない比較
-
-******************************************************************************/
 
 int lstrcmpni(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		NORM_IGNORECASE, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return _strnicmp(buf1, buf2, (size_t)len);
 }
 
 
@@ -1084,7 +1034,7 @@ char *GetMETATag(char *buf, char *type, char *name, char *contentname)
 			*t = '\0';
 
 			//METAタグの内容がWWWCのMETAがどうかチェックする
-			if(GetTagType(TagContent + 4, type, TagType) == TRUE && lstrcmpi(TagType, name) == 0 &&
+			if(GetTagType(TagContent + 4, type, TagType) == TRUE && _stricmp(TagType, name) == 0 &&
 				GetTagType(TagContent + 4, contentname, content) == TRUE){
 				GlobalFree(TagContent);
 				GlobalFree(TagType);
@@ -1547,7 +1497,7 @@ static int FormatDateConv(char *format, char *buf, SYSTEMTIME *gTime)
 		p++;
 	}
 
-	if(lstrcmpi(tz, "GMT") == 0){
+	if(_stricmp(tz, "GMT") == 0){
 		DateAdd(gTime, TimeZone);
 	}
 	return 0;

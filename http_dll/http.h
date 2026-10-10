@@ -31,6 +31,9 @@
 
 //バッファサイズ (UTF-8 では日本語1文字が3バイト。プラグインと共有する構造体は wwwcdll.h の 256 のまま)
 #define BUFSIZE							1024
+
+//文字列の一致は strcmp / _stricmp (ASCII)。lstrcmp は言語に依存した比較のため使わない
+#include <string.h>
 #define PATH_BUFSIZE					(BUFSIZE + 32)		//DLLのディレクトリ (BUFSIZE 未満) + ファイル名
 #define MAXSIZE							32768
 #define RECVSIZE						32768				/* 受信サイズ */
@@ -54,6 +57,11 @@
 #define OP2_PASS						6
 #define OP2_REFERER						7
 #define OP2_IGNORECERT					8
+
+//プロキシの設定 (wwwc.ini の [PROXY] Proxy と TPHTTP の ProxyMode)
+#define PROXY_NONE						0		//使用しない
+#define PROXY_NAMED						1		//指定したプロキシ (サーバとポート)
+#define PROXY_SYSTEM					2		//Windows のプロキシ設定 (自動構成スクリプトを含む)
 
 //ダークモードのヘッダ・ソース表示の色
 #define VIEW_DARK_BACK					RGB(30, 30, 30)
@@ -81,6 +89,9 @@ struct TPHTTP{
 	char *Path;							/* パス */
 	int Port;							/* ポート番号 */
 
+	int ProxyMode;						/* PROXY_NONE / PROXY_NAMED (SvName:Port) / PROXY_SYSTEM */
+	BOOL ProxyGlobal;					/* プロトコルの設定のプロキシ (キャッシュと認証の設定を使う) */
+
 	char *hSvName;						/* HOSTサーバ名 */
 	int hPort;							/* HOSTポート番号 */
 
@@ -92,20 +103,6 @@ struct TPHTTP{
 
 	char *user;
 	char *pass;
-};
-
-struct TPGETHOSTBYNAME{
-	HWND hWnd;
-	UINT wMsg;
-	char *name;
-	HANDLE hth;
-	BOOL EventFlag;
-};
-
-struct TPHOSTINFO {
-	char *HostName;
-	UINT hash;
-	unsigned long addr;
 };
 
 

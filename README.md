@@ -65,6 +65,14 @@ folder can be changed with the command line option `/d:"folder"`.
   `<user>_sjis_backup` and `settings_sjis_backup`.
 - Clipboard and drag & drop use `CF_UNICODETEXT` and wide `CF_HDROP` lists,
   because other applications read `CF_TEXT` in the system code page.
+- Strings are compared with `strcmp` / `_stricmp` (identifiers, URLs, titles,
+  ASCII names) or `PathCompare` (paths, ordinal and case-insensitive).
+  `lstrcmp` / `lstrcmpi` compare by the user's locale and are used only to
+  sort lists for display.
+- Proxy (HTTP settings): none, the Windows settings (WinHTTP automatic
+  proxy, including configuration scripts), or a given server
+  (`[PROXY] Proxy` = 0 / 2 / 1 in wwwc.ini). A proxy set in the item
+  properties takes precedence.
 - Dark mode: Options > General > Theme (Light / Dark / Follow Windows), stored
   as `[GENERAL] DarkMode` = 0 / 1 / 2 in user.ini. The default is 2 (follow
   Windows). Requires Windows 10 1809 or later.
@@ -182,6 +190,9 @@ WWWC.exe gets the plugin functions with `GetProcAddress` and calls them.
   to plugins and reads from them, including `struct TPITEM`, are UTF-8.
   Plugins that assumed Shift_JIS must be updated. A plugin DLL runs in the
   WWWC process, so `CP_ACP` and the `A` APIs are UTF-8 there as well.
+- WWWC.exe initializes Winsock and forwards `WM_WSOCK_GETHOST` /
+  `WM_WSOCK_SELECT` to `XXX_Gethost` / `XXX_Select` for protocol DLLs that
+  use asynchronous Winsock (the HTTP plugin itself uses WinHTTP).
 - `WM_WWWC_GETINIPATH` takes the buffer size in `wParam` (since 1.3.1); 0
   means 256 bytes, as older plugins assume. The path can be longer than 255
   bytes in UTF-8.

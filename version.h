@@ -13,10 +13,10 @@
 #define WWWC_VERSION_H
 
 #define WWWC_VERSION_MAJOR			1
-#define WWWC_VERSION_MINOR			3
-#define WWWC_VERSION_PATCH			1
+#define WWWC_VERSION_MINOR			4
+#define WWWC_VERSION_PATCH			0
 
-#define WWWC_VERSION_STR			"1.3.1"
-#define WWWC_VERSION_FILE_STR		"1.3.1.0"
+#define WWWC_VERSION_STR			"1.4.0"
+#define WWWC_VERSION_FILE_STR		"1.4.0.0"
 
 #endif

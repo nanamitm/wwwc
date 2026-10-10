@@ -651,7 +651,7 @@ HTREEITEM TreeView_CheckName(HWND hTreeView, HTREEITEM hItem, char *str)
 	cItem = TreeView_GetChild(hTreeView, hItem);
 	while(cItem != NULL){
 		TreeView_GetItemInfo(hTreeView, cItem, buf);
-		if(lstrcmpi(str, buf) == 0){
+		if(PathCompare(str, buf) == 0){
 			return cItem;
 		}
 		cItem = TreeView_GetNextSibling(hTreeView, cItem);

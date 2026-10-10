@@ -29,6 +29,10 @@
 
 #include "../version.h"
 
+//文字列の比較: 識別子・URL・タイトルの一致は strcmp / _stricmp (ASCII)、パスは PathCompare、
+//表示用の並べ替えだけ lstrcmp (言語に依存した比較)
+#include <string.h>
+
 //バッファサイズ。UTF-8 では日本語1文字が3バイトになるため、パス (MAX_PATH 文字) が入る大きさにする
 #define BUFSIZE						1024
 //プラグイン (http_dll/wwwcdll.h) と共有する構造体の文字列の大きさ (変更しないこと)
@@ -544,6 +548,7 @@ char *GetIndexToString(struct TPITEM *tpItemInfo, int Index);
 HANDLE TextMemToUnicode(HANDLE hText);
 char *UnicodeMemToText(HANDLE hMem);
 void CopyDisplayText(char *ret, const char *buf, int size);
+int PathCompare(const char *buf1, const char *buf2);
 
 //--------------------------
 //	File

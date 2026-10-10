@@ -2709,6 +2709,9 @@ static HWND InitInstance(HANDLE hInstance, int nCmdShow)
 	initWinsock
 
 	WinSockの初期化
+	WWWC と HTTP のプロトコル DLL (WinHTTP) は Winsock を使わないが、非同期の
+	Winsock を使うプロトコル DLL のために、初期化と WM_WSOCK_GETHOST /
+	WM_WSOCK_SELECT の転送 (XXX_Gethost / XXX_Select) は残している
 
 ******************************************************************************/
 

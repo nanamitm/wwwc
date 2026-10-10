@@ -18,12 +18,8 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
-#ifdef THGHN
-#include <process.h>
-#endif
 #include <time.h>
 #include <winhttp.h>
 
@@ -60,9 +56,6 @@
 
 static int srcLen;
 
-static struct TPHOSTINFO *tpHostInfo;
-static int HostInfoCnt;
-
 //通信スレッドからの通知
 #define WM_HTTP_DONE				(WM_APP + 1)
 #define NOTIFY_WINDOW_CLASS			"WWWC_HTTP_Notify"
@@ -82,7 +75,6 @@ struct HTTPREQ{
 	struct TPITEM Item;				/* 通信スレッド用のアイテム情報 */
 	struct TPHTTP HTTP;				/* 通信スレッド用の接続情報と受信データ */
 
-	int Proxy;
 	int pNoCache;
 	int pUsePass;
 	char pUser[BUFSIZE];
@@ -110,7 +102,6 @@ extern char pPass[];
 
 extern char BrowserPath[];
 extern int TimeZone;
-extern int HostNoCache;
 
 extern char DateFormat[];
 extern char TimeFormat[];
@@ -674,7 +665,7 @@ static int Head_GetDate(struct TPITEM *tpItemInfo, int CmpOption, BOOL *DateRet)
 	*DateRet = GetHeadContent(tpHTTP->buf, "Last-Modified:", headcontent);
 	if(*DateRet == TRUE){
 		if(CmpOption == 1 && tpItemInfo->DLLData1 != NULL && *tpItemInfo->DLLData1 != '\0' &&
-			lstrcmp(tpItemInfo->DLLData1, headcontent) != 0){
+			strcmp(tpItemInfo->DLLData1, headcontent) != 0){
 			CmpMsg = ST_UP;
 		}
 		if(CmpMsg == ST_UP || CmpOption == 0 || tpItemInfo->DLLData1 == NULL || *tpItemInfo->DLLData1 == '\0'){
@@ -1445,12 +1436,25 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 		px = ItemProxy;
 		pt = atoi(ItemPort);
 
-	}else if(ProxyFlag == 0 && Proxy == 1){
+	}else if(ProxyFlag == 0 && Proxy == PROXY_NAMED){
 		px = pServer;
 		pt = pPort;
 	}
 
-	if((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2){
+	//使用するプロキシ (通信スレッドはこの結果だけを使う)
+	tpHTTP->ProxyMode = PROXY_NONE;
+	tpHTTP->ProxyGlobal = FALSE;
+	if(ProxyFlag == 2){
+		tpHTTP->ProxyMode = PROXY_NAMED;
+	}else if(ProxyFlag == 0 && Proxy == PROXY_NAMED){
+		tpHTTP->ProxyMode = PROXY_NAMED;
+		tpHTTP->ProxyGlobal = TRUE;
+	}else if(ProxyFlag == 0 && Proxy == PROXY_SYSTEM){
+		tpHTTP->ProxyMode = PROXY_SYSTEM;
+		tpHTTP->ProxyGlobal = TRUE;
+	}
+
+	if(tpHTTP->ProxyMode == PROXY_NAMED){
 		//Proxyのサーバ名とポート番号を取得
 		tpHTTP->SvName = (char *)GlobalAlloc(GPTR, lstrlen(px) + 1);
 		if(tpHTTP->SvName == NULL){
@@ -1608,7 +1612,7 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 		if(SvName == NULL) return FALSE;
 		*SvName = '\0';
 		Port = GetURL((*(CheckItemList + i))->CheckURL, SvName, NULL, 80, NULL, NULL);
-		if(Port != -1 && lstrcmp(RealServer, SvName) == 0){
+		if(Port != -1 && strcmp(RealServer, SvName) == 0){
 			HeapFree(GetProcessHeap(), 0, SvName);
 			return TRUE;
 		}
@@ -1706,9 +1710,10 @@ static struct HTTPREQ *CreateRequest(struct TPITEM *tpItemInfo, struct TPHTTP *t
 	req->HTTP.pass = DupString((tpHTTP->pass != NULL) ? tpHTTP->pass : "");
 	req->HTTP.HeadCheckFlag = tpHTTP->HeadCheckFlag;
 	req->HTTP.FilterFlag = tpHTTP->FilterFlag;
+	req->HTTP.ProxyMode = tpHTTP->ProxyMode;
+	req->HTTP.ProxyGlobal = tpHTTP->ProxyGlobal;
 
 	//プロキシの設定 (プロパティで変更されても通信中のリクエストには影響しない)
-	req->Proxy = Proxy;
 	req->pNoCache = pNoCache;
 	req->pUsePass = pUsePass;
 	lstrcpyn(req->pUser, pUser, BUFSIZE);
@@ -1819,19 +1824,21 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	char pass[BUFSIZE];
 	char referer[BUFSIZE];
 	char buf[BUFSIZE];
-	int ProxyFlag;
 	int clen;
 	BOOL ret = FALSE;
 
 	SetLastError(NO_ERROR);
 
-	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
-	if ((ProxyFlag == 0 && req->Proxy == 1) || ProxyFlag == 2) {
+	//プロキシは開始時 (GetServerPort) に決めたもの。以前はアイテムに設定したプロキシが使われていなかった
+	if (tpHTTP->ProxyMode == PROXY_NAMED) {
 		WCHAR wproxy[2048];
 		char proxy[2048];
 		wsprintf(proxy, "http://%.1000s:%d", tpHTTP->SvName, tpHTTP->Port);
 		MultiByteToWideChar(CP_ACP, 0, proxy, -1, wproxy, 2048);
 		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NAMED_PROXY, wproxy, WINHTTP_NO_PROXY_BYPASS, 0);
+	} else if (tpHTTP->ProxyMode == PROXY_SYSTEM) {
+		//Windows のプロキシ設定 (自動検出、自動構成スクリプトを含む)
+		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	} else {
 		hSession = WinHttpOpen(USER_AGENT, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	}
@@ -1894,6 +1901,16 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 			SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
 		WinHttpSetOption(hRequest, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
 	}
+	//Windows のプロキシ設定では直接接続になることもあるため、プロキシの認証情報は
+	//Proxy-Authorization ヘッダではなく WinHTTP に渡す (プロキシにだけ送られる)
+	if (tpHTTP->ProxyMode == PROXY_SYSTEM && req->pUsePass == 1) {
+		WCHAR wuser[BUFSIZE], wpass[BUFSIZE];
+
+		MultiByteToWideChar(CP_ACP, 0, req->pUser, -1, wuser, BUFSIZE);
+		MultiByteToWideChar(CP_ACP, 0, req->pPass, -1, wpass, BUFSIZE);
+		WinHttpSetCredentials(hRequest, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC, wuser, wpass, NULL);
+		SecureZeroMemory(wpass, sizeof(wpass));
+	}
 
 	*user = '\0';
 	*pass = '\0';
@@ -1901,7 +1918,7 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 	if (tpItemInfo->DLLData1 != NULL) {
 		dwSize += lstrlen(tpItemInfo->DLLData1);
 	}
-	if (req->Proxy == 1 && req->pUsePass == 1) {
+	if (tpHTTP->ProxyMode == PROXY_NAMED && tpHTTP->ProxyGlobal == TRUE && req->pUsePass == 1) {
 		dwSize += (lstrlen(req->pUser) + 1 + lstrlen(req->pPass)) * 13 / 10;
 	}
 	if (GetOptionString(tpItemInfo->Option2, referer, OP2_REFERER) == TRUE) {
@@ -1939,11 +1956,11 @@ static BOOL HTTP_Request(struct HTTPREQ *req)
 		s = iStrCpyW(s, tpItemInfo->DLLData1);
 	}
 	//キャッシュ制御
-	if (req->Proxy == 1 && req->pNoCache == 1) {
+	if (tpHTTP->ProxyGlobal == TRUE && req->pNoCache == 1) {
 		s = iStrCpyW(s, "\r\nPragma: no-cache\r\nCache-Control: no-cache");
 	}
 	//プロキシ認証
-	if (req->Proxy == 1 && req->pUsePass == 1) {
+	if (tpHTTP->ProxyMode == PROXY_NAMED && tpHTTP->ProxyGlobal == TRUE && req->pUsePass == 1) {
 		wsprintf(BaseStr1, "%s:%s", req->pUser, req->pPass);
 		eBase(BaseStr1, BaseStr2);
 
@@ -2577,7 +2594,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 	char URL[MAXSIZE];
 	char *p, *r;
 
-	if(lstrcmpi(FileType,"url") == 0){
+	if(_stricmp(FileType,"url") == 0){
 		GetPrivateProfileString("InternetShortcut", "URL", "", URL, MAXSIZE - 1, FilePath);
 
 		for(r = p = FilePath; *p != '\0'; p++){
@@ -2595,7 +2612,7 @@ __declspec(dllexport) int CALLBACK HTTP_DropFile(HWND hWnd, char *FileType, char
 			lstrcpy(tpItemInfo->Title, r);
 		}
 		if(lstrlen(tpItemInfo->Title) > 4){
-			if(lstrcmpi((tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4), ".url") == 0){
+			if(_stricmp((tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4), ".url") == 0){
 				*(tpItemInfo->Title + lstrlen(tpItemInfo->Title) - 4) = '\0';
 			}
 		}
@@ -2626,7 +2643,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 	char *p = NULL;
 	int rc = -1;
 
-	if(lstrcmp(Action, "open") == 0){
+	if(strcmp(Action, "open") == 0){
 		//開く
 		if(tpItemInfo->ViewURL != NULL){
 			p = tpItemInfo->ViewURL;
@@ -2640,7 +2657,7 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		}
 		rc = ExecItem(hWnd, p, NULL);
 
-	}else if(lstrcmp(Action, "checkopen") == 0){
+	}else if(strcmp(Action, "checkopen") == 0){
 		//チェックするURLで開く
 		if(tpItemInfo->CheckURL != NULL){
 			p = tpItemInfo->CheckURL;
@@ -2651,17 +2668,17 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 		}
 		rc = ExecItem(hWnd, p, NULL);
 
-	}else if(lstrcmp(Action, "header") == 0){
+	}else if(strcmp(Action, "header") == 0){
 		//ヘッダ表示
 		tpItemInfo->Param3 = 1;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
-	}else if(lstrcmp(Action, "source") == 0){
+	}else if(strcmp(Action, "source") == 0){
 		//ソース表示
 		tpItemInfo->Param3 = 2;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
 
-	}else if(lstrcmp(Action, "gettitle") == 0){
+	}else if(strcmp(Action, "gettitle") == 0){
 		//タイトル取得
 		tpItemInfo->Param3 = 3;
 		SendMessage(hWnd, WM_ITEMCHECK, 0, (LPARAM)tpItemInfo);
@@ -2682,10 +2699,6 @@ __declspec(dllexport) int CALLBACK HTTP_ExecItem(HWND hWnd, char *Action, struct
 __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 {
 	int i = 0;
-
-#ifdef THGHN
-	CreateEvent(NULL, TRUE, TRUE, "GHBN_EVENT");
-#endif
 
 	lstrcpy(tpInfo->Scheme, "http://\thttps://");
 	lstrcpy(tpInfo->NewMenu, STR_GETINFO_HTTP_NEWMENU);
@@ -2742,32 +2755,12 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 __declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
 {
-#ifdef THGHN
-	HANDLE hEvent;
-#endif
 	int i;
 
 	for(i = 0; i < 100; i++){
 		if(hWndList[i] != NULL){
 			SendMessage(hWndList[i], WM_CLOSE, 0, 0);
 		}
-	}
-
-#ifdef THGHN
-	hEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "GHBN_EVENT");
-	if(hEvent != NULL){
-		CloseHandle(hEvent);
-	}
-#endif
-
-	if(tpHostInfo != NULL){
-		for(i = 0; i < HostInfoCnt; i++){
-			if((tpHostInfo + i)->HostName != NULL){
-				LocalFree((tpHostInfo + i)->HostName);
-			}
-		}
-		LocalFree(tpHostInfo);
-		tpHostInfo = NULL;
 	}
 
 	FreeFilter();

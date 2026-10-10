@@ -18,7 +18,6 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
 
@@ -58,7 +57,6 @@ char pPass[BUFSIZE];
 
 char BrowserPath[BUFSIZE];
 int TimeZone;
-int HostNoCache;
 
 char DateFormat[BUFSIZE];
 char TimeFormat[BUFSIZE];
@@ -98,14 +96,11 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	GetPrivateProfileString("FORMAT", "DateFormat", "yyyy/MM/dd", DateFormat, BUFSIZE - 1, app_path);
 	GetPrivateProfileString("FORMAT", "TimeFormat", "HH:mm", TimeFormat, BUFSIZE - 1, app_path);
 	TimeZone = GetPrivateProfileInt("HTTP", "TimeZone", 9, app_path);
-	HostNoCache = GetPrivateProfileInt("HTTP", "HostNoCache", 0, app_path);
 
 	WritePrivateProfileString("FORMAT", "DateFormat", DateFormat, app_path);
 	WritePrivateProfileString("FORMAT", "TimeFormat", TimeFormat, app_path);
 	wsprintf(buf, "%ld", TimeZone);
 	WritePrivateProfileString("HTTP", "TimeZone", buf, app_path);
-	wsprintf(buf, "%ld", HostNoCache);
-	WritePrivateProfileString("HTTP", "HostNoCache", buf, app_path);
 
 	CheckType = GetPrivateProfileInt("CHECK", "CheckType", 0, app_path);
 	TimeOut = GetPrivateProfileInt("CHECK", "TimeOut", 60, app_path);

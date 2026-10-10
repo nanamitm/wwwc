@@ -166,8 +166,8 @@ struct TPITEM *GetMainItem(HWND hWnd, struct TPTREE *tpTreeInfo, struct TPITEM *
 		if(tpItemInfo == NULL){
 			continue;
 		}
-		if(lstrcmp(tpItemInfo->Title, SelItemInfo->Title) == 0 &&
-			lstrcmp(tpItemInfo->CheckURL, SelItemInfo->CheckURL) == 0){
+		if(strcmp(tpItemInfo->Title, SelItemInfo->Title) == 0 &&
+			strcmp(tpItemInfo->CheckURL, SelItemInfo->CheckURL) == 0){
 			return *(tpTreeInfo->ItemList + i);
 		}
 	}
@@ -219,7 +219,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 	int i;
 
 	ProtocolIndex = GetProtocolIndex(tpItemInfo->CheckURL);
-	if(StrAction == NULL || (ProtocolIndex == -1 && lstrcmpi(StrAction, "open") == 0)){
+	if(StrAction == NULL || (ProtocolIndex == -1 && _stricmp(StrAction, "open") == 0)){
 		//関連付けで実行
 		p = tpItemInfo->ViewURL;
 		if(p == NULL || *p == '\0'){
@@ -236,7 +236,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 		}
 		//Actionの検索
 		for(i = 0; i < tpProtocol[ProtocolIndex].tpMenuCnt; i++){
-			if(lstrcmpi(tpProtocol[ProtocolIndex].tpMenu[i].Action, StrAction) == 0){
+			if(_stricmp(tpProtocol[ProtocolIndex].tpMenu[i].Action, StrAction) == 0){
 				break;
 			}
 		}
@@ -349,7 +349,7 @@ BOOL Item_DefaultOpen(HWND hWnd, struct TPITEM *tpItemInfo)
 	for(j = 0; j < ToolListCnt; j++){
 		if((ToolList[j].Action & TOOL_EXEC_ITEMMENU) == 0 ||
 			strlistcmp(tpProtocol[ProtocolIndex].title, ToolList[j].Protocol, ',') == FALSE ||
-			lstrcmp(ToolList[j].title, "-") == 0){
+			strcmp(ToolList[j].title, "-") == 0){
 			continue;
 		}
 		if((ToolList[j].Action & TOOL_EXEC_MENUDEFAULT) != 0){
@@ -375,7 +375,7 @@ BOOL Item_DefaultOpen(HWND hWnd, struct TPITEM *tpItemInfo)
 		return FALSE;
 	}
 	for(i = 0; i < pMenuCnt; i++){
-		if(lstrcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
+		if(strcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
 			continue;
 		}
 		if(tpProtocol[ProtocolIndex].tpMenu[i].Default == TRUE){
@@ -581,13 +581,13 @@ BOOL Item_Select(HWND hWnd, HTREEITEM hItem)
 			//タイトルの比較
 			p = ((*(tpTreeInfo->ItemList + i))->Title == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->Title;
 			r = ((*(tpTmpItemList + j))->Title == NULL) ? "" : (*(tpTmpItemList + j))->Title;
-			if(lstrcmp(p, r) != 0){
+			if(strcmp(p, r) != 0){
 				continue;
 			}
 			//URLの比較
 			p = ((*(tpTreeInfo->ItemList + i))->CheckURL == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->CheckURL;
 			r = ((*(tpTmpItemList + j))->CheckURL == NULL) ? "" : (*(tpTmpItemList + j))->CheckURL;
-			if(lstrcmp(p, r) != 0){
+			if(strcmp(p, r) != 0){
 				continue;
 			}
 
@@ -931,14 +931,14 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 		//タイトルの比較
 		p = ((*(tpTreeInfo->ItemList + i))->Title == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->Title;
 		r = (NewItemInfo->Title == NULL) ? "" : NewItemInfo->Title;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			*(tpItemList + i) = *(tpTreeInfo->ItemList + i);
 			continue;
 		}
 		//URLの比較
 		p = ((*(tpTreeInfo->ItemList + i))->CheckURL == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->CheckURL;
 		r = (NewItemInfo->CheckURL == NULL) ? "" : NewItemInfo->CheckURL;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			*(tpItemList + i) = *(tpTreeInfo->ItemList + i);
 			continue;
 		}

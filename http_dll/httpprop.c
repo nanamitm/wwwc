@@ -358,7 +358,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 				buf = GlobalAlloc(GPTR, len + 1);
 				if(buf != NULL){
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)buf);
-					if(lstrcmp(tpItemInfo->CheckURL, buf) != 0){
+					if(strcmp(tpItemInfo->CheckURL, buf) != 0){
 						if(tpItemInfo->Size != NULL){
 							GlobalFree(tpItemInfo->Size);
 							tpItemInfo->Size = NULL;
@@ -832,11 +832,25 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 ******************************************************************************/
 
+//プロキシの選択に合わせてコントロールを有効にする
+static void EnableProxyControls(HWND hDlg)
+{
+	BOOL named = (IsDlgButtonChecked(hDlg, IDC_RADIO_USEPROXY) == BST_CHECKED) ? TRUE : FALSE;
+	BOOL any = (named == TRUE || IsDlgButtonChecked(hDlg, IDC_RADIO_SYSPROXY) == BST_CHECKED) ? TRUE : FALSE;
+	BOOL pass = (any == TRUE && IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == BST_CHECKED) ? TRUE : FALSE;
+
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), named);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), named);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), any);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), any);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), pass);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), pass);
+}
+
 static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char encpass[PASS_ENC_SIZE];
 	char buf[BUFSIZE];
-	BOOL EnableFlag;
 
 	switch (uMsg)
 	{
@@ -846,13 +860,8 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 		CheckDlgButton(hDlg, IDC_CHECK_REQGET, CheckType);
 
-		CheckDlgButton(hDlg, IDC_CHECK_PROXY, Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), Proxy);
+		CheckDlgButton(hDlg, (Proxy == PROXY_NAMED) ? IDC_RADIO_USEPROXY :
+			((Proxy == PROXY_SYSTEM) ? IDC_RADIO_SYSPROXY : IDC_RADIO_NOPROXY), BST_CHECKED);
 
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PSERVER), WM_SETTEXT, 0, (LPARAM)pServer);
 		wsprintf(buf,"%ld", pPort);
@@ -864,10 +873,7 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_SETTEXT, 0, (LPARAM)pUser);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_SETTEXT, 0, (LPARAM)pPass);
 
-		if(IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 0){
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), FALSE);
-		}
+		EnableProxyControls(hDlg);
 		break;
 
 	case WM_NOTIFY:
@@ -876,35 +882,11 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 	case WM_COMMAND:
 		switch(wParam)
 		{
-		case IDC_CHECK_PROXY:
-			if(IsDlgButtonChecked(hDlg, IDC_CHECK_PROXY) == 1){
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), TRUE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), TRUE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), TRUE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS),TRUE);
-				if(IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 1){
-					EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), TRUE);
-					EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), TRUE);
-				}
-			}else{
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), FALSE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), FALSE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), FALSE);
-			}
-			break;
-
+		case IDC_RADIO_NOPROXY:
+		case IDC_RADIO_SYSPROXY:
+		case IDC_RADIO_USEPROXY:
 		case IDC_CHECK_USEPASS:
-			EnableFlag = (IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 1) ? TRUE : FALSE;
-
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), EnableFlag);
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), EnableFlag);
+			EnableProxyControls(hDlg);
 			break;
 
 		case IDOK:
@@ -912,7 +894,8 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 			TimeOut = atoi(buf);
 			CheckType = IsDlgButtonChecked(hDlg, IDC_CHECK_REQGET);
 
-			Proxy = IsDlgButtonChecked(hDlg, IDC_CHECK_PROXY);
+			Proxy = (IsDlgButtonChecked(hDlg, IDC_RADIO_USEPROXY) == BST_CHECKED) ? PROXY_NAMED :
+				((IsDlgButtonChecked(hDlg, IDC_RADIO_SYSPROXY) == BST_CHECKED) ? PROXY_SYSTEM : PROXY_NONE);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PSERVER), WM_GETTEXT, BUFSIZE - 1, (LPARAM)pServer);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PPORT), WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 			pPort = atoi(buf);

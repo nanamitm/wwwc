@@ -1015,7 +1015,7 @@ INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case ID_MENUITEM_ALLSELECT:
 			//フォーカスの持つボタンを選択
 			GetClassName(GetFocus(), buf, BUFSIZE - 1);
-			if(lstrcmpi(buf, "edit") == 0){
+			if(_stricmp(buf, "edit") == 0){
 				SendMessage(GetFocus(), EM_SETSEL, 0, -1);
 			}else{
 				SetFocus(GetDlgItem(hDlg, WWWC_LIST));
