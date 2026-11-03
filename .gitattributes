@@ -1,4 +1,4 @@
-# Sources (.c/.h/.rc) and docs/ are UTF-8 without BOM. Normalize EOL to CRLF.
+# Sources and manuals are UTF-8 (C/H retain the upstream BOM). Normalize EOL to CRLF.
 *.c       text eol=crlf
 *.h       text eol=crlf
 *.rc      text eol=crlf

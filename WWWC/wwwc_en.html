@@ -417,11 +417,12 @@ footer p { margin: 0 0 4px; }
 
 		<article id="install">
 			<h3>Installation</h3>
-			<p>WWWC runs on Windows 7, 8, 8.1, 10 and 11.</p>
+			<p>This fork requires Windows 10 version 1903 or later, or Windows 11.</p>
 			<p>Run the installer (wwwc<strong>version</strong>.exe), choose the destination folder and where to create shortcuts, and install.
 			The installer runs as administrator. The default destination is the "WWWC" folder under "Program Files".</p>
-			<p>The settings and the items are saved in "%LOCALAPPDATA%\WWWC" (usually C:\Users\<i>user name</i>\AppData\Local\WWWC).
-			When WWWC starts for the first time, a folder with your user name is created in this folder, and the settings of each user are saved there.</p>
+			<p>For compatibility, WWWC first searches the folder containing WWWC.exe for existing general.ini, wwwc.ini, filter.txt or a user data folder, and continues using that folder if found.
+			Updating WWWC in its old folder does not require copying data to LocalAppData. A fresh installed copy uses "%LOCALAPPDATA%\WWWC".
+			ZIP copies (no wwwc_app.ini, or portable=1) remain portable. The shortcut working directory does not affect this choice. The /d: override remains available.</p>
 			<p>To uninstall WWWC, use "Programs and Features" in the Control Panel ("Apps" in Settings). The uninstaller asks whether to delete the settings and the items.</p>
 			<p>WWWC is displayed in English if the display language of Windows is not Japanese.</p>
 			<p>WWWC requires an Internet connection.</p>
@@ -493,7 +494,7 @@ footer p { margin: 0 0 4px; }
 			If you turn on "Do not show the window at startup", the window is not shown at startup and only the icon in the task tray is shown.</p>
 			<p>In "When Items Are Updated", if you turn on "Show a message", the update message is displayed when a check finishes and there are updated items.
 			If you turn on "Play a sound", a sound is played when a check finishes and there are updated items. You can also choose the sound to play.</p>
-			<p>For more detailed display and behavior settings, edit "user.ini" in the user folder (the folder with the name of the user signed in to Windows) in the folder where the settings are saved (%LOCALAPPDATA%\WWWC).
+			<p>For more detailed display and behavior settings, edit "user.ini" in the user folder (the folder with the name of the user signed in to Windows) in the folder where the settings are saved (beside WWWC.exe when existing data is found; otherwise %LOCALAPPDATA%\WWWC for installed copies).
 			See "<a href="ini_sample.txt">ini_sample.txt</a>" (Japanese) for the settings. Exit WWWC before you edit the file.</p>
 		</article>
 
@@ -542,7 +543,7 @@ footer p { margin: 0 0 4px; }
 			<p>However, some web pages are created dynamically by CGI, SSI and so on, and the update information cannot be obtained.
 			In this case, WWWC sends a "GET" request, which gets the whole page, and checks for updates by the size of the page.</p>
 			<div class="callout"><p>Checking pages that are created dynamically by CGI, SSI and so on puts load on the servers. If you do not need to check them, set them to "Do Not Check".</p></div>
-			<p>If you need to check such a page but the size changes every time, create "filter.txt" in the folder where the settings are saved (%LOCALAPPDATA%\WWWC) with reference to "<a href="filter_sample.txt">filter_sample.txt</a>" (Japanese).
+			<p>If you need to check such a page but the size changes every time, create "filter.txt" in the folder where the settings are saved (beside WWWC.exe when existing data is found; otherwise %LOCALAPPDATA%\WWWC for installed copies) with reference to "<a href="filter_sample.txt">filter_sample.txt</a>" (Japanese).
 			You can remove the parts of the page that change every time, or extract the part with new information, to check the page reliably.</p>
 			<dl>
 				<dt>"Check by modified date"</dt>

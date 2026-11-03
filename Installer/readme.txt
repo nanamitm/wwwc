@@ -102,7 +102,8 @@ general.ini、wwwc.dll の wwwc.ini と filter.txt、アーカイブ) を保存�
   portable=0
 
 WWWC と wwwc.dll は実行ファイルと同じフォルダの wwwc_app.ini で portable=0 が
-指定されている場合、データを %LOCALAPPDATA%\WWWC に保存します。wwwc_app.ini が
+指定されていても、実行ファイルのフォルダに既存の設定またはユーザデータがある場合は
+互換性のためそちらを優先します。無い場合だけ %LOCALAPPDATA%\WWWC に保存します。wwwc_app.ini が
 無い場合 (ZIP で配布したファイルを任意のフォルダに置いて使う場合) は従来どおり
 実行ファイルと同じフォルダに保存します。
 

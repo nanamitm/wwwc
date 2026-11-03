@@ -1,4 +1,4 @@
-WWWC Ver 1.2.0
+WWWC Ver 1.5.2 (modified fork of nakkag/WWWC)
 ------------------------
 
 * Introduction
@@ -22,10 +22,16 @@ Files
 
 * Installation
 
-Run the installer (wwwc120.exe). The installer runs as administrator and
+Run the installer. The installer runs as administrator and
 installs WWWC in the WWWC folder under Program Files by default.
 
-The settings and the items are saved in %LOCALAPPDATA%\WWWC.
+At startup, WWWC first checks the folder containing WWWC.exe for existing
+general.ini, wwwc.ini, filter.txt, or a user data folder. If found, those
+settings and items continue to be used, even with portable=0. Updating the
+executable in an old installation needs no manual copy to LocalAppData.
+A fresh installed copy uses %LOCALAPPDATA%\WWWC. ZIP distributions (no
+wwwc_app.ini, or portable=1) remain portable. The shortcut working directory
+does not affect this lookup. The /d: data directory override remains available.
 To uninstall WWWC, use "Programs and Features" in the Control Panel
 ("Apps" in Settings).
 

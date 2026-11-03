@@ -1,4 +1,4 @@
-﻿#Requires -Version 5.1
+#Requires -Version 5.1
 <#
 .SYNOPSIS
 	インストーラのビルドに必要なファイルを準備します。
@@ -44,14 +44,14 @@ function Get-WwwcVersion([string]$specified) {
 			throw "バージョンの指定が正しくありません (例: 1.2.0): $specified"
 		}
 	} else {
-		$rcPath = Join-Path $RootDir "WWWC\WWWC.rc"
+		$rcPath = Join-Path $RootDir "version.h"
 		if (-not (Test-Path $rcPath)) {
 			throw "WWWC.rc が見つかりません: $rcPath"
 		}
 		$rcText = Get-Content -Path $rcPath -Raw -Encoding UTF8
-		$m = [regex]::Match($rcText, 'FILEVERSION\s+(\d+)\s*,\s*(\d+)\s*,\s*(\d+)')
+		$m = [regex]::Match($rcText, 'WWWC_VERSION_STR\s+"(\d+)\.(\d+)\.(\d+)"')
 		if (-not $m.Success) {
-			throw "WWWC.rc から FILEVERSION を取得できませんでした。"
+			throw "version.h から WWWC_VERSION_STR を取得できませんでした。"
 		}
 	}
 	$major = [int]$m.Groups[1].Value
