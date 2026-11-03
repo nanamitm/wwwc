@@ -1,4 +1,4 @@
-/*
+﻿/*
  * WWWC
  *
  * Profile.h

@@ -152,8 +152,8 @@ BOOL AddUpItem(struct TPITEM *NewItemInfo)
 		}
 		//既に同じアイテムが存在している場合は上書きを行う
 		if((*(UpItemList + i))->hItem == NewItemInfo->hItem &&
-			lstrcmp((*(UpItemList + i))->Title, NewItemInfo->Title) == 0 &&
-			lstrcmp((*(UpItemList + i))->CheckURL, NewItemInfo->CheckURL) == 0){
+			strcmp((*(UpItemList + i))->Title, NewItemInfo->Title) == 0 &&
+			strcmp((*(UpItemList + i))->CheckURL, NewItemInfo->CheckURL) == 0){
 
 			FreeItemInfo(*(UpItemList + i), FALSE);
 			GlobalFree(*(UpItemList + i));
@@ -212,8 +212,8 @@ static BOOL CopyUPItem(void)
 			}
 			//既に同じアイテムが存在している場合は上書きを行う
 			if((*(ViewUpItemList + i))->hItem == (*(UpItemList + j))->hItem &&
-				lstrcmp((*(ViewUpItemList + i))->Title, (*(UpItemList + j))->Title) == 0 &&
-				lstrcmp((*(ViewUpItemList + i))->CheckURL, (*(UpItemList + j))->CheckURL) == 0){
+				strcmp((*(ViewUpItemList + i))->Title, (*(UpItemList + j))->Title) == 0 &&
+				strcmp((*(ViewUpItemList + i))->CheckURL, (*(UpItemList + j))->CheckURL) == 0){
 
 				FreeItemInfo(*(ViewUpItemList + i), FALSE);
 				GlobalFree(*(ViewUpItemList + i));
@@ -304,13 +304,14 @@ static BOOL ListView_UpGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 			if(IsTreeItem(WWWCWnd, tpItemInfo->hItem) == TRUE){
 				TreeView_GetItemInfo(GetDlgItem(WWWCWnd, WWWC_TREE), RootItem, tmp1);
 				wsprintf(tmp2, "\\\\%s", tmp1);
-				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, lvItem->pszText, tmp2);
+				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, tmp1, tmp2);
+				CopyDisplayText(lvItem->pszText, tmp1, lvItem->cchTextMax);
 			}
 
-		}else if((char *)*((long *)((long)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)) != NULL){
+		}else if(*((char **)((char *)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)) != NULL){
 			//アイテム情報とカラム情報からテキストを設定
-			lstrcpyn(lvItem->pszText,
-				(char *)*((long *)((long)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
+			CopyDisplayText(lvItem->pszText,
+				*((char **)((char *)tpItemInfo + (upColumnInfo + lvItem->iSubItem)->p)), lvItem->cchTextMax);
 
 		}else{
 			*(lvItem->pszText) = '\0';
@@ -383,8 +384,8 @@ BOOL SetSubItemClipboardData(HWND hWnd)
 
 	//フォルダのパス
 	hMemText = Clipboard_Set_TEXT(hWnd, NULL);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 	CloseClipboard();
 	return TRUE;
@@ -422,7 +423,7 @@ void StartDragSubItem(HWND hWnd)
 
 	//クリップボードフォーマットの設定
 	cf[0] = WWWC_ClipFormat;
-	cf[1] = CF_TEXT;
+	cf[1] = CF_UNICODETEXT;
 	cf[2] = CF_HDROP;
 	cfcnt = (NoFileFlag == FALSE) ? CLIPFORMAT_CNT : CLIPFORMAT_CNT - 1;
 
@@ -460,7 +461,7 @@ void StartDragSubItem(HWND hWnd)
 			break;
 		}
 		RefreshListView(hWnd);
-		CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 	}
 }
 
@@ -550,8 +551,8 @@ BOOL FindInitSubIcon(HWND hDlg, struct TPITEM *tpItemInfo)
 			continue;
 		}
 		if(tpItemInfo == TmpItemInfo || (tpItemInfo->hItem == TmpItemInfo->hItem &&
-			lstrcmp(tpItemInfo->Title, TmpItemInfo->Title) == 0 &&
-			lstrcmp(tpItemInfo->CheckURL, TmpItemInfo->CheckURL) == 0)){
+			strcmp(tpItemInfo->Title, TmpItemInfo->Title) == 0 &&
+			strcmp(tpItemInfo->CheckURL, TmpItemInfo->CheckURL) == 0)){
 			InitSubIcon(hDlg, i);
 			return TRUE;
 		}
@@ -827,7 +828,7 @@ static void CloseUpMessage(HWND hDlg)
 
 	//リストビューのカラムのサイズを取得
 	for(i = 0; i < LvUPColCnt; i++){
-		LvUPColSize[i] = ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i);
+		LvUPColSize[i] = DpiUnscaleFor(GetDlgItem(hDlg, WWWC_LIST), ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i));
 	}
 
 	FreeViewUpItemList();
@@ -910,7 +911,7 @@ static void ShowUpMessage(HWND hDlg)
 		}
 		ListView_InsertItemEx(GetDlgItem(hDlg, WWWC_LIST),
 			(char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-			(long)*(ViewUpItemList + i), -1);
+			(LPARAM)*(ViewUpItemList + i), -1);
 		UpItemCnt++;
 	}
 
@@ -1056,7 +1057,7 @@ static void SetUpMessageControls(HWND hDlg)
 
 	//ウィンドウの高さ設定
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(strcmp(buf, BTN_UPINFO_OFF) == 0){
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_MSG), (LPRECT)&StRect);
 		GetWindowRect(GetDlgItem(hDlg, IDC_STATIC_BANNER), (LPRECT)&BnRect);
 		BnSize = (BnRect.bottom - BnRect.top < 32) ? 32 : BnRect.bottom - BnRect.top;
@@ -1104,7 +1105,7 @@ static void SizeUpMessage(HWND hDlg, WPARAM wParam)
 		return;
 	}
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && strcmp(buf, BTN_UPINFO_OFF) == 0){
 		//詳細表示で元のサイズに戻った場合
 		MaxWndFlag = FALSE;
 		GetWindowRect(hDlg, (LPRECT)&WindowRect);
@@ -1117,7 +1118,7 @@ static void SizeUpMessage(HWND hDlg, WPARAM wParam)
 			lvRect.bottom - WindowRect.top + GetSystemMetrics(SM_CYSIZEFRAME),
 			SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOMOVE);
 
-	}else if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && lstrcmp(buf, BTN_UPINFO_ON) == 0){
+	}else if(wParam == SIZE_RESTORED && MaxWndFlag == TRUE && strcmp(buf, BTN_UPINFO_ON) == 0){
 		//詳細非表示で元のサイズに戻った場合
 		MaxWndFlag = FALSE;
 		GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);
@@ -1149,7 +1150,7 @@ void RefreshListView(HWND hDlg)
 	UpdateWindow(GetDlgItem(WWWCWnd, WWWC_LIST));
 	InvalidateRect(GetDlgItem(hDlg, WWWC_LIST), NULL, FALSE);
 	UpdateWindow(GetDlgItem(hDlg, WWWC_LIST));
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 
 	ListView_RefreshItem(GetDlgItem(WWWCWnd, WWWC_LIST));
 	ListView_RefreshItem(GetDlgItem(hDlg, WWWC_LIST));
@@ -1176,7 +1177,7 @@ static void ViewUpInfo(HWND hDlg)
 	GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);	//リストビューのサイズ
 
 	GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-	if(lstrcmp(buf, BTN_UPINFO_OFF) == 0){
+	if(strcmp(buf, BTN_UPINFO_OFF) == 0){
 		//詳細を隠す
 		SetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), BTN_UPINFO_ON);
 		ShowWindow(GetDlgItem(hDlg, WWWC_LIST), SW_HIDE);
@@ -1260,7 +1261,7 @@ void ExeAction(HWND hDlg, WPARAM wParam)
 	}
 	//アイテム情報の解放
 	GlobalFree(ToolItemList);
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(WWWCWnd, RootItem, TreeView_FreeItem, 1);
 
 	//表示の更新
 	RefreshListView(hDlg);
@@ -1278,7 +1279,7 @@ void ExeAction(HWND hDlg, WPARAM wParam)
 
 static void SetBannerSubClass(HWND hWnd)
 {
-	BannerWindowProcedure = (WNDPROC)SetWindowLong(hWnd, GWL_WNDPROC, (long)SubClassBannerProc);
+	BannerWindowProcedure = (WNDPROC)SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)SubClassBannerProc);
 }
 
 
@@ -1292,7 +1293,7 @@ static void SetBannerSubClass(HWND hWnd)
 
 static void DelBannerSubClass(HWND hWnd)
 {
-	SetWindowLong(hWnd, GWL_WNDPROC, (long)BannerWindowProcedure);
+	SetWindowLongPtr(hWnd, GWLP_WNDPROC, (LONG_PTR)BannerWindowProcedure);
 	BannerWindowProcedure = NULL;
 }
 
@@ -1325,7 +1326,7 @@ static LRESULT CALLBACK SubClassBannerProc(HWND hWnd, UINT msg, WPARAM wParam,LP
 
 ******************************************************************************/
 
-BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	RECT WindowRect, lvRect;
 	char buf[BUFSIZE];
@@ -1374,7 +1375,7 @@ BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	case WM_SIZING:
 		//詳細が隠されている場合はサイズを制限
 		GetWindowText(GetDlgItem(hDlg, IDC_BUTTON_INFO), buf, BUFSIZE - 1);
-		if(lstrcmp(buf, BTN_UPINFO_ON) == 0){
+		if(strcmp(buf, BTN_UPINFO_ON) == 0){
 			GetWindowRect(GetDlgItem(hDlg, WWWC_LIST), (LPRECT)&lvRect);
 			((LPRECT)lParam)->bottom = lvRect.top + GetSystemMetrics(SM_CYSIZEFRAME);
 		}
@@ -1601,7 +1602,7 @@ BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	//リストビューアイテムの初期化
 	case WM_LV_INITICON:
-		InitSubIcon(hDlg, wParam);
+		InitSubIcon(hDlg, (int)wParam);
 		RefreshListView(hDlg);
 		break;
 
@@ -1617,8 +1618,8 @@ BOOL CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:	//テキスト
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hDlg, NULL);
+		case CF_UNICODETEXT:	//テキスト
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hDlg, NULL));
 			break;
 
 		case CF_HDROP:	//ドロップファイル

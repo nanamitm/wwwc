@@ -102,7 +102,7 @@ static void TreeView_SetHistory(HTREEITEM NewItem);
 
 ******************************************************************************/
 
-void CallTreeItem(HWND hWnd, HTREEITEM hItem, FARPROC Func, long Param)
+void CallTreeItem(HWND hWnd, HTREEITEM hItem, TREEITEM_FUNC Func, LPARAM Param)
 {
 	HTREEITEM cItem;
 
@@ -136,19 +136,19 @@ HWND CreateTreeView(HWND hWnd)
 
 /******************************************************************************
 
-	TreeView_Initialize
+	TreeView_CreateImageList
 
-	ツリービューの初期化
+	ツリービューのイメージリストの作成 (DPI が変わったときも作り直す)
 
 ******************************************************************************/
 
-void TreeView_Initialize(HWND hWnd)
+void TreeView_CreateImageList(HWND hWnd)
 {
 	HIMAGELIST IconList;
 	HIMAGELIST TmpIconList;
 	HICON TmpIcon;
 
-	IconList = ImageList_Create(TvIconSize, TvIconSize, ILC_COLOR16 | ILC_MASK, 0, 0);
+	IconList = ImageList_Create(TvIconSize, TvIconSize, ILC_COLOR32 | ILC_MASK, 0, 0);
 	if(*TvBkColor != '\0'){
 		ImageList_SetBkColor(IconList, strtol(TvBkColor, NULL, 0));
 	}else{
@@ -219,7 +219,25 @@ void TreeView_Initialize(HWND hWnd)
 	DestroyIcon(TmpIcon);
 	ImageList_Destroy((void *)TmpIconList);
 
-	TreeView_SetImageList(GetDlgItem(hWnd, WWWC_TREE), IconList, TVSIL_NORMAL);
+	IconList = TreeView_SetImageList(GetDlgItem(hWnd, WWWC_TREE), IconList, TVSIL_NORMAL);
+	if(IconList != NULL){
+		//作り直した場合は前のイメージリストを解放する
+		ImageList_Destroy(IconList);
+	}
+}
+
+
+/******************************************************************************
+
+	TreeView_Initialize
+
+	ツリービューの初期化 (アイコンとルート、ごみ箱、フォルダ)
+
+******************************************************************************/
+
+void TreeView_Initialize(HWND hWnd)
+{
+	TreeView_CreateImageList(hWnd);
 
 	//ルートアイテム
 	RootItem = TreeView_AllocItem(GetDlgItem(hWnd, WWWC_TREE), (HTREEITEM)TVI_ROOT,
@@ -300,7 +318,7 @@ HTREEITEM TreeView_AllocItem(HWND hTreeView, HTREEITEM pItem, HTREEITEM After, c
 	NewItem = TreeView_SetNewItem(hTreeView, Title, pItem, Icon, IconSel, (HTREEITEM)After);
 
 	//ツリービューアイテムのlParamにツリー情報のアドレスをいれる
-	TreeView_SetlParam(hTreeView, NewItem, (long)tpTreeInfo);
+	TreeView_SetlParam(hTreeView, NewItem, (LPARAM)tpTreeInfo);
 
 	return NewItem;
 }
@@ -353,7 +371,7 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 
 	if(SucceedFromParent == 1){
 		//親情報の継承
-		CopyAutoTime(hWnd, hItem, (long)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE),
+		CopyAutoTime(hWnd, hItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE),
 			TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))));
 	}
 
@@ -391,7 +409,7 @@ BOOL TreeView_NewFolderItem(HWND hWnd)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;
@@ -450,7 +468,7 @@ void CALLBACK TreeView_FreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -489,7 +507,7 @@ void CALLBACK TreeView_FreeTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
 
 	//ツリー情報の解放
 	GlobalFree(tpTreeInfo);
-	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem, (long)NULL);
+	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem, (LPARAM)NULL);
 }
 
 
@@ -512,7 +530,7 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 	RemoveDirectory(buf);
 
 	//フォルダの削除
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeTreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeTreeItem, 1);
 	pItem = TreeView_GetParent(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	TreeView_SetIconState(hWnd, pItem, 0);
@@ -527,7 +545,7 @@ void TreeView_DeleteTreeInfo(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_AllExpand(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -622,7 +640,7 @@ HTREEITEM TreeView_FindItemPath(HWND hTreeView, HTREEITEM hItem, char *path)
 
 ******************************************************************************/
 
-void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK FindTreeItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	HTREEITEM pItem;
 
@@ -637,7 +655,7 @@ BOOL IsTreeItem(HWND hWnd, HTREEITEM hItem)
 	HTREEITEM RetItem;
 
 	RetItem = hItem;
-	CallTreeItem(WWWCWnd, RootItem, (FARPROC)FindTreeItem, (long)&RetItem);
+	CallTreeItem(WWWCWnd, RootItem, FindTreeItem, (LPARAM)&RetItem);
 	if(RetItem != NULL){
 		return FALSE;
 	}
@@ -661,7 +679,7 @@ HTREEITEM TreeView_CheckName(HWND hTreeView, HTREEITEM hItem, char *str)
 	cItem = TreeView_GetChild(hTreeView, hItem);
 	while(cItem != NULL){
 		TreeView_GetItemInfo(hTreeView, cItem, buf);
-		if(lstrcmpi(str, buf) == 0){
+		if(PathCompare(str, buf) == 0){
 			return cItem;
 		}
 		cItem = TreeView_GetNextSibling(hTreeView, cItem);
@@ -725,6 +743,9 @@ BOOL TreeView_IsRecyclerItem(HWND hTreeView, HTREEITEM hItem)
 
 ******************************************************************************/
 
+//パスの最大長 (呼び出し元で "\Item.dat" などを付けても BUFSIZE に収まるように)
+#define TREE_PATH_MAX		(BUFSIZE - 16)
+
 void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootString)
 {
 	HTREEITEM pItem;
@@ -746,8 +767,7 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 	pItem = TreeView_GetParent(hTreeView, hItem);
 	while(pItem != RootItem && pItem != NULL){
 		TreeView_GetItemInfo(hTreeView, pItem, tvName);
-		if(lstrlen(tvName) + 1 + lstrlen(buf) > BUFSIZE - 1){
-			OverFlag = TRUE;
+		if(lstrlen(tvName) + 1 + lstrlen(buf) >= TREE_PATH_MAX){
 			break;
 		}
 		wsprintf(work, "%s\\%s", tvName, buf);
@@ -755,17 +775,16 @@ void TreeView_GetPath(HWND hTreeView, HTREEITEM hItem, char *ret, char *RootStri
 
 		pItem = TreeView_GetParent(hTreeView, pItem);
 	}
-	if(OverFlag == TRUE || lstrlen(RootString) + 1 + lstrlen(buf) > BUFSIZE - 1){
-		if(RootString == CuDir){
-			//実フォルダのパスを切り詰めると別のフォルダを操作してしまうため終了する
-			abort();
-		}
-		//表示用のパスは切り詰める
-		lstrcpyn(ret, RootString, BUFSIZE);
+	//指定の文字列と結合 (呼び出し元のバッファは BUFSIZE 以上)
+	lstrcpyn(ret, RootString, TREE_PATH_MAX);
+	if(pItem != RootItem || lstrlen(ret) + 1 + lstrlen(buf) >= TREE_PATH_MAX){
+		//長すぎるパスはファイル名に使えない文字にして、ファイル操作を失敗させる
+		//(切り詰めると別のフォルダのデータを読み書きしてしまうため)
+		lstrcat(ret, "\\?");
 		return;
 	}
-	//指定の文字列と結合
-	wsprintf(ret, "%s\\%s", RootString, buf);
+	lstrcat(ret, "\\");
+	lstrcat(ret, buf);
 }
 
 
@@ -1005,7 +1024,7 @@ HTREEITEM TreeView_GetHiTestItem(HWND hTreeView)
 
 ******************************************************************************/
 
-BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, long lParam)
+BOOL TreeView_SetlParam(HWND hTreeView, HTREEITEM hItem, LPARAM lParam)
 {
 	TV_ITEM tvit = { 0 };
 
@@ -1286,7 +1305,7 @@ static void TreeView_DeleteParentIcon(HWND hWnd, HTREEITEM hItem, int Icon1, int
 
 ******************************************************************************/
 
-void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i, ItemCnt, Icon;
@@ -1414,7 +1433,7 @@ void CALLBACK TreeView_SetIconState(HWND hWnd, HTREEITEM hItem, long Param)
 
 ******************************************************************************/
 
-void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	HTREEITEM cItem, TmpItem;
 	char path[BUFSIZE];
@@ -1423,7 +1442,7 @@ void CALLBACK TreeView_NoFileDelete(HWND hWnd, HTREEITEM hItem, long Param)
 	//ルートとごみ箱は削除しない (ごみ箱のフォルダは空のときは存在しない)
 	if(hItem != RootItem && hItem != RecyclerItem &&
 		GetDirSerch(path) == FALSE && FindCheckItem(hWnd, hItem) == 0 && FindPropItem(hWnd, hItem) == 0){
-		CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeTreeItem, 1);
+		CallTreeItem(hWnd, hItem, TreeView_FreeTreeItem, 1);
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		return;
 	}
@@ -1487,7 +1506,7 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 	DragItemIndex = -1;
 
 	cf[0] = WWWC_ClipFormat;
-	cf[1] = CF_TEXT;
+	cf[1] = CF_UNICODETEXT;
 	cf[2] = CF_HDROP;
 	cfcnt = (NoFileFlag == FALSE) ? CLIPFORMAT_CNT : CLIPFORMAT_CNT - 1;
 
@@ -1501,10 +1520,10 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 			ListView_RefreshFolder(hWnd);
 		}
 		TreeView_SetIconState(hWnd, pItem, 0);
-		CallTreeItem(hWnd, pItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(hWnd, pItem, TreeView_FreeItem, 1);
 
 	}else{
-		CallTreeItem(hWnd, DgdpItem, (FARPROC)TreeView_FreeItem, 1);
+		CallTreeItem(hWnd, DgdpItem, TreeView_FreeItem, 1);
 	}
 	if(NoFileFlag == FALSE){
 		FreeDropFiles();

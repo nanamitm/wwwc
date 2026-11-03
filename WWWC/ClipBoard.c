@@ -180,7 +180,7 @@ BOOL Clipboard_DeleteCutStatus(HWND hWnd)
 
 	ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_CUT);
 
-	CallTreeItem(hWnd, CutItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, CutItem, TreeView_FreeItem, 1);
 	CutItem = NULL;
 	return TRUE;
 }
@@ -385,7 +385,7 @@ static HANDLE Clipboard_Set_TEXT_FolderPath(HWND hWnd, HTREEITEM hItem)
 
 static HANDLE Clipboard_Set_TEXT_ItemInfo(struct TPITEM *tpItemInfo)
 {
-	FARPROC Func_GetItemText;
+	PROTOCOL_GETITEMTEXT_FUNC Func_GetItemText;
 	HANDLE hMemText;
 	char buf[BUFSIZE];
 	char *p;
@@ -415,7 +415,7 @@ static HANDLE Clipboard_Set_TEXT_ItemInfo(struct TPITEM *tpItemInfo)
 
 	//プロトコルDLLのアイテムの文字列を取得する関数を呼ぶ
 	wsprintf(buf, "%sGetItemText", tpProtocol[ProtocolIndex].FuncHeader);
-	Func_GetItemText = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+	Func_GetItemText = (PROTOCOL_GETITEMTEXT_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	if(Func_GetItemText == NULL){
 		return NULL;
 	}
@@ -536,8 +536,8 @@ static BOOL Clipboard_SetTreeData(HWND hWnd, int mode)
 
 	//フォルダのパス
 	hMemText = Clipboard_Set_TEXT(hWnd, HiTestItem);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 
 	CloseClipboard();
@@ -624,8 +624,8 @@ BOOL Clipboard_SetItemData(HWND hWnd, int mode)
 
 	//アイテム情報の文字列のハンドル
 	hMemText = Clipboard_Set_TEXT(hWnd, NULL);
-	if(hMemText != NULL){
-		SetClipboardData(CF_TEXT, hMemText);
+	if((hMemText = TextMemToUnicode(hMemText)) != NULL){
+		SetClipboardData(CF_UNICODETEXT, hMemText);
 	}
 
 	CloseClipboard();
@@ -715,7 +715,7 @@ static BOOL CopyFolder(HWND hWnd, HTREEITEM hItem, char *FromPath, char *Name, i
 	}
 
 	//送り側と受け側のフォルダが同じ
-	if(lstrcmpi(Path, FromPath) == 0){
+	if(strcmp(Path, FromPath) == 0){
 		if(mode == FLAG_COPY){
 			wsprintf(Msg, EMSG_FOLDERCOPY_CUR, Name);
 			MessageBox(hWnd, Msg, EMSG_FOLDERCOPY_TITLE, MB_ICONSTOP);
@@ -757,7 +757,7 @@ static BOOL CopyFolder(HWND hWnd, HTREEITEM hItem, char *FromPath, char *Name, i
 
 	}else{
 		//移動先と移動元が同じ場合は処理を行わない
-		if(lstrcmpi(FromPath, CopyPath) == 0){
+		if(strcmp(FromPath, CopyPath) == 0){
 			return FALSE;
 		}
 
@@ -806,7 +806,7 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 	//移動先と移動元が同じ場合
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, TmpBuf, CuDir);
 	wsprintf(ToPath, "%s\\"DATAFILENAME, TmpBuf);
-	if(lstrcmpi(ToPath, SourcePath) == 0){
+	if(PathCompare(ToPath, SourcePath) == 0){
 		//移動の場合は処理を行わない
 		if(mode == FLAG_CUT){
 			return FALSE;
@@ -834,7 +834,7 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 			for(i = 0;i < tpTreeInfo->ItemListCnt;i++){
 				if(*(tpTreeInfo->ItemList + i) == NULL ||
 					(*(tpTreeInfo->ItemList + i))->Title == NULL ||
-					lstrcmp((*(tpTreeInfo->ItemList + i))->Title, TmpTitle) != 0){
+					strcmp((*(tpTreeInfo->ItemList + i))->Title, TmpTitle) != 0){
 					continue;
 				}
 
@@ -882,13 +882,13 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 		//タイトルの比較
 		p = ((*(tpDeleteItemList + i))->Title == NULL) ? "" : (*(tpDeleteItemList + i))->Title;
 		r = (NewItemInfo->Title == NULL) ? "" : NewItemInfo->Title;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			continue;
 		}
 		//URLの比較
 		p = ((*(tpDeleteItemList + i))->CheckURL == NULL) ? "" : (*(tpDeleteItemList + i))->CheckURL;
 		r = (NewItemInfo->CheckURL == NULL) ? "" : NewItemInfo->CheckURL;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			continue;
 		}
 
@@ -913,7 +913,7 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 {
 	struct TPITEM *tpItemInfo;
-	char buf[MAXSIZE];
+	char *buf;
 	char FromPath[BUFSIZE];
 	char SourcePath[BUFSIZE];
 	char Name[BUFSIZE];
@@ -926,6 +926,12 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 	int i;
 	BOOL SelInitFlag = FALSE;
 
+	//アイテムの1行はタイトル・URL・コメントなどを合計すると MAXSIZE を超える
+	buf = (char *)GlobalAlloc(GMEM_FIXED, (SIZE_T)lstrlen(Data) + 1);
+	if(buf == NULL){
+		return -1;
+	}
+
 	*SourcePath = '\0';
 	tpDeleteItemList = NULL;
 
@@ -937,7 +943,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 	for(p = Data;*p != '\0';p++){
 		if(*p != '\r'){
 			//バッファを超える行は切り詰める
-			if(*p != '\n' && r < buf + MAXSIZE - 1){
+			if(*p != '\n'){
 				*(r++) = *p;
 			}
 			continue;
@@ -1037,7 +1043,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 
 				if(ListFolderCnt < TreeFolderCnt){
 					ListView_InsertItemEx(GetDlgItem(hWnd, WWWC_LIST), (char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-						(long)NULL, ListFolderCnt);
+						(LPARAM)NULL, ListFolderCnt);
 				}
 
 				i = TreeView_GetListIndex(GetDlgItem(hWnd, WWWC_TREE),
@@ -1053,7 +1059,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 
 		}else{
 			//選択の解除
-			if(SelInitFlag == FALSE && (ret == FLAG_COPY || lstrcmpi(ToPath, SourcePath) != 0)){
+			if(SelInitFlag == FALSE && (ret == FLAG_COPY || PathCompare(ToPath, SourcePath) != 0)){
 				ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), -1, 0, LVIS_SELECTED);
 				SelInitFlag = TRUE;
 			}
@@ -1081,6 +1087,7 @@ static int StringToItem(HWND hWnd, HTREEITEM hItem, char *Data, int DnDFlag)
 		FreeItemList(tpDeleteItemList, tpDeleteItemListCnt, FALSE);
 		GlobalFree(tpDeleteItemList);
 	}
+	GlobalFree(buf);
 	return ret;
 }
 
@@ -1139,7 +1146,7 @@ int Clipboard_CheckFormat(void)
 
 	ClipFormat[0] = WWWC_ClipFormat;
 	ClipFormat[1] = CF_HDROP;
-	ClipFormat[2] = CF_TEXT;
+	ClipFormat[2] = CF_UNICODETEXT;
 	return GetPriorityClipboardFormat(ClipFormat, CLIPFORMAT_CNT);
 }
 
@@ -1171,9 +1178,9 @@ void Clipboard_GetData(HWND hWnd)
 
 	switch(ret)
 	{
-	case CF_TEXT:		//テキスト
-		hClip = GetClipboardData(CF_TEXT);
-		if((buf = GlobalLock(hClip)) == NULL){
+	case CF_UNICODETEXT:		//テキスト
+		hClip = GetClipboardData(CF_UNICODETEXT);
+		if((buf = UnicodeMemToText(hClip)) == NULL){
 			break;
 		}
 		//プロトコルを識別できた場合はアイテムとして追加
@@ -1181,7 +1188,7 @@ void Clipboard_GetData(HWND hWnd)
 			SetFocus(GetDlgItem(hWnd, WWWC_LIST));
 			Item_UrlAdd(hWnd, NEWITEMNAME, buf, 0, NULL);
 		}
-		GlobalUnlock(hClip);
+		GlobalFree(buf);
 		break;
 
 	case CF_HDROP:		//ドロップファイル

@@ -130,7 +130,7 @@ void FreeProtocol(void)
 void SetProtocolInfo(void)
 {
 	struct TPPROTOCOLINFO tpProtocolInfo;
-	FARPROC Func_GetInfo;
+	PROTOCOL_GETINFO_FUNC Func_GetInfo;
 	char buf[BUFSIZE];
 	int i;
 	int ret;
@@ -142,7 +142,7 @@ void SetProtocolInfo(void)
 			continue;
 		}
 		wsprintf(buf, "%sGetInfo", tpProtocol[i].FuncHeader);
-		Func_GetInfo = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_GetInfo = (PROTOCOL_GETINFO_FUNC)GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
 		if(Func_GetInfo != NULL){
 			tpProtocolInfo.iSize = sizeof(struct TPPROTOCOLINFO);
 			ret = Func_GetInfo(&tpProtocolInfo);
@@ -172,14 +172,14 @@ void EndProtocolNotify(void)
 	int i;
 	char buf[BUFSIZE];
 	int ret;
-	FARPROC Func_EndNotify;
+	PROTOCOL_ENDNOTIFY_FUNC Func_EndNotify;
 
 	for(i = 0;i < ProtocolCnt;i++){
 		if(tpProtocol[i].lib == NULL){
 			continue;
 		}
 		wsprintf(buf, "%sEndNotify", tpProtocol[i].FuncHeader);
-		Func_EndNotify = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_EndNotify = (PROTOCOL_ENDNOTIFY_FUNC)GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
 		if(Func_EndNotify != NULL){
 			ret = Func_EndNotify();
 		}
@@ -323,9 +323,11 @@ static void SetProtocolListIcon(HWND hListView)
 	char IconFile[BUFSIZE];
 	int IconIndex;
 	char IconPath[BUFSIZE];
-	HICON hLIcon, hSIcon;
+	HICON hLIcon, hSIcon, hIcon;
+	int IconSize = SICONSIZE;
 
 	IconList = ListView_GetImageList(hListView, LVSIL_SMALL);
+	ImageList_GetIconSize(IconList, &IconSize, &IconSize);
 
 	ImageList_Remove(IconList, -1);
 
@@ -345,13 +347,16 @@ static void SetProtocolListIcon(HWND hListView)
 			lstrcpy(IconPath, dll);
 		}
 		ExtractIconEx(IconPath, IconIndex, &hLIcon, &hSIcon, 1);
-		if(hSIcon == NULL){
-			hSIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_NO), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+		//高 DPI では大きいアイコンを縮小する
+		hIcon = (IconSize > SICONSIZE && hLIcon != NULL) ? hLIcon : hSIcon;
+		if(hIcon == NULL){
+			hIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_NO), IMAGE_ICON, IconSize, IconSize, 0);
 		}
 
-		ImageList_AddIcon(IconList, hSIcon);
-		DestroyIcon(hSIcon);
-		DestroyIcon(hLIcon);
+		ImageList_AddIcon(IconList, hIcon);
+		if(hIcon != hSIcon && hIcon != hLIcon) DestroyIcon(hIcon);
+		if(hSIcon != NULL) DestroyIcon(hSIcon);
+		if(hLIcon != NULL) DestroyIcon(hLIcon);
 
 		ListView_SetItemIcon(hListView, i, i);
 
@@ -407,11 +412,11 @@ static void ListView_AddProtocol(HWND hListView, struct TP_PROTOCOL *tpProtocolI
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_PROTOCOL tpProtocolInfo;
 	struct TPPROTOCOLSET tpProtocolSet;
-	FARPROC Func_GetProtocolList;
+	GETPROTOCOLLIST_FUNC Func_GetProtocolList;
 	HINSTANCE hLib;
 	HWND ParamLvWnd;
 	char buf[BUFSIZE];
@@ -435,7 +440,7 @@ static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 		}
 
 		//プロトコル情報取得関数のアドレスを取得
-		Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+		Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 		if(Func_GetProtocolList == NULL){
 			ErrMsg(hDlg, GetLastError(), NULL);
 			FreeLibrary(hLib);
@@ -485,7 +490,7 @@ static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 			}
 
 			//プロトコル情報取得関数のアドレスを取得
-			Func_GetProtocolList = GetProcAddress((HMODULE)hLib, "GetProtocolList");
+			Func_GetProtocolList = (GETPROTOCOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetProtocolList");
 			if(Func_GetProtocolList == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);
@@ -544,7 +549,7 @@ static BOOL CALLBACK SetProtocolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	int i;
 	char buf[BUFSIZE];
@@ -708,10 +713,10 @@ static BOOL CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 ******************************************************************************/
 
-BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LV_COLUMN lvc;
-	FARPROC Func_ProtocolProperty;
+	PROTOCOL_PROTOCOLPROPERTY_FUNC Func_ProtocolProperty;
 	HMODULE hLib;
 	HIMAGELIST IconList;
 	char buf[BUFSIZE];
@@ -720,7 +725,7 @@ BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 	int SelectItem;
 	int i;
 #ifdef OP_XP_STYLE
-	static long hThemeUp, hThemeDown;
+	static LONG_PTR hThemeUp, hThemeDown;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)
@@ -791,7 +796,7 @@ BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 			LVS_EX_ONECLICKACTIVATE | LVS_EX_FULLROWSELECT |
 			SendDlgItemMessage(hDlg, IDC_LIST_PROTOCOL, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
 
-		IconList = ImageList_Create(SICONSIZE, SICONSIZE, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hDlg, SICONSIZE), DpiScaleFor(hDlg, SICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 		ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
 		ListView_SetImageList(GetDlgItem(hDlg, IDC_LIST_PROTOCOL), IconList, LVSIL_SMALL);
 
@@ -992,7 +997,7 @@ BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 				break;
 			}
 			wsprintf(buf, "%sProtocolProperty", tmp2);
-			Func_ProtocolProperty = GetProcAddress((HMODULE)hLib, buf);
+			Func_ProtocolProperty = (PROTOCOL_PROTOCOLPROPERTY_FUNC)GetProcAddress((HMODULE)hLib, buf);
 			if(Func_ProtocolProperty == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);

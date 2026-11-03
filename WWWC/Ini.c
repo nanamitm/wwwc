@@ -178,6 +178,7 @@ int EndCheckMsg;
 
 int AutoCheck;
 int StartCheck;
+int DarkModeType;
 int NoMinuteCheck;
 
 int OpenReturnIcon;
@@ -253,6 +254,7 @@ void GetINI(void)
 	}
 	profile_get_string("GENERAL", "DateFormat", "yyyy/MM/dd", DateFormat, BUFSIZE - 1, app_path);
 	profile_get_string("GENERAL", "TimeFormat", "HH:mm", TimeFormat, BUFSIZE - 1, app_path);
+	DarkModeType = profile_get_int("GENERAL", "DarkMode", 2, app_path);
 
 	GetWindowRect(GetDesktopWindow(), &DeskTopRect);
 
@@ -321,6 +323,8 @@ void GetINI(void)
 	profile_get_string("LISTVIEW", "LvTextColor", "", LvTextColor, BUFSIZE - 1, app_path);
 	LvLIconSize = profile_get_int("LISTVIEW", "LvLIconSize", LICONSIZE, app_path);
 	LvSIconSize = profile_get_int("LISTVIEW", "LvSIconSize", SICONSIZE, app_path);
+	//アイコンのサイズは 96 DPI での値。表示には DPI に合わせたサイズを使う
+	Dpi_SetIconSizeBase();
 	profile_get_string("LISTVIEW", "LvColumn", "2,3,1,10,", LvColumn, BUFSIZE - 1, app_path);
 	CheckColumnString(LvColumn, "2,3,1,10,");
 	ZeroMemory(LvColSize, sizeof(LvColSize));
@@ -519,6 +523,7 @@ void PutINI(void)
 	profile_write_string("GENERAL", "Language", Language, app_path);
 	profile_write_string("GENERAL", "DateFormat", DateFormat, app_path);
 	profile_write_string("GENERAL", "TimeFormat", TimeFormat, app_path);
+	profile_write_int("GENERAL", "DarkMode", DarkModeType, app_path);
 
 	profile_write_int("WINDOW", "left", WinRect.left, app_path);
 	profile_write_int("WINDOW", "top", WinRect.top, app_path);
@@ -564,7 +569,7 @@ void PutINI(void)
 	profile_write_int("TREEVIEW", "TvWndStyle", TvWndStyle, app_path);
 	profile_write_string("TREEVIEW", "TvBkColor", TvBkColor, app_path);
 	profile_write_string("TREEVIEW", "TvTextColor", TvTextColor, app_path);
-	profile_write_int("TREEVIEW", "TvIconSize", TvIconSize, app_path);
+	profile_write_int("TREEVIEW", "TvIconSize", TvIconSizeBase, app_path);
 
 	profile_write_int("LISTVIEW", "LvStyle", LvStyle, app_path);
 	profile_write_int("LISTVIEW", "LvSortFlag", LvSortFlag, app_path);
@@ -577,8 +582,8 @@ void PutINI(void)
 	profile_write_string("LISTVIEW", "LvBkColor", LvBkColor, app_path);
 	profile_write_string("LISTVIEW", "LvTextBkColor", LvTextBkColor, app_path);
 	profile_write_string("LISTVIEW", "LvTextColor", LvTextColor, app_path);
-	profile_write_int("LISTVIEW", "LvLIconSize", LvLIconSize, app_path);
-	profile_write_int("LISTVIEW", "LvSIconSize", LvSIconSize, app_path);
+	profile_write_int("LISTVIEW", "LvLIconSize", LvLIconSizeBase, app_path);
+	profile_write_int("LISTVIEW", "LvSIconSize", LvSIconSizeBase, app_path);
 	profile_write_string("LISTVIEW", "LvColumn", LvColumn, app_path);
 
 	profile_write_int("LISTVIEW", "LvColSize-0", *LvColSize, app_path);
@@ -980,7 +985,7 @@ void GetToolList(void)
 		for(i = 0;i < ToolItemCnt;i++){
 			ToolList[i].iSize = sizeof(struct TP_TOOLS);
 			wsprintf(buf, "title-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].title, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].title, sizeof(ToolList[i].title), app_path);
 			wsprintf(buf, "FileName-%d", i);
 			profile_get_string("TOOLS", buf, "", ToolList[i].FileName, BUFSIZE - 1, app_path);
 			wsprintf(buf, "Action-%d", i);
@@ -988,11 +993,11 @@ void GetToolList(void)
 			wsprintf(buf, "MenuIndex-%d", i);
 			ToolList[i].MenuIndex = profile_get_int("TOOLS", buf, -1, app_path);
 			wsprintf(buf, "Protocol-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].Protocol, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].Protocol, sizeof(ToolList[i].Protocol), app_path);
 			wsprintf(buf, "CommandLine-%d", i);
 			profile_get_string("TOOLS", buf, "", ToolList[i].CommandLine, BUFSIZE - 1, app_path);
 			wsprintf(buf, "func-%d", i);
-			profile_get_string("TOOLS", buf, "", ToolList[i].func, BUFSIZE - 1, app_path);
+			profile_get_string("TOOLS", buf, "", ToolList[i].func, sizeof(ToolList[i].func), app_path);
 
 			wsprintf(buf, "Ctrl-%d", i);
 			ToolList[i].Ctrl = profile_get_int("TOOLS", buf, 0, app_path);

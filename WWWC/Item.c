@@ -54,7 +54,7 @@ extern int DefNoCheck;
 
 static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction);
 static void SetCopyItemInfo(struct TPITEM *tpItemInfo, HWND IconWnd, HWND InfoWnd);
-static BOOL CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static int UpdateItemInfo(HWND hWnd, struct TPITEM *tpToItemInfo, struct TPITEM *tpFromItemInfo);
 static BOOL Item_SelectDelete(HWND hWnd);
 static BOOL FolderDelete(HWND hWnd);
@@ -78,7 +78,7 @@ void FreeItemInfo(struct TPITEM *TmpItemInfo, BOOL ProtocolFreeFlag)
 		if(ProtocolIndex != -1 && (tpProtocol + ProtocolIndex)->lib != NULL){
 			if((tpProtocol + ProtocolIndex)->Func_FreeItem == NULL){
 				wsprintf(buf, "%sFreeItem", (tpProtocol + ProtocolIndex)->FuncHeader);
-				(tpProtocol + ProtocolIndex)->Func_FreeItem = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+				(tpProtocol + ProtocolIndex)->Func_FreeItem = (PROTOCOL_FREEITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 			}
 			if((tpProtocol + ProtocolIndex)->Func_FreeItem != NULL){
 				(tpProtocol + ProtocolIndex)->Func_FreeItem(TmpItemInfo);
@@ -166,8 +166,8 @@ struct TPITEM *GetMainItem(HWND hWnd, struct TPTREE *tpTreeInfo, struct TPITEM *
 		if(tpItemInfo == NULL){
 			continue;
 		}
-		if(lstrcmp(tpItemInfo->Title, SelItemInfo->Title) == 0 &&
-			lstrcmp(tpItemInfo->CheckURL, SelItemInfo->CheckURL) == 0){
+		if(strcmp(tpItemInfo->Title, SelItemInfo->Title) == 0 &&
+			strcmp(tpItemInfo->CheckURL, SelItemInfo->CheckURL) == 0){
 			return *(tpTreeInfo->ItemList + i);
 		}
 	}
@@ -243,7 +243,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 	int i;
 
 	ProtocolIndex = GetProtocolIndex(tpItemInfo->CheckURL);
-	if(StrAction == NULL || (ProtocolIndex == -1 && lstrcmpi(StrAction, "open") == 0)){
+	if(StrAction == NULL || (ProtocolIndex == -1 && _stricmp(StrAction, "open") == 0)){
 		//関連付けで実行
 		p = tpItemInfo->ViewURL;
 		if(p == NULL || *p == '\0'){
@@ -264,7 +264,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 		}
 		//Actionの検索
 		for(i = 0; i < tpProtocol[ProtocolIndex].tpMenuCnt; i++){
-			if(lstrcmpi(tpProtocol[ProtocolIndex].tpMenu[i].Action, StrAction) == 0){
+			if(_stricmp(tpProtocol[ProtocolIndex].tpMenu[i].Action, StrAction) == 0){
 				break;
 			}
 		}
@@ -275,7 +275,7 @@ static int Item_Action(HWND hWnd, struct TPITEM *tpItemInfo, char *StrAction)
 		//実行
 		if(tpProtocol[ProtocolIndex].Func_ExecItem == NULL){
 			wsprintf(buf, "%sExecItem", tpProtocol[ProtocolIndex].FuncHeader);
-			tpProtocol[ProtocolIndex].Func_ExecItem = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+			tpProtocol[ProtocolIndex].Func_ExecItem = (PROTOCOL_EXECITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 		}
 		if(tpProtocol[ProtocolIndex].Func_ExecItem != NULL){
 			ret = tpProtocol[ProtocolIndex].Func_ExecItem(hWnd, tpProtocol[ProtocolIndex].tpMenu[i].Action, tpItemInfo);
@@ -377,7 +377,7 @@ BOOL Item_DefaultOpen(HWND hWnd, struct TPITEM *tpItemInfo)
 	for(j = 0; j < ToolListCnt; j++){
 		if((ToolList[j].Action & TOOL_EXEC_ITEMMENU) == 0 ||
 			strlistcmp(tpProtocol[ProtocolIndex].title, ToolList[j].Protocol, ',') == FALSE ||
-			lstrcmp(ToolList[j].title, "-") == 0){
+			strcmp(ToolList[j].title, "-") == 0){
 			continue;
 		}
 		if((ToolList[j].Action & TOOL_EXEC_MENUDEFAULT) != 0){
@@ -403,7 +403,7 @@ BOOL Item_DefaultOpen(HWND hWnd, struct TPITEM *tpItemInfo)
 		return FALSE;
 	}
 	for(i = 0; i < pMenuCnt; i++){
-		if(lstrcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
+		if(strcmp(tpProtocol[ProtocolIndex].tpMenu[i].name, "-") == 0){
 			continue;
 		}
 		if(tpProtocol[ProtocolIndex].tpMenu[i].Default == TRUE){
@@ -621,13 +621,13 @@ BOOL Item_Select(HWND hWnd, HTREEITEM hItem)
 			//タイトルの比較
 			p = ((*(tpTreeInfo->ItemList + i))->Title == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->Title;
 			r = ((*(tpTmpItemList + j))->Title == NULL) ? "" : (*(tpTmpItemList + j))->Title;
-			if(lstrcmp(p, r) != 0){
+			if(strcmp(p, r) != 0){
 				continue;
 			}
 			//URLの比較
 			p = ((*(tpTreeInfo->ItemList + i))->CheckURL == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->CheckURL;
 			r = ((*(tpTmpItemList + j))->CheckURL == NULL) ? "" : (*(tpTmpItemList + j))->CheckURL;
-			if(lstrcmp(p, r) != 0){
+			if(strcmp(p, r) != 0){
 				continue;
 			}
 
@@ -795,7 +795,7 @@ static void SetCopyItemInfo(struct TPITEM *tpItemInfo, HWND IconWnd, HWND InfoWn
 
 ******************************************************************************/
 
-static BOOL CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK UpdateMsgProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HICON hIcon;
 	char buf[BUFSIZE * 3];
@@ -973,14 +973,14 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 		//タイトルの比較
 		p = ((*(tpTreeInfo->ItemList + i))->Title == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->Title;
 		r = (NewItemInfo->Title == NULL) ? "" : NewItemInfo->Title;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			*(tpItemList + i) = *(tpTreeInfo->ItemList + i);
 			continue;
 		}
 		//URLの比較
 		p = ((*(tpTreeInfo->ItemList + i))->CheckURL == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->CheckURL;
 		r = (NewItemInfo->CheckURL == NULL) ? "" : NewItemInfo->CheckURL;
-		if(lstrcmp(p, r) != 0){
+		if(strcmp(p, r) != 0){
 			*(tpItemList + i) = *(tpTreeInfo->ItemList + i);
 			continue;
 		}
@@ -1010,7 +1010,7 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 				if(tpListViewItemInfo != *(tpTreeInfo->ItemList + i)){
 					continue;
 				}
-				ListView_SetlParam(GetDlgItem(hWnd, WWWC_LIST), j, (long)NewItemInfo);
+				ListView_SetlParam(GetDlgItem(hWnd, WWWC_LIST), j, (LPARAM)NewItemInfo);
 				//チェックする/しない設定
 				ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), j,
 					((NewItemInfo->CheckSt == 1) ? INDEXTOOVERLAYMASK(ICON_ST_NOCHECK) : 0), LVIS_OVERLAYMASK);
@@ -1034,7 +1034,7 @@ int Item_Add(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo)
 
 		if(hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 			ListView_InsertItemEx(GetDlgItem(hWnd, WWWC_LIST), (char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-				(long)(*(tpItemList + i)), -1);
+				(LPARAM)(*(tpItemList + i)), -1);
 			//チェックする/しない設定
 			ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST),
 				ListView_GetItemCount(GetDlgItem(hWnd, WWWC_LIST)) - 1,
@@ -1086,7 +1086,7 @@ BOOL Item_UrlAdd(HWND hWnd, char *Title, char *buf, int NameFlag, HTREEITEM hIte
 			break;
 		}
 		for(r = url; *p != '\0'; p++){
-			if(IS_LEAD_BYTE(p)){
+			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 				//２バイトコードの場合
 				*(r++) = *(p++);
 				*(r++) = *p;
@@ -1100,6 +1100,7 @@ BOOL Item_UrlAdd(HWND hWnd, char *Title, char *buf, int NameFlag, HTREEITEM hIte
 		//新しいアイテム情報の確保
 		NewItemInfo = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM));
 		if(NewItemInfo == NULL){
+			GlobalFree(url);
 			return FALSE;
 		}
 		NewItemInfo->iSize = sizeof(struct TPITEM);
@@ -1359,7 +1360,7 @@ BOOL Item_FlagDelete(struct TPTREE *tpTreeInfo)
 
 BOOL Item_Create(HWND hWnd, int ProtocolIndex)
 {
-	FARPROC Func_Property;
+	PROTOCOL_ITEM_FUNC Func_Property;
 	struct TPTREE *tpTreeInfo;
 	struct TPITEM *NewItemInfo;
 	HTREEITEM hItem;
@@ -1372,7 +1373,7 @@ BOOL Item_Create(HWND hWnd, int ProtocolIndex)
 		return FALSE;
 	}
 	wsprintf(buf, "%sProperty", tpProtocol[ProtocolIndex].FuncHeader);
-	Func_Property = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+	Func_Property = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	if(Func_Property == NULL){
 		return FALSE;
 	}
@@ -1647,7 +1648,7 @@ int Item_Initialize(HWND hWnd, struct TPITEM *tpItemInfo, BOOL InitIconFlag)
 	if(tpProtocol[ProtocolIndex].Func_InitItem == NULL){
 		//プロトコルDLLのアイテム初期化関数を呼ぶ
 		wsprintf(buf, "%sInitItem", tpProtocol[ProtocolIndex].FuncHeader);
-		tpProtocol[ProtocolIndex].Func_InitItem = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+		tpProtocol[ProtocolIndex].Func_InitItem = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	}
 	if(tpProtocol[ProtocolIndex].Func_InitItem != NULL){
 		ret = tpProtocol[ProtocolIndex].Func_InitItem(hWnd, tpItemInfo);
@@ -1749,7 +1750,7 @@ void Item_MainItemIni(HWND hMainWnd, HWND hWnd, struct TPITEM **tpItemList, int 
 
 ******************************************************************************/
 
-void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeItemIni(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;
@@ -2178,7 +2179,7 @@ BOOL ClearRecycler(HWND hWnd, BOOL Flag)
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, buf, CuDir);
 	DeleteDirTree(buf, FALSE);
 	RemoveDirectory(buf);
-	CallTreeItem(hWnd, RecyclerItem, (FARPROC)TreeView_FreeTreeItem, 1);
+	CallTreeItem(hWnd, RecyclerItem, TreeView_FreeTreeItem, 1);
 
 	while(TreeView_GetChild(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem) != NULL){
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE),
@@ -2199,7 +2200,7 @@ BOOL ClearRecycler(HWND hWnd, BOOL Flag)
 	tpTreeInfo->CheckSt = 0;
 	tpTreeInfo->AutoCheckSt = 1;
 	tpTreeInfo->Comment = NULL;
-	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, (long)tpTreeInfo);
+	TreeView_SetlParam(GetDlgItem(hWnd, WWWC_TREE), RecyclerItem, (LPARAM)tpTreeInfo);
 
 	TreeView_SetIconState(hWnd, RecyclerItem, 0);
 

@@ -1,4 +1,4 @@
-/*
+﻿/*
  * WWWC
  *
  * Memory.h

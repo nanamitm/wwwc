@@ -17,6 +17,7 @@
 
 #define _INC_OLE
 #include <windows.h>
+#include <stdio.h>
 #undef  _INC_OLE
 
 #include "String.h"
@@ -30,8 +31,6 @@
 /**************************************************************************
 	Define
 **************************************************************************/
-
-#define BUFSIZE					256
 
 #define NOCMP_SIZE				1
 #define NOCMP_DATE				2
@@ -144,7 +143,8 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 		FindClose(hFindFile);
 
 		//サイズの比較
-		wsprintf(buf, "%ld", (long)FindData.nFileSizeLow);
+		_snprintf_s(buf, sizeof(buf), _TRUNCATE, "%llu",
+			((unsigned long long)FindData.nFileSizeHigh << 32) | FindData.nFileSizeLow);
 		/* 前回チェック時のものと比較する */
 		if(GetOptionInt(tpItemInfo->Option1, 1) == 0 && LresultCmp(tpItemInfo->Size, buf) != 0){
 			CmpMsg = ST_UP;
@@ -268,7 +268,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 	char *buf = NULL;
 	int rc = -1;
 
-	if(lstrcmp(Action,"open") == 0){
+	if(strcmp(Action,"open") == 0){
 		if(tpItemInfo->CheckURL != NULL){
 			for(buf = tpItemInfo->CheckURL + lstrlen("file:"); *buf == '/' && *buf != '\0'; buf++);
 		}
@@ -296,7 +296,7 @@ __declspec(dllexport) int CALLBACK FILE_ExecItem(HWND hWnd, char *Action, struct
 
 ******************************************************************************/
 
-static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -307,7 +307,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 	{
 	case WM_INITDIALOG:
 		/* ウィンドウにアイテム情報を待避する */
-		SetWindowLong(hDlg,DWL_USER,(long)lParam);
+		SetWindowLongPtr(hDlg,DWLP_USER,(LONG_PTR)lParam);
 
 		tpItemInfo = (struct TPITEM *)lParam;
 		
@@ -347,7 +347,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_SETTEXT, 0, (LPARAM)tmp);
 
 			for(r = p = buf; *p != '\0'; p++){
-				if(IS_LEAD_BYTE(p)){
+				if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 					p++;
 				}else if(*p == '\\' || *p == '/'){
 					r = p;
@@ -358,7 +358,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 		case IDOK:
 			/* ウィンドウからアイテムの情報を取得する */
-			tpItemInfo = (struct TPITEM *)GetWindowLong(hDlg, DWL_USER);
+			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, DWLP_USER);
 			
 			/* タイトル */
 			if(tpItemInfo->Title != NULL){
@@ -420,7 +420,7 @@ static BOOL CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 __declspec(dllexport) int CALLBACK FILE_Property(HWND hWnd, struct TPITEM *tpItemInfo)
 {
 	/* プロパティのダイアログを表示する */
-	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_FILEPROP), hWnd, FilePropertyProc, (long)tpItemInfo) == FALSE){
+	if(DialogBoxParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_FILEPROP), hWnd, FilePropertyProc, (LPARAM)tpItemInfo) == FALSE){
 		return -1;
 	}
 	return 0;

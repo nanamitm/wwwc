@@ -156,7 +156,7 @@ void SetToolMenu(HWND hWnd)
 	//ツールのリストからメニューを作成
 	for(i = 0;i < ToolListCnt;i++){
 		if((ToolList[i].Action & TOOL_EXEC_WINDOWMENU) != 0 && ToolList[i].title[0] != '\0'){
-			if(lstrcmp(ToolList[i].title, "-") == 0){
+			if(strcmp(ToolList[i].title, "-") == 0){
 				// メニュー名が "-" だった場合はセパレータにする
 				AppendMenu(ToolMenu, MF_SEPARATOR, 0, NULL);
 			}else{
@@ -184,7 +184,7 @@ void SetToolMenu(HWND hWnd)
 						ToolList[i].Key == VK_INSERT ||
 						ToolList[i].Key == VK_DELETE ||
 						ToolList[i].Key == VK_NUMLOCK) ext_flag = 1 << 24;
-					GetKeyNameText((scan_code << 16) | ext_flag, p, sizeof(buf) - (p - buf) - 1);
+					GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (int)(p - buf) - 1);
 				}
 				AppendMenu(ToolMenu, MF_STRING, ID_WMENU_TOOL_ACTION + i, buf);
 			}
@@ -220,7 +220,7 @@ int DllToolExec(HWND hWnd, int i, struct TPITEM **ToolItemList, int ToolItemList
 
 	//ツールの関数名からアドレスを取得
 	if(ToolList[i].Func_Tool == NULL){
-		ToolList[i].Func_Tool = GetProcAddress((HMODULE)ToolList[i].lib, ToolList[i].func);
+		ToolList[i].Func_Tool = (TOOL_FUNC)GetProcAddress((HMODULE)ToolList[i].lib, ToolList[i].func);
 	}
 	if(ToolList[i].Func_Tool == NULL){
 		ErrMsg(hWnd, GetLastError(), NULL);
@@ -247,7 +247,7 @@ int DllToolExec(HWND hWnd, int i, struct TPITEM **ToolItemList, int ToolItemList
 static int DllToolProp(HWND hWnd, char *File, char *Func)
 {
 	HINSTANCE hLib;
-	FARPROC Func_Tool;
+	TOOL_FUNC Func_Tool;
 	int ret = 0;
 
 	hLib = LoadLibrary(File);
@@ -256,7 +256,7 @@ static int DllToolProp(HWND hWnd, char *File, char *Func)
 	}
 
 	//ツールの関数名からアドレスを取得
-	Func_Tool = GetProcAddress((HMODULE)hLib, Func);
+	Func_Tool = (TOOL_FUNC)GetProcAddress((HMODULE)hLib, Func);
 	if(Func_Tool != NULL){
 		//DLL内のツールを実行
 		ret = Func_Tool(hWnd, NULL, -1, TOOL_EXEC_PORP, 0);
@@ -439,19 +439,19 @@ void SubItemExecTool(HWND hWnd, int id, struct TPITEM **ToolItemList, int cnt, i
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	struct TP_GETTOOL GetTool;
 	HINSTANCE hLib;
-	FARPROC Func_GetToolList;
+	GETTOOLLIST_FUNC Func_GetToolList;
 	int cnt = 0;
 	int ret, i;
 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, GWL_USERDATA, (LONG)lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)lParam);
 
 		tpSetTool = (struct TP_TOOLS *)lParam;
 		SetWindowText(GetDlgItem(hDlg, IDC_STATIC_FILENAME), tpSetTool->FileName);
@@ -464,7 +464,7 @@ static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 		}
 
 		//ツール取得関数のアドレスを取得
-		Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+		Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 		if(Func_GetToolList == NULL){
 			ErrMsg(hDlg, GetLastError(), NULL);
 			FreeLibrary(hLib);
@@ -502,13 +502,13 @@ static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 		{
 		case IDOK:
 			//リストの選択項目を取得
-			i = SendDlgItemMessage(hDlg, IDC_LIST_DLLENTRY, LB_GETCURSEL, 0, 0);
+			i = (int)SendDlgItemMessage(hDlg, IDC_LIST_DLLENTRY, LB_GETCURSEL, 0, 0);
 			if(i == -1){
 				MessageBox(hDlg, EMSG_SELECT_TOOL, EMSG_SELECT_TITLE_TOOL, MB_OK | MB_ICONEXCLAMATION);
 				break;
 			}
 
-			tpSetTool = (struct TP_TOOLS *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpSetTool = (struct TP_TOOLS *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
 			hLib = LoadLibrary(tpSetTool->FileName);
 			if(hLib == NULL){
@@ -518,7 +518,7 @@ static BOOL CALLBACK SetDLLToolListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 			}
 
 			//ツール取得関数のアドレスを取得
-			Func_GetToolList = GetProcAddress((HMODULE)hLib, "GetToolList");
+			Func_GetToolList = (GETTOOLLIST_FUNC)GetProcAddress((HMODULE)hLib, "GetToolList");
 			if(Func_GetToolList == NULL){
 				ErrMsg(hDlg, GetLastError(), NULL);
 				FreeLibrary(hLib);
@@ -689,19 +689,19 @@ static void VisibleToolOption(HWND hDlg, int HideOption)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	HMENU hMenu;		//ポップアップメニューのハンドル
 	RECT ButtonRect;	//ボタンの位置
 	HINSTANCE hLib;
-	FARPROC Func_GetToolHideOption;
+	GETTOOLHIDEOPTION_FUNC Func_GetToolHideOption;
 	char buf[BUFSIZE], tmp[BUFSIZE];
 	char *p, *r;
 	static char funcStr[BUFSIZE];
 	int i;
 #ifdef OP_XP_STYLE
-	static long hThemeP, hThemeC;
+	static LONG_PTR hThemeP, hThemeC;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)
@@ -716,7 +716,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 		SendDlgItemMessage(hDlg, IDC_SPIN_MENUINDEX,
 			UDM_SETRANGE, 0, (LPARAM)MAKELONG((short)100, (short)-1));
 
-		SetWindowLong(hDlg, GWL_USERDATA, (LONG)lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, (LONG_PTR)lParam);
 		ToolInfoToDialog(hDlg, (struct TP_TOOLS *)lParam, funcStr);
 
 		SendMessage(hDlg, WM_COMMAND, IDC_CHECK_WINDOWMENU, 0);
@@ -780,7 +780,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 		}
 		//ツール取得関数のアドレスを取得
-		Func_GetToolHideOption = GetProcAddress((HMODULE)hLib, "GetToolHideOption");
+		Func_GetToolHideOption = (GETTOOLHIDEOPTION_FUNC)GetProcAddress((HMODULE)hLib, "GetToolHideOption");
 		if(Func_GetToolHideOption == NULL){
 			FreeLibrary(hLib);
 			break;
@@ -830,7 +830,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 					//タイトルの設定
 					r = "";
 					for(p = buf; *p != '\0'; p++){
-						if(IS_LEAD_BYTE(p)){
+						if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 							p++;
 							continue;
 						}
@@ -916,14 +916,14 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				MessageBox(hDlg, EMSG_NOINPUT, EMSG_NOINPUT_TITLE, MB_OK | MB_ICONEXCLAMATION);
 				break;
 			}
-			tpSetTool = (struct TP_TOOLS *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpSetTool = (struct TP_TOOLS *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 
-			lstrcpy(tpSetTool->title, buf);
+			lstrcpyn(tpSetTool->title, buf, sizeof(tpSetTool->title));
 			*tpSetTool->FileName = '\0';
 			SendDlgItemMessage(hDlg, IDC_EDIT_FILENAME, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->FileName);
 
 			/* ホットキーの取得 */
-			i = SendDlgItemMessage(hDlg,IDC_HOTKEY, HKM_GETHOTKEY, 0, 0);
+			i = (int)SendDlgItemMessage(hDlg,IDC_HOTKEY, HKM_GETHOTKEY, 0, 0);
 			tpSetTool->Key = LOBYTE(i);
 			i = HIBYTE(i);
 			tpSetTool->Ctrl = ((i & HOTKEYF_SHIFT) ? 4 : 0) |
@@ -946,7 +946,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			tpSetTool->Action += CHECKITEMCNT(IDC_CHECK_SAVEFOLDER, TOOL_EXEC_SAVEFOLDER);
 
 			*tpSetTool->Protocol = '\0';
-			SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->Protocol);
+			SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, sizeof(tpSetTool->Protocol), (LPARAM)tpSetTool->Protocol);
 
 			SendDlgItemMessage(hDlg, IDC_EDIT_MENUINDEX, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 			if(*buf == '\0'){
@@ -957,7 +957,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			*tpSetTool->CommandLine = '\0';
 			*tpSetTool->func = '\0';
 			if(str_match("*.dll", tpSetTool->FileName) == TRUE){
-				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->func);
+				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, sizeof(tpSetTool->func), (LPARAM)tpSetTool->func);
 			}else{
 				SendDlgItemMessage(hDlg, IDC_EDIT_COMMANDLINE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)tpSetTool->CommandLine);
 			}
@@ -992,7 +992,7 @@ static BOOL CALLBACK SetToolExeProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 				*buf = '\0';
 				SendDlgItemMessage(hDlg, IDC_EDIT_PROTOCOL, WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
-				if(lstrcmp(buf, "*") == 0){
+				if(strcmp(buf, "*") == 0){
 					*buf = '\0';
 				}
 
@@ -1131,7 +1131,7 @@ static void ToolInfoToList(HWND hListView, int SelectItem, struct TP_TOOLS *tpSe
 			tpSetTool->Key == VK_INSERT ||
 			tpSetTool->Key == VK_DELETE ||
 			tpSetTool->Key == VK_NUMLOCK) ext_flag = 1 << 24;
-		GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (p - buf) - 1);
+		GetKeyNameText((scan_code << 16) | ext_flag, p, BUFSIZE - (int)(p - buf) - 1);
 	}
 	ListView_SetItemText(hListView, SelectItem, 5, buf);
 
@@ -1160,7 +1160,7 @@ static void SetLvToolIcon(HWND hListView)
 
 	IconList = ListView_GetImageList(hListView, LVSIL_SMALL);
 	if(IconList == NULL){
-		IconList = ImageList_Create(16, 16, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hListView, SICONSIZE), DpiScaleFor(hListView, SICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 	}else{
 		ImageList_Remove(IconList, -1);
 	}
@@ -1171,9 +1171,9 @@ static void SetLvToolIcon(HWND hListView)
 		*buf = '\0';
 		ListView_GetItemText(hListView, i, 1, buf, BUFSIZE - 1);
 		if(*buf == '\0'){
-			ImageListIconAdd(IconList, IDI_ICON_NON, 16, "", 0);
+			ImageListIconAdd(IconList, IDI_ICON_NON, DpiScaleFor(hListView, SICONSIZE), "", 0);
 		}else{
-			ImageListFileIconAdd(IconList, buf, 0, 16, "", 0);
+			ImageListFileIconAdd(IconList, buf, 0, DpiScaleFor(hListView, SICONSIZE), "", 0);
 		}
 		ListView_SetItemIcon(hListView, i, i);
 	}
@@ -1189,14 +1189,14 @@ static void SetLvToolIcon(HWND hListView)
 
 ******************************************************************************/
 
-BOOL CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK SetToolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TP_TOOLS *tpSetTool;
 	LV_COLUMN lvc;
 	int SelectItem;
 	int i, j;
 #ifdef OP_XP_STYLE
-	static long hThemeUp, hThemeDown;
+	static LONG_PTR hThemeUp, hThemeDown;
 #endif	//OP_XP_STYLE
 
 	switch (uMsg)

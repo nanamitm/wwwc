@@ -38,7 +38,7 @@
 	Global Variables
 **************************************************************************/
 
-char fpath[BUFSIZE];
+char fpath[PATH_BUFSIZE];
 
 FILTER *FilterInfo;
 int FilterCount;
@@ -75,7 +75,7 @@ static char *FindStr(char *buf, char *Str, int len, BOOL first, BOOL icase)
 		if(((icase == FALSE) ? lstrcmpn : lstrcmpni)(Str, p, len) == 0){
 			return p;
 		}
-		if(IS_LEAD_BYTE(p)){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 			continue;
 		}
@@ -114,7 +114,7 @@ static char *ConvStr(char *buf)
 	if(ret == NULL) return ret;
 
 	for(p = buf, r = ret; *p != '\0'; p++){
-		if(IS_LEAD_BYTE(p)){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 		}else if(*p == '\\' && *(p + 1) != '\0'){
@@ -152,7 +152,7 @@ static void CRLFConv(char *buf)
 	char *p, *r;
 
 	for(p = r = buf; *p != '\0'; p++){
-		if(IS_LEAD_BYTE(p)){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 			continue;
@@ -196,7 +196,7 @@ static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL i
 
 	while(*p != '\0'){
 		for(r = p; *r != '\0' && *r != '*'; r++);
-		len = r - p;
+		len = (int)(r - p);
 
 		t = FindStr(t, p, len, ((*ts == NULL) ? TRUE : FALSE), icase);
 		if(t == NULL){
@@ -254,7 +254,7 @@ static BOOL StrFilter(char *buf, char *sStr, char *eStr, int f, BOOL icase)
 		lstrcpy(s1, e1);
 	}else{
 		//文字列の抽出
-		lstrcpyn(buf, s1, e1 - s1 + 1);
+		lstrcpyn(buf, s1, (int)(e1 - s1 + 1));
 	}
 	return TRUE;
 }
@@ -291,12 +291,15 @@ BOOL FilterMatch(char *url)
 	FilterCheck
 
 	フィルタをかける
+	*pbuf (GlobalAlloc) の HeadSize 以降を、変換してフィルタをかけた文字列に置き換える
 
 ******************************************************************************/
 
-BOOL FilterCheck(char *url, char *buf, int Size)
+BOOL FilterCheck(char *url, char **pbuf, int HeadSize)
 {
+	char *buf = *pbuf + HeadSize;
 	char *tmp = NULL;
+	char *newbuf;
 	BOOL rc = TRUE;
 	int i;
 
@@ -309,7 +312,7 @@ BOOL FilterCheck(char *url, char *buf, int Size)
 		if(str_match((FilterInfo + i)->url, url) == TRUE){
 			if(tmp == NULL){
 				//ソース変換
-				tmp = SrcConv(buf, Size);
+				tmp = SrcConv(buf, lstrlen(buf));
 				if(tmp == NULL){
 					break;
 				}
@@ -334,8 +337,16 @@ BOOL FilterCheck(char *url, char *buf, int Size)
 		}
 	}
 	if(tmp != NULL){
-		//変換で長くなった場合も受信バッファに収まる長さまでコピーする
-		lstrcpyn(buf, tmp, lstrlen(buf) + 1);
+		//変換した文字列は元より長くなることがある (Shift_JIS -> UTF-8 など)
+		newbuf = (char *)GlobalAlloc(GMEM_FIXED, HeadSize + lstrlen(tmp) + 1);
+		if(newbuf == NULL){
+			GlobalFree(tmp);
+			return FALSE;
+		}
+		CopyMemory(newbuf, *pbuf, HeadSize);
+		lstrcpy(newbuf + HeadSize, tmp);
+		GlobalFree(*pbuf);
+		*pbuf = newbuf;
 		GlobalFree(tmp);
 		return rc;
 	}
@@ -389,12 +400,15 @@ BOOL ReadFilterFile(char *cpath)
 {
 	HANDLE hFile;
 	char *buf, *p;
-	char path[BUFSIZE];
+	char path[PATH_BUFSIZE];
 	DWORD fSizeLow, fSizeHigh;
 	DWORD ret;
 	long FileSize;
 	int i;
 
+	if(lstrlen(cpath) >= BUFSIZE){
+		return FALSE;
+	}
 	lstrcpy(fpath, cpath);
 	wsprintf(path, "%s\\%s", cpath, FILE_FILTER);
 
@@ -568,7 +582,7 @@ void FreeFilter(void)
 __declspec(dllexport) int CALLBACK FilterReload(HWND hWnd, struct TPITEM **ToolItemList,
 													  int ToolItemListCnt, int type, int CheckType)
 {
-	char path[BUFSIZE];
+	char path[PATH_BUFSIZE];
 
 	if(type == TOOL_EXEC_PORP){
 		wsprintf(path, "%s\\%s", fpath, FILE_FILTER);

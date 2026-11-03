@@ -84,17 +84,17 @@ extern int LvCheckEndAutoSort;
 **************************************************************************/
 
 static int GetHandleToIndex(HANDLE hHnd);
-static int GetSocketToIndex(int Soc);
+static int GetSocketToIndex(UINT_PTR Soc);
 static int GetItemInfoToIndex(struct TPITEM *tpItemInfo);
 static int ListCheckCount(HWND hWnd);
 static int TreeCheckCount(HWND hWnd, HTREEITEM hItem, int CheckFlag);
 static void ListCheckIni(HWND hWnd, BOOL TreeFlag);
-static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, long Param);
-static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, long Param);
-static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param);
+static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void SetCheckDateTime(struct TPITEM *tpItemInfo);
 static int CheckStartItem(HWND hWnd, struct TPITEM *tpItemInfo, int ProtocolIndex, int CheckListIndex);
-static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo);
 static void NotifyItemCheckEnd(HWND hWnd, struct TPITEM *tpItemInfo);
 
@@ -131,7 +131,7 @@ static int GetHandleToIndex(HANDLE hHnd)
 
 ******************************************************************************/
 
-static int GetSocketToIndex(int Soc)
+static int GetSocketToIndex(UINT_PTR Soc)
 {
 	int i;
 
@@ -292,7 +292,7 @@ void ItemCheckIni(HWND hWnd, struct TPITEM *tpItemInfo, BOOL no_err)
 	//アイテムの初期化
 	if((tpProtocol + ProtocolIndex)->Func_Initialize == NULL){
 		wsprintf(buf, "%sInitialize", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_Initialize = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_Initialize = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Initialize != NULL){
 		ret = (tpProtocol + ProtocolIndex)->Func_Initialize(hWnd, tpItemInfo);
@@ -333,7 +333,7 @@ static void ListCheckIni(HWND hWnd, BOOL TreeFlag)
 		if(tpItemInfo == NULL){
 			hItem = TreeView_GetIndexToItem(GetDlgItem(hWnd, WWWC_TREE), TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), i);
 			if(TreeFlag == TRUE){
-				CallTreeItem(hWnd, hItem, (FARPROC)TreeCheckIni, CHECKINI_TREECHECK);
+				CallTreeItem(hWnd, hItem, TreeCheckIni, CHECKINI_TREECHECK);
 			}else{
 				TreeCheckIni(hWnd, hItem, CHECKINI_CHECK);
 			}
@@ -384,7 +384,7 @@ void FolderCheckIni(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK TreeCheckIni(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 
@@ -522,7 +522,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 	case CHECKINI_AUTOALLCHECK:
 	case CHECKINI_ALLCHECK:
 		//すべてのアイテムをチェック
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeCheckIni, CheckFlag);
+		CallTreeItem(hWnd, RootItem, TreeCheckIni, CheckFlag);
 		break;
 
 	case CHECKINI_TREECHECK:
@@ -530,7 +530,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 		if(GetFocus() == GetDlgItem(hWnd, WWWC_TREE) || hItem != TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)) ||
 			ListView_GetSelectedCount(GetDlgItem(hWnd, WWWC_LIST)) == 0){
 			TreeCheckIni(hWnd, hItem, CheckFlag);
-			CallTreeItem(hWnd, hItem, (FARPROC)TreeCheckIni, CheckFlag);
+			CallTreeItem(hWnd, hItem, TreeCheckIni, CheckFlag);
 		}else{
 			ListCheckIni(hWnd, TRUE);
 		}
@@ -581,7 +581,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 	if(TrayIcon == 1 && TrayMessage(hWnd, NIM_MODIFY, TRAY_ID, TrayIcon_Chaeck, buf) == FALSE){
 		TrayMessage(hWnd, NIM_ADD, TRAY_ID, TrayIcon_Chaeck, buf);
 	}
-	SetClassLong(hWnd, GCL_HICON, (long)TrayIcon_Chaeck_Win);
+	SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)TrayIcon_Chaeck_Win);
 
 	//既にチェック中の場合
 	if(gCheckFlag == 1){
@@ -640,7 +640,7 @@ BOOL CheckIniProc(HWND hWnd, HTREEITEM hItem, int CheckFlag, int CheckType)
 
 ******************************************************************************/
 
-static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -667,7 +667,7 @@ int FindCheckItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, FindCheckTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -680,7 +680,7 @@ int FindCheckItem(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindCheckNoCheckTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -697,7 +697,7 @@ int FindCheckNoCheckItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindCheckNoCheckTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, FindCheckNoCheckTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -755,7 +755,7 @@ static int CheckStartItem(HWND hWnd, struct TPITEM *tpItemInfo, int ProtocolInde
 	//プロトコルDLLのチェック開始の関数を呼ぶ
 	if((tpProtocol + ProtocolIndex)->Func_Start == NULL){
 		wsprintf(buf, "%sStart", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_Start = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_Start = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Start == NULL){
 		tpItemInfo->Status = (tpItemInfo->Status & ST_UP) ? ST_UP | ST_ERROR : ST_ERROR;
@@ -806,7 +806,7 @@ static int CheckStartItem(HWND hWnd, struct TPITEM *tpItemInfo, int ProtocolInde
 
 ******************************************************************************/
 
-static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int ProtocolIndex;
@@ -845,7 +845,7 @@ static void CALLBACK CheckStartFolder(HWND hWnd, HTREEITEM hItem, long Param)
 
 		}else if(ProtocolIndex != -1 && (*(tpTreeInfo->ItemList + i))->IconStatus == ST_NOCHECK){
 			//チェック開始
-			if(CheckStartItem(hWnd, (*(tpTreeInfo->ItemList + i)), ProtocolIndex, Param) == -1){
+			if(CheckStartItem(hWnd, (*(tpTreeInfo->ItemList + i)), ProtocolIndex, (int)Param) == -1){
 				continue;
 			}
 			CheckFlag = TRUE;
@@ -891,7 +891,7 @@ int CheckProc(HWND hWnd)
 	}
 
 	//チェックするアイテムを検索してチェックを開始
-	CallTreeItem(hWnd, RootItem, (FARPROC)CheckStartFolder, (long)j);
+	CallTreeItem(hWnd, RootItem, CheckStartFolder, (LPARAM)j);
 	if(CheckItemList == NULL){
 		return 0;
 	}
@@ -1048,7 +1048,7 @@ int GethostMsg(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Gethost == NULL){
 		wsprintf(buf, "%sGethost", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_Gethost = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_Gethost = (PROTOCOL_SOCKET_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Gethost == NULL){
 		tpItemInfo->Status = (tpItemInfo->Status & ST_UP) ? ST_UP | ST_ERROR : ST_ERROR;
@@ -1081,7 +1081,7 @@ int SelectMsg(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	int ProtocolIndex;
 	int ret;
 
-	Index = GetSocketToIndex((int)wParam);
+	Index = GetSocketToIndex((UINT_PTR)wParam);
 	if(Index == -1){
 		return 0;
 	}
@@ -1097,7 +1097,7 @@ int SelectMsg(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Select == NULL){
 		wsprintf(buf, "%sSelect", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_Select = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_Select = (PROTOCOL_SOCKET_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Select == NULL){
 		tpItemInfo->Status = (tpItemInfo->Status & ST_UP) ? ST_UP | ST_ERROR : ST_ERROR;
@@ -1147,7 +1147,7 @@ void TimeoutItem(HWND hWnd)
 
 		if((tpProtocol + ProtocolIndex)->Func_Timer == NULL){
 			wsprintf(buf, "%sTimer", (tpProtocol + ProtocolIndex)->FuncHeader);
-			(tpProtocol + ProtocolIndex)->Func_Timer = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+			(tpProtocol + ProtocolIndex)->Func_Timer = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 		}
 		if((tpProtocol + ProtocolIndex)->Func_Timer != NULL){
 			ret = (tpProtocol + ProtocolIndex)->Func_Timer(hWnd, *(CheckItemList + i));
@@ -1211,7 +1211,7 @@ static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo)
 	//プロトコルDLLのチェックのキャンセル関数を呼出す
 	if((tpProtocol + ProtocolIndex)->Func_Cancel == NULL){
 		wsprintf(buf, "%sCancel", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_Cancel = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_Cancel = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_Cancel != NULL){
 		ret = (tpProtocol + ProtocolIndex)->Func_Cancel(hWnd, tpItemInfo);
@@ -1228,7 +1228,7 @@ static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo)
 	//表示されているアイテムの場合は表示の更新を行う
 	if(tpItemInfo->hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		ListIndex = ListView_GetMemToIndex(GetDlgItem(hWnd, WWWC_LIST), tpItemInfo);
-		if(tpItemInfo->RefreshFlag = TRUE){
+		if(tpItemInfo->RefreshFlag == TRUE){
 			ListView_SetItemText(GetDlgItem(hWnd, WWWC_LIST), ListIndex, 0, LPSTR_TEXTCALLBACK);
 		}
 		ListView_RedrawItems(GetDlgItem(hWnd, WWWC_LIST), ListIndex, ListIndex);
@@ -1308,7 +1308,7 @@ void ListCancelItem(HWND hWnd)
 
 ******************************************************************************/
 
-void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK TreeCancelItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int i;
@@ -1368,7 +1368,7 @@ int CheckEndItem(HWND hWnd, WPARAM wParam, LPARAM lParam)
 	case ST_DEFAULT:
 	case ST_ERROR:
 	case ST_TIMEOUT:
-		((struct TPITEM *)lParam)->Status = (((struct TPITEM *)lParam)->Status & ST_UP) ? ST_UP | wParam : wParam;
+		((struct TPITEM *)lParam)->Status = (((struct TPITEM *)lParam)->Status & ST_UP) ? ST_UP | (int)wParam : (int)wParam;
 		break;
 	}
 
@@ -1376,7 +1376,7 @@ int CheckEndItem(HWND hWnd, WPARAM wParam, LPARAM lParam)
 
 	if(((struct TPITEM *)lParam)->hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
 		ListIndex = ListView_GetMemToIndex(GetDlgItem(hWnd, WWWC_LIST), ((struct TPITEM *)lParam));
-		if(((struct TPITEM *)lParam)->RefreshFlag = TRUE){
+		if(((struct TPITEM *)lParam)->RefreshFlag == TRUE){
 			ListView_SetItemText(GetDlgItem(hWnd, WWWC_LIST), ListIndex, 0, LPSTR_TEXTCALLBACK);
 		}
 		ListView_RedrawItems(GetDlgItem(hWnd, WWWC_LIST), ListIndex, ListIndex);
@@ -1405,7 +1405,7 @@ static void NotifyItemCheckEnd(HWND hWnd, struct TPITEM *tpItemInfo)
 	if(ProtocolIndex != -1 && (tpProtocol + ProtocolIndex)->lib != NULL){
 		if((tpProtocol + ProtocolIndex)->Func_ItemCheckEnd == NULL){
 			wsprintf(buf, "%sItemCheckEnd", (tpProtocol + ProtocolIndex)->FuncHeader);
-			(tpProtocol + ProtocolIndex)->Func_ItemCheckEnd = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+			(tpProtocol + ProtocolIndex)->Func_ItemCheckEnd = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 		}
 		if((tpProtocol + ProtocolIndex)->Func_ItemCheckEnd != NULL){
 			(tpProtocol + ProtocolIndex)->Func_ItemCheckEnd(hWnd, tpItemInfo);
@@ -1496,7 +1496,7 @@ void CheckEndProc(HWND hWnd)
 	//ツール実行後にアイコンの初期化を行う設定の処理
 	WaitCursor(TRUE);
 	//アイテム情報の解放
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeItem, 1);
 
 	//表示の更新
 	if(InitFlag == TRUE){
@@ -1530,7 +1530,7 @@ void CheckEndProc(HWND hWnd)
 	if(TrayIcon == 1 && TrayMessage(hWnd, NIM_MODIFY, TRAY_ID, vIcon, buf) == FALSE){
 		TrayMessage(hWnd, NIM_ADD, TRAY_ID, vIcon, buf);
 	}
-	SetClassLong(hWnd, GCL_HICON, (long)TrayIcon_Main_Win);
+	SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)TrayIcon_Main_Win);
 
 	if(CmdCheckEnd == TRUE){
 		if(UPcnt > 0 && CmdNoUpCheckEnd == TRUE){

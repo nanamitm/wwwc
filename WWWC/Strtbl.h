@@ -26,6 +26,11 @@
 #define STR_COPYNAME					GetResStr(IDS_STR_COPYNAME)
 #define STR_COPYNAME_CNT				GetResStr(IDS_STR_COPYNAME_CNT)
 
+//表示テーマ
+#define STR_DARKMODE_LIGHT				"ライト"
+#define STR_DARKMODE_DARK				"ダーク"
+#define STR_DARKMODE_SYSTEM				"Windows の設定に従う"
+
 #define EMSG_PROP_TITLE					GetResStr(IDS_EMSG_PROP_TITLE)
 #define EMSG_PROP						GetResStr(IDS_EMSG_PROP)
 
@@ -40,6 +45,7 @@
 
 #define ABOUTTITLE						GetResStr(IDS_ABOUTTITLE)
 
+#define ABOUT_MODIFIED						"(nakkag/WWWC を元にした改変版)"
 #define HELPFILE						GetResStr(IDS_HELPFILE)
 #define HELPFILE_DEF					"wwwc.html"
 

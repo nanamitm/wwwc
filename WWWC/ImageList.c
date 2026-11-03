@@ -48,7 +48,7 @@ int ImageListIconAdd(HIMAGELIST IconList, int Index, int IconSize, char *buf, in
 	if(*buf != '\0'){
 		//アイコンファイルが指定されている場合はファイルからアイコンを取得
 		ExtractIconEx(buf, iIndex, &hIcon, &hsIcon, 1);
-		if(IconSize >= LICONSIZE){
+		if(IconSize > SICONSIZE){		//高 DPI では大きいアイコンを縮小する
 			DestroyIcon(hsIcon);
 		}else{
 			DestroyIcon(hIcon);
@@ -88,7 +88,7 @@ int ImageListFileIconAdd(HIMAGELIST IconList, char *FileName, UINT uFlags, int I
 	if(*buf != '\0'){
 		//アイコンファイルが指定されている場合はファイルからアイコンを取得
 		ExtractIconEx(buf, iIndex, &hIcon, &hsIcon, 1);
-		if(IconSize >= LICONSIZE){
+		if(IconSize > SICONSIZE){		//高 DPI では大きいアイコンを縮小する
 			DestroyIcon(hsIcon);
 		}else{
 			DestroyIcon(hIcon);

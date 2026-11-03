@@ -153,9 +153,10 @@ void ListView_SetItemImage(HWND hListView, int IconSize, int LVFLag)
 	//イメージリストの作成
 	IconList = ListView_GetImageList(hListView, LVFLag);
 	if(IconList == NULL){
-		IconList = ImageList_Create(IconSize, IconSize, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(IconSize, IconSize, ILC_COLOR32 | ILC_MASK, 0, 0);
 	}else{
-		ImageList_Remove(IconList, -1);
+		//DPI が変わった場合もあるのでサイズを設定し直す (画像はすべて削除される)
+		ImageList_SetIconSize(IconList, IconSize, IconSize);
 	}
 
 	if(*LvBkColor != '\0'){
@@ -237,7 +238,7 @@ static int SetColmunInfo(char *Colbuf, struct TPLVCOLUMN *ColInfo)
 
 	lstrcpy(TmpColumnInfo->Title, COLUMN_NAME);
 	TmpColumnInfo->fmt = LVCFMT_LEFT;
-	TmpColumnInfo->p = sizeof(long) + sizeof(HTREEITEM);
+	TmpColumnInfo->p = offsetof(struct TPITEM, Title);
 	TmpColumnInfo++;
 
 	r = buf;
@@ -248,73 +249,73 @@ static int SetColmunInfo(char *Colbuf, struct TPLVCOLUMN *ColInfo)
 		}else{
 			*r = '\0';
 
-			TmpColumnInfo->p = sizeof(long) + sizeof(HTREEITEM);
+			TmpColumnInfo->p = 0;
 			switch(atoi(buf))
 			{
 			case 0:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_NAME);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-//				TmpColumnInfo->p = sizeof(long) + sizeof(HTREEITEM);
+				TmpColumnInfo->p = offsetof(struct TPITEM, Title);
 				break;
 
 			case 1:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_CHECKURL);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *);
+				TmpColumnInfo->p = offsetof(struct TPITEM, CheckURL);
 				break;
 
 			case 2:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_SIZE);
 				TmpColumnInfo->fmt = LVCFMT_RIGHT;
-				TmpColumnInfo->p += sizeof(char *) * 2;
+				TmpColumnInfo->p = offsetof(struct TPITEM, Size);
 				break;
 
 			case 3:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_DATE);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 3;
+				TmpColumnInfo->p = offsetof(struct TPITEM, Date);
 				break;
 
 			case 4:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_CHECKDATE);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 4 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, CheckDate);
 				break;
 
 			case 5:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_OLDSIZE);
 				TmpColumnInfo->fmt = LVCFMT_RIGHT;
-				TmpColumnInfo->p += sizeof(char *) * 5 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, OldSize);
 				break;
 
 			case 6:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_OLDDATE);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 6 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, OldDate);
 				break;
 
 			case 7:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_VIEWURL);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 7 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, ViewURL);
 				break;
 
 			case 8:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_OPTION1);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 8 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, Option1);
 				break;
 
 			case 9:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_OPTION2);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 9 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, Option2);
 				break;
 
 			case 10:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_COMMENT);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 10 + sizeof(int);
+				TmpColumnInfo->p = offsetof(struct TPITEM, Comment);
 				break;
 
 			case 11:
@@ -326,19 +327,19 @@ static int SetColmunInfo(char *Colbuf, struct TPLVCOLUMN *ColInfo)
 			case 12:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_ERROR);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 11 + sizeof(int) * 2;
+				TmpColumnInfo->p = offsetof(struct TPITEM, ErrStatus);
 				break;
 
 			case 13:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_DLLDATA1);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 12 + sizeof(int) * 2;
+				TmpColumnInfo->p = offsetof(struct TPITEM, DLLData1);
 				break;
 
 			case 14:
 				lstrcpy(TmpColumnInfo->Title, COLUMN_DLLDATA2);
 				TmpColumnInfo->fmt = LVCFMT_LEFT;
-				TmpColumnInfo->p += sizeof(char *) * 13 + sizeof(int) * 2;
+				TmpColumnInfo->p = offsetof(struct TPITEM, DLLData2);
 				break;
 
 			default:
@@ -377,7 +378,7 @@ int ListView_AddColumn(HWND hListView, char *chLvColumn, int *lColSize, struct T
 	if(cnt == 0){
 		lstrcpy(ColInfo->Title, COLUMN_NAME);
 		ColInfo->fmt = LVCFMT_LEFT;
-		ColInfo->p = sizeof(HTREEITEM);
+		ColInfo->p = offsetof(struct TPITEM, Title);
 		cnt = 1;
 	}
 
@@ -388,7 +389,7 @@ int ListView_AddColumn(HWND hListView, char *chLvColumn, int *lColSize, struct T
 		if(lColSize[i] == 0){
 			lColSize[i] = DEFAULT_COLSIZE;
 		}
-		lvc.cx = lColSize[i];
+		lvc.cx = DpiScaleFor(hListView, lColSize[i]);		//設定は 96 DPI での幅
 		lvc.pszText = ColInfo[i].Title;
 		lvc.iSubItem = i;
 		ListView_InsertColumn(hListView, i, &lvc);
@@ -416,7 +417,7 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 	}
 
 	sfg = (lParamSort < 0) ? 1 : 0;	//昇順／降順
-	ghed = ABS(lParamSort) - 1;		//ソートを行うヘッダ
+	ghed = (int)ABS(lParamSort) - 1;		//ソートを行うヘッダ
 
 	*buf1 = '\0';
 	*buf2 = '\0';
@@ -460,14 +461,14 @@ int CALLBACK CompareFunc(LPARAM lParam1, LPARAM lParam2, LPARAM lParamSort)
 
 	}else{
 		//比較を行う文字列
-		if((char *)*((long *)((long)((struct TPITEM *)lParam1) + (SortColInfo + ghed)->p)) != NULL){
+		if(*((char **)((char *)((struct TPITEM *)lParam1) + (SortColInfo + ghed)->p)) != NULL){
 			lstrcpyn(buf1,
-				(char *)*((long *)((long)((struct TPITEM *)lParam1) + (SortColInfo + ghed)->p)),
+				*((char **)((char *)((struct TPITEM *)lParam1) + (SortColInfo + ghed)->p)),
 				BUFSIZE - 1);
 		}
-		if((char *)*((long *)((long)((struct TPITEM *)lParam2) + (SortColInfo + ghed)->p)) != NULL){
+		if(*((char **)((char *)((struct TPITEM *)lParam2) + (SortColInfo + ghed)->p)) != NULL){
 			lstrcpyn(buf2,
-				(char *)*((long *)((long)((struct TPITEM *)lParam2) + (SortColInfo + ghed)->p)),
+				*((char **)((char *)((struct TPITEM *)lParam2) + (SortColInfo + ghed)->p)),
 				BUFSIZE - 1);
 		}
 
@@ -529,7 +530,7 @@ void ListView_SetRedraw(HWND hListView, int DrawFlag)
 
 ******************************************************************************/
 
-int ListView_InsertItemEx(HWND hListView, char *buf, int Img, long lp, int iItem)
+int ListView_InsertItemEx(HWND hListView, char *buf, int Img, LPARAM lp, int iItem)
 {
 	LV_ITEM lvi = { 0 };
 
@@ -725,10 +726,10 @@ int ListView_GetMemToIndex(HWND hListView, struct TPITEM *tpItemInfo)
 
 ******************************************************************************/
 
-long ListView_GetlParam(HWND hListView, int i)
+LPARAM ListView_GetlParam(HWND hListView, int i)
 {
 	LV_ITEM lvi = { 0 };
-	long j = 0;
+	LPARAM j = 0;
 
 	lvi.mask = LVIF_PARAM;
 	lvi.iItem = i;
@@ -747,7 +748,7 @@ long ListView_GetlParam(HWND hListView, int i)
 
 ******************************************************************************/
 
-void ListView_SetlParam(HWND hListView, int i, long lParam)
+void ListView_SetlParam(HWND hListView, int i, LPARAM lParam)
 {
 	LV_ITEM lvi = { 0 };
 
@@ -986,7 +987,7 @@ void ListView_StyleChange(HWND hWnd, int NewStyle)
 	SetListMenuUnCheck(hWnd, ID_MENUITEM_VIEW_REPORT, 0);
 	SetListMenuUnCheck(hWnd, ID_MENUITEM_VIEW_REPORT_LINE, 0);
 
-	st = SendDlgItemMessage(hWnd, WWWC_LIST, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
+	st = (int)SendDlgItemMessage(hWnd, WWWC_LIST, LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0);
 	if((st & LVS_EX_FULLROWSELECT) != 0){
 		st ^= LVS_EX_FULLROWSELECT;
 	}
@@ -1075,14 +1076,14 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 		//テキスト
 		if(hLVItem->mask & LVIF_TEXT){
 			*(hLVItem->pszText) = '\0';
-			if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_NAME) == 0){
-				lstrcpyn(hLVItem->pszText, buf, BUFSIZE - 1);
-			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_CHECKURL) == 0){
-				lstrcpy(hLVItem->pszText, FOLDERNAME);
-			}else if(lstrcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_COMMENT) == 0){
+			if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_NAME) == 0){
+				CopyDisplayText(hLVItem->pszText, buf, hLVItem->cchTextMax);
+			}else if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_CHECKURL) == 0){
+				CopyDisplayText(hLVItem->pszText, FOLDERNAME, hLVItem->cchTextMax);
+			}else if(strcmp((ColumnInfo + hLVItem->iSubItem)->Title, COLUMN_COMMENT) == 0){
 				tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 				if(tpTreeInfo != NULL && tpTreeInfo->Comment != NULL){
-					lstrcpyn(hLVItem->pszText, tpTreeInfo->Comment, BUFSIZE - 1);
+					CopyDisplayText(hLVItem->pszText, tpTreeInfo->Comment, hLVItem->cchTextMax);
 				}
 			}
 		}
@@ -1096,9 +1097,10 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 	//アイテム
 	//テキスト
 	if(hLVItem->mask & LVIF_TEXT){
-		if((char *)*((long *)((long)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)) != NULL){
-			lstrcpyn(hLVItem->pszText,
-				(char *)*((long *)((long)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)), BUFSIZE - 1);
+		if(*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)) != NULL){
+			//バッファの大きさは cchTextMax (リストビューが用意する)
+			CopyDisplayText(hLVItem->pszText,
+				*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)), hLVItem->cchTextMax);
 		}else{
 			*(hLVItem->pszText) = '\0';
 		}
@@ -1206,7 +1208,7 @@ void ListView_RefreshFolder(HWND hWnd)
 		//ツリービューに表示されている数が多い場合は追加
 		for(i = ListFolderCnt;i < TreeFolderCnt;i++){
 			ListView_InsertItemEx(GetDlgItem(hWnd, WWWC_LIST), (char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-				(long)NULL, ListFolderCnt);
+				(LPARAM)NULL, ListFolderCnt);
 		}
 		SelFlag = FALSE;
 	}
@@ -1327,7 +1329,7 @@ void ListView_ShowItem(HWND hWnd, HTREEITEM hItem)
 		lvi.iItem = j + 1;
 		lvi.state = ((*(tpTreeInfo->ItemList + i))->CheckSt == 1)
 			? INDEXTOOVERLAYMASK(ICON_ST_NOCHECK) : 0;
-		lvi.lParam = (long)*(tpTreeInfo->ItemList + i);
+		lvi.lParam = (LPARAM)*(tpTreeInfo->ItemList + i);
 		j = ListView_InsertItem(hListView, &lvi);
 		if(j == -1){
 			break;
@@ -1430,7 +1432,7 @@ void ListView_StartDragItem(HWND hWnd)
 
 	//クリップボードフォーマットを設定
 	cf[0] = WWWC_ClipFormat;
-	cf[1] = CF_TEXT;
+	cf[1] = CF_UNICODETEXT;
 	cf[2] = CF_HDROP;
 	cfcnt = (NoFileFlag == FALSE) ? CLIPFORMAT_CNT : CLIPFORMAT_CNT - 1;
 
@@ -1479,7 +1481,7 @@ void ListView_StartDragItem(HWND hWnd)
 		}
 	}
 	TreeView_SetIconState(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), 0);
-	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), TreeView_FreeItem, 1);
 
 	WaitCursor(FALSE);
 }

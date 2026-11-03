@@ -91,15 +91,15 @@ extern char LvFindColumn[];
 
 static BOOL AddFindItem(struct TPITEM *NewItemInfo);
 static void FreeFindItemList(void);
-static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, long Param);
+static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 static void FindStart(HWND hDlg);
 static LPARAM TabCtrl_GetlParam(HWND hTabCtrl, int iItem);
 static void TabCtrl_SetlParam(HWND hTabCtrl, int iItem, LPARAM lParam);
 static void InitializeFindWindow(HWND hDlg);
 static void SizeFindWindow(HWND hDlg);
 static void CloseFindWindow(HWND hDlg);
-static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static LRESULT Tab_NotifyProc(HWND hWnd, LPARAM lParam, WPARAM wParam);
 static LRESULT FindListViewHeaderNotifyProc(HWND hWnd, LPARAM lParam, struct TPLVCOLUMN *ColInfo);
 static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem);
@@ -167,7 +167,7 @@ static void FreeFindItemList(void)
 
 ******************************************************************************/
 
-static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	struct TPFINDINFO *FindInfo = (struct TPFINDINFO *)Param;
@@ -195,22 +195,27 @@ static void CALLBACK FindItem(HWND hWnd, HTREEITEM hItem, long Param)
 		//項目
 		AddFlag = FALSE;
 		if((FindInfo->ItemFlag & 1) &&
+			(*(tpTreeInfo->ItemList + i))->Title != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Title) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 2) &&
+			(*(tpTreeInfo->ItemList + i))->CheckURL != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->CheckURL) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 4) &&
+			(*(tpTreeInfo->ItemList + i))->ViewURL != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->ViewURL) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 8) &&
+			(*(tpTreeInfo->ItemList + i))->Date != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Date) == TRUE){
 			AddFlag = TRUE;
 		}
 		if(AddFlag == FALSE && (FindInfo->ItemFlag & 16) &&
+			(*(tpTreeInfo->ItemList + i))->Comment != NULL &&
 			str_match(FindInfo->FindString, (*(tpTreeInfo->ItemList + i))->Comment) == TRUE){
 			AddFlag = TRUE;
 		}
@@ -273,10 +278,10 @@ static void FindStart(HWND hDlg)
 
 	if(tpFindInfo.FindSub == TRUE){
 		//再帰して検索
-		CallTreeItem(WWWCWnd, tpFindInfo.hItem, (FARPROC)FindItem, (long)&tpFindInfo);
+		CallTreeItem(WWWCWnd, tpFindInfo.hItem, FindItem, (LPARAM)&tpFindInfo);
 	}else{
 		//指定のフォルダのみ検索
-		FindItem(WWWCWnd, tpFindInfo.hItem, (long)&tpFindInfo);
+		FindItem(WWWCWnd, tpFindInfo.hItem, (LPARAM)&tpFindInfo);
 	}
 
 	if(FindItemList != NULL){
@@ -289,7 +294,7 @@ static void FindStart(HWND hDlg)
 			}
 			ListView_InsertItemEx(GetDlgItem(hDlg, WWWC_LIST),
 				(char*)LPSTR_TEXTCALLBACK, I_IMAGECALLBACK,
-				(long)*(FindItemList + i), i);
+				(LPARAM)*(FindItemList + i), i);
 			ListView_SetItemState(GetDlgItem(hDlg, WWWC_LIST), i,
 				(((*(FindItemList + i))->CheckSt == 1) ? INDEXTOOVERLAYMASK(ICON_ST_NOCHECK) : 0), LVIS_OVERLAYMASK);
 		}
@@ -501,7 +506,7 @@ static void CloseFindWindow(HWND hDlg)
 
 	//リストビューのカラムのサイズを取得
 	for(i = 0;i < LvFindColCnt;i++){
-		LvFindColSize[i] = ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i);
+		LvFindColSize[i] = DpiUnscaleFor(GetDlgItem(hDlg, WWWC_LIST), ListView_GetColumnWidth(GetDlgItem(hDlg, WWWC_LIST), i));
 	}
 
 	FreeFindItemList();
@@ -518,7 +523,7 @@ static void CloseFindWindow(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	HWND hCombo;
 	struct TPFINDINFO *FindInfo;
@@ -587,14 +592,14 @@ static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 		//コンボボックスの設定
 		hCombo = GetDlgItem(hDlg, IDC_COMBO_FINDSTRING);
 		if(SendMessage(hCombo, CB_GETDROPPEDSTATE, 0, 0) == TRUE){
-			if((i = SendMessage(hCombo, CB_GETCURSEL, 0, 0)) > -1){
+			if((i = (int)SendMessage(hCombo, CB_GETCURSEL, 0, 0)) > -1){
 				SendMessage(hCombo, CB_SETCURSEL, i , 0);
 			}
 			SendMessage(hCombo, CB_SHOWDROPDOWN, FALSE, 0);
 		}
 		SendMessage(hCombo, WM_GETTEXT, BUFSIZE - 3, (LPARAM)buf);
 		if(*buf != '\0'){
-			if((i = SendMessage(hCombo, CB_FINDSTRING, -1, (LPARAM)buf)) > -1){
+			if((i = (int)SendMessage(hCombo, CB_FINDSTRING, -1, (LPARAM)buf)) > -1){
 				SendMessage(hCombo, CB_DELETESTRING, i, 0);
 			}
 			SendMessage(hCombo, CB_INSERTSTRING, 0, (LPARAM)buf);
@@ -641,7 +646,7 @@ static BOOL CALLBACK FindNameProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
 ******************************************************************************/
 
-static BOOL CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK FindItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPFINDINFO *FindInfo;
 
@@ -813,13 +818,14 @@ static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 			if(IsTreeItem(WWWCWnd, tpItemInfo->hItem) == TRUE){
 				TreeView_GetItemInfo(GetDlgItem(WWWCWnd, WWWC_TREE), RootItem, tmp1);
 				wsprintf(tmp2, "\\\\%s", tmp1);
-				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, lvItem->pszText, tmp2);
+				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, tmp1, tmp2);
+				CopyDisplayText(lvItem->pszText, tmp1, lvItem->cchTextMax);
 			}
 
-		}else if((char *)*((long *)((long)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)) != NULL){
+		}else if(*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)) != NULL){
 			//アイテム情報とカラム情報からテキストを設定
-			lstrcpyn(lvItem->pszText,
-				(char *)*((long *)((long)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), BUFSIZE - 1);
+			CopyDisplayText(lvItem->pszText,
+				*((char **)((char *)tpItemInfo + (FindColumnInfo + lvItem->iSubItem)->p)), lvItem->cchTextMax);
 
 		}else{
 			*(lvItem->pszText) = '\0';
@@ -856,7 +862,7 @@ static BOOL ListView_FindGetDispItem(HWND hWnd, LV_ITEM *lvItem)
 
 ******************************************************************************/
 
-BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	RECT WindowRect;
 	char buf[BUFSIZE];
@@ -1009,7 +1015,7 @@ BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case ID_MENUITEM_ALLSELECT:
 			//フォーカスの持つボタンを選択
 			GetClassName(GetFocus(), buf, BUFSIZE - 1);
-			if(lstrcmpi(buf, "edit") == 0){
+			if(_stricmp(buf, "edit") == 0){
 				SendMessage(GetFocus(), EM_SETSEL, 0, -1);
 			}else{
 				SetFocus(GetDlgItem(hDlg, WWWC_LIST));
@@ -1115,7 +1121,7 @@ BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	//リストビューアイテムの初期化
 	case WM_LV_INITICON:
-		InitSubIcon(hDlg, wParam);
+		InitSubIcon(hDlg, (int)wParam);
 		RefreshListView(hDlg);
 		break;
 
@@ -1131,8 +1137,8 @@ BOOL CALLBACK FindProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:	//テキスト
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hDlg, NULL);
+		case CF_UNICODETEXT:	//テキスト
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hDlg, NULL));
 			break;
 
 		case CF_HDROP:	//ドロップファイル

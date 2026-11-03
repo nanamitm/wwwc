@@ -165,7 +165,7 @@ void InitUndo(HWND hWnd, char *path, HTREEITEM hItem, int mode)
 		wsprintf(buf, "\\\\Internet%s", path + lstrlen(CuDir));
 		p = r = buf;
 		while(*p != '\0'){
-			if(IS_LEAD_BYTE(p)){
+			if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 				p++;
 			}else if(*p == '\\' || *p == '/'){
 				r = p;
@@ -424,8 +424,8 @@ BOOL ExecUndo(HWND hWnd)
 			if((*(tpTreeInfo->ItemList + i)) == NULL){
 				continue;
 			}
-			if(lstrcmp((*(tpTreeInfo->ItemList + i))->Title, CurUndo.NewTitle) == 0 &&
-				lstrcmp((*(tpTreeInfo->ItemList + i))->CheckURL, CurUndo.UndoURL) == 0){
+			if(strcmp((*(tpTreeInfo->ItemList + i))->Title, CurUndo.NewTitle) == 0 &&
+				strcmp((*(tpTreeInfo->ItemList + i))->CheckURL, CurUndo.UndoURL) == 0){
 				GlobalFree((*(tpTreeInfo->ItemList + i))->Title);
 				(*(tpTreeInfo->ItemList + i))->Title = AllocCopy(CurUndo.OldTitle);
 				if((*(tpTreeInfo->ItemList + i))->Title == NULL){

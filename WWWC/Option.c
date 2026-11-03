@@ -25,6 +25,7 @@
 
 #include "General.h"
 #include "Profile.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -62,6 +63,7 @@ extern HTREEITEM PropItem;
 
 extern int TrayIcon;
 extern int TrayWinShow;
+extern int DarkModeType;
 extern char Inet[];
 extern int InetIndex;
 extern int CheckMax;
@@ -79,9 +81,9 @@ static void init_themes(void);
 static void themes_free(void);
 #endif	//OP_XP_STYLE
 static void AllocGetText(HWND hEdit, char **buf);
-static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -126,20 +128,35 @@ static void themes_free(void)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-long open_theme(const HWND hWnd, const WCHAR *class_name)
+typedef HTHEME (WINAPI *OPENTHEMEDATA_FUNC)(HWND hwnd, LPCWSTR pszClassList);
+typedef HRESULT (WINAPI *CLOSETHEMEDATA_FUNC)(HTHEME hTheme);
+typedef HRESULT (WINAPI *DRAWTHEMEBACKGROUND_FUNC)(HTHEME hTheme, HDC hdc, int iPartId, int iStateId, const RECT *pRect, const RECT *pClipRect);
+
+LONG_PTR open_theme(const HWND hWnd, const WCHAR *class_name)
 {
-	static FARPROC _OpenThemeData = NULL;
+	static OPENTHEMEDATA_FUNC _OpenThemeData = NULL;
 
 	if(hModThemes == NULL){
 		return 0;
 	}
 	if(_OpenThemeData == NULL){
-		_OpenThemeData = GetProcAddress(hModThemes, "OpenThemeData");
+		_OpenThemeData = (OPENTHEMEDATA_FUNC)GetProcAddress(hModThemes, "OpenThemeData");
 	}
 	if(_OpenThemeData == NULL){
 		return 0;
 	}
-	return (long)_OpenThemeData(hWnd, class_name);
+	if(DarkMode_IsDark() == TRUE){
+		//ダークモードではダーク用のテーマを優先する
+		WCHAR dark_class[BUFSIZE];
+		HTHEME hTheme;
+
+		wsprintfW(dark_class, L"DarkMode_Explorer::%s", class_name);
+		hTheme = _OpenThemeData(hWnd, dark_class);
+		if(hTheme != NULL){
+			return (LONG_PTR)hTheme;
+		}
+	}
+	return (LONG_PTR)_OpenThemeData(hWnd, class_name);
 }
 #endif	//OP_XP_STYLE
 
@@ -153,15 +170,15 @@ long open_theme(const HWND hWnd, const WCHAR *class_name)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-void close_theme(long hTheme)
+void close_theme(LONG_PTR hTheme)
 {
-	static FARPROC _CloseThemeData = NULL;
+	static CLOSETHEMEDATA_FUNC _CloseThemeData = NULL;
 
 	if(hModThemes == NULL){
 		return;
 	}
 	if(_CloseThemeData == NULL){
-		_CloseThemeData = GetProcAddress(hModThemes, "CloseThemeData");
+		_CloseThemeData = (CLOSETHEMEDATA_FUNC)GetProcAddress(hModThemes, "CloseThemeData");
 	}
 	if(_CloseThemeData == NULL){
 		return;
@@ -180,16 +197,16 @@ void close_theme(long hTheme)
 ******************************************************************************/
 
 #ifdef OP_XP_STYLE
-BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme)
+BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, LONG_PTR hTheme)
 {
-	static FARPROC _DrawThemeBackground = NULL;
+	static DRAWTHEMEBACKGROUND_FUNC _DrawThemeBackground = NULL;
 	DWORD state = 0;
 
 	if(hModThemes == NULL){
 		return FALSE;
 	}
 	if(_DrawThemeBackground == NULL){
-		_DrawThemeBackground = GetProcAddress(hModThemes, "DrawThemeBackground");
+		_DrawThemeBackground = (DRAWTHEMEBACKGROUND_FUNC)GetProcAddress(hModThemes, "DrawThemeBackground");
 	}
 	if(_DrawThemeBackground == NULL){
 		return FALSE;
@@ -204,7 +221,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_UPHOT;
 		}else{
-			state = ABS_UPNORMAL;
+			state = ABS_UPHOVER;		//Windows 11 では NORMAL に矢印が描かれないため HOVER を使う
 		}
 		break;
 
@@ -216,7 +233,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_DOWNHOT;
 		}else{
-			state = ABS_DOWNNORMAL;
+			state = ABS_DOWNHOVER;
 		}
 		break;
 
@@ -228,7 +245,7 @@ BOOL draw_theme_scroll(LPDRAWITEMSTRUCT lpDrawItem, UINT i, long hTheme)
 		}else if(lpDrawItem->itemState & ODS_FOCUS){
 			state = ABS_RIGHTHOT;
 		}else{
-			state = ABS_RIGHTNORMAL;
+			state = ABS_RIGHTHOVER;
 		}
 		break;
 	}
@@ -288,7 +305,7 @@ static void AllocGetText(HWND hEdit, char **buf)
 	if(*buf != NULL){
 		GlobalFree(*buf);
 	}
-	len = SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0) + 1;
+	len = (int)SendMessage(hEdit, WM_GETTEXTLENGTH, 0, 0) + 1;
 	*buf = (char *)GlobalAlloc(LMEM_FIXED, sizeof(char) * (len + 1));
 	if(*buf != NULL){
 		**buf = '\0';
@@ -305,7 +322,7 @@ static void AllocGetText(HWND hEdit, char **buf)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	HICON hIcon;
@@ -314,7 +331,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, GWL_USERDATA, lParam);
+		SetWindowLongPtr(hDlg, GWLP_USERDATA, lParam);
 		tpItemInfo = (struct TPITEM *)lParam;
 		if(tpItemInfo == NULL){
 			EndDialog(hDlg, FALSE);
@@ -365,7 +382,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 
 		case IDOK:
-			tpItemInfo = (struct TPITEM *)GetWindowLong(hDlg, GWL_USERDATA);
+			tpItemInfo = (struct TPITEM *)GetWindowLongPtr(hDlg, GWLP_USERDATA);
 			if(tpItemInfo == NULL){
 				EndDialog(hDlg, FALSE);
 				break;
@@ -409,7 +426,7 @@ static BOOL CALLBACK OptionItemProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 
 BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 {
-	FARPROC Func_Property = NULL;
+	PROTOCOL_ITEM_FUNC Func_Property = NULL;
 	char buf[BUFSIZE];
 	int ProtocolIndex;
 	int ret;
@@ -417,12 +434,12 @@ BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 	ProtocolIndex = GetProtocolIndex(tpItemInfo->CheckURL);
 	if(ProtocolIndex != -1 && tpProtocol[ProtocolIndex].lib != NULL){
 		wsprintf(buf, "%sProperty", tpProtocol[ProtocolIndex].FuncHeader);
-		Func_Property = GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
+		Func_Property = (PROTOCOL_ITEM_FUNC)GetProcAddress((HMODULE)tpProtocol[ProtocolIndex].lib, buf);
 	}
 
 	//アイテムのプロパティを表示
 	if(Func_Property == NULL){
-		return DialogBoxParam(g_hinst,
+		return (BOOL)DialogBoxParam(g_hinst,
 			MAKEINTRESOURCE(IDD_DIALOG_ITEM), hWnd, OptionItemProc, (LPARAM)tpItemInfo);
 	}
 	ret = Func_Property(hWnd, tpItemInfo);
@@ -438,7 +455,7 @@ BOOL ShowItemProp(HWND hWnd, struct TPITEM *tpItemInfo)
 
 ******************************************************************************/
 
-static void CALLBACK FindPropTree(HWND hWnd, HTREEITEM hItem, long Param)
+static void CALLBACK FindPropTree(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	struct TPTREE *tpTreeInfo;
 	int *ret = (int *)Param;
@@ -457,7 +474,7 @@ int FindPropItem(HWND hWnd, HTREEITEM hItem)
 {
 	int ret = 0;
 
-	CallTreeItem(hWnd, hItem, (FARPROC)FindPropTree, (long)&ret);
+	CallTreeItem(hWnd, hItem, FindPropTree, (LPARAM)&ret);
 	return ret;
 }
 
@@ -543,7 +560,7 @@ LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPTREE *tpTreeInfo;
 	HTREEITEM cItem;
@@ -633,7 +650,7 @@ static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 		}
 
 		TreeView_SetIconState(WWWCWnd, PropItem, 0);
-		CallTreeItem(WWWCWnd, PropItem, (FARPROC)TreeView_FreeItem, 0);
+		CallTreeItem(WWWCWnd, PropItem, TreeView_FreeItem, 0);
 		break;
 
 	case WM_NOTIFY:
@@ -654,7 +671,7 @@ static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 				DestroyIcon(hIcon);
 				break;
 			}
-			i = SendDlgItemMessage(hDlg, IDC_EDIT_COMMENT, WM_GETTEXTLENGTH, 0, 0) + 1;
+			i = (int)SendDlgItemMessage(hDlg, IDC_EDIT_COMMENT, WM_GETTEXTLENGTH, 0, 0) + 1;
 			tmp = (char *)GlobalAlloc(GPTR, i + 1);
 			if(tmp == NULL){
 				abort();
@@ -690,7 +707,7 @@ static BOOL CALLBACK OptionFolderProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARA
 
 int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_FOLDER];
@@ -742,9 +759,10 @@ int ViewFolderProperties(HWND hWnd, HTREEITEM hItem)
 
 ******************************************************************************/
 
-static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
+	int i;
 
 	switch (uMsg)
 	{
@@ -765,6 +783,13 @@ static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 		CheckDlgButton(hDlg, IDC_CHECK_TRAY, TrayIcon);
 		CheckDlgButton(hDlg, IDC_CHECK_TRAYWINSHOW, TrayWinShow);
+
+		//表示テーマ (DARKMODE_LIGHT, DARKMODE_DARK, DARKMODE_SYSTEM の順)
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_LIGHT);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_DARK);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_ADDSTRING, 0, (LPARAM)STR_DARKMODE_SYSTEM);
+		SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_SETCURSEL,
+			(DarkModeType >= DARKMODE_LIGHT && DarkModeType <= DARKMODE_SYSTEM) ? DarkModeType : DARKMODE_LIGHT, 0);
 		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_TRAYWINSHOW), TrayIcon);
 
 		CheckDlgButton(hDlg, IDC_CHECK_UPMSG, UPMsg);
@@ -835,6 +860,10 @@ static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 			}
 			TrayIcon = IsDlgButtonChecked(hDlg, IDC_CHECK_TRAY);
 			TrayWinShow = IsDlgButtonChecked(hDlg, IDC_CHECK_TRAYWINSHOW);
+			i = (int)SendDlgItemMessage(hDlg, IDC_COMBO_DARKMODE, CB_GETCURSEL, 0, 0);
+			if(i >= DARKMODE_LIGHT && i <= DARKMODE_SYSTEM){
+				DarkModeType = i;
+			}
 
 			UPMsg = IsDlgButtonChecked(hDlg, IDC_CHECK_UPMSG);
 			UPSnd = IsDlgButtonChecked(hDlg, IDC_CHECK_UPSND);
@@ -861,7 +890,7 @@ static BOOL CALLBACK OptionCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 int ViewProperties(HWND hWnd)
 {
-#define sizeof_PROPSHEETHEADER		40	//古いコモンコントロール対策
+#define sizeof_PROPSHEETHEADER		PROPSHEETHEADER_V1_SIZE	//古いコモンコントロール対策
 	PROPSHEETPAGE psp;
 	PROPSHEETHEADER psh;
 	HPROPSHEETPAGE hpsp[PROP_CNT_OPTION];

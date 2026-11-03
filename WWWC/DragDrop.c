@@ -109,7 +109,7 @@ static BOOL CreateDropFile(struct TPITEM *tpItemInfo, char *fPath, char *iPath, 
 	}
 	if((tpProtocol + ProtocolIndex)->Func_CreateDropFile == NULL){
 		wsprintf(buf, "%sCreateDropItem", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_CreateDropFile = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
+		(tpProtocol + ProtocolIndex)->Func_CreateDropFile = (PROTOCOL_CREATEDROPITEM_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, buf);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_CreateDropFile == NULL){
 		return FALSE;
@@ -228,7 +228,7 @@ BOOL DragDrop_CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *TempDirName)
 	//階層的にドロップファイルの作成
 	CreateTreeDropFiles(hWnd, hItem, DndPath, buf);
 
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeItem, 1);
 	WaitCursor(FALSE);
 	return TRUE;
 }
@@ -318,7 +318,7 @@ BOOL DragDrop_CreateDropFiles(HWND hWnd, char *TempDirName)
 		}
 	}
 
-	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)), TreeView_FreeItem, 1);
 	if(DropFileCnt == 0){
 		GlobalFree(DropFileNameList);
 		DropFileNameList = NULL;
@@ -650,7 +650,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 	p = buf;
 	r = NULL;
 	while(*p != '\0'){
-		if(IS_LEAD_BYTE(p)){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
 		}else if(*p == '.'){
 			r = p;
@@ -673,12 +673,12 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 		struct TPITEM **tpFromItemInfo;
 		int FromCnt, i;
 
-		if(lstrcmpi(r, "dll") == 0){
+		if(_stricmp(r, "dll") == 0){
 			SelectDll(hWnd, buf);
 			return;
 		}
 
-		if(lstrcmpi(r, "dat") != 0){
+		if(_stricmp(r, "dat") != 0){
 			return;
 		}
 
@@ -713,7 +713,7 @@ void DragDrop_GetDropItemFiles(HWND hWnd, char *buf, HTREEITEM hItem)
 	//ドロップファイルを処理する関数を呼ぶ
 	if((tpProtocol + ProtocolIndex)->Func_DropFile == NULL){
 		wsprintf(funcName, "%sDropFile", (tpProtocol + ProtocolIndex)->FuncHeader);
-		(tpProtocol + ProtocolIndex)->Func_DropFile = GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, funcName);
+		(tpProtocol + ProtocolIndex)->Func_DropFile = (PROTOCOL_DROPFILE_FUNC)GetProcAddress((HMODULE)(tpProtocol + ProtocolIndex)->lib, funcName);
 	}
 	if((tpProtocol + ProtocolIndex)->Func_DropFile == NULL){
 		return;
@@ -793,7 +793,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 			(HTREEITEM)TVI_SORT, fName, ICON_DIR_CLOSE, ICON_DIR_OPEN);
 		if(SucceedFromParent == 1){
 			//親情報の継承
-			CopyAutoTime(hWnd, cItem, (long)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem));
+			CopyAutoTime(hWnd, cItem, (LPARAM)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem));
 		}
 
 		TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), cItem, buf, CuDir);
@@ -830,7 +830,7 @@ void DragDrop_GetDropTree(HWND hWnd, char *Path, HTREEITEM hItem)
 			continue;
 		}
 
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		//再帰
@@ -895,7 +895,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 	}
 
 	TreeView_SetIconState(hWnd, hItem, 0);
-	CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 1);
+	CallTreeItem(hWnd, hItem, TreeView_FreeItem, 1);
 	WaitCursor(FALSE);
 }
 
@@ -908,7 +908,7 @@ void DragDrop_GetDropFiles(HWND hWnd, HDROP hDrop, HTREEITEM hItem)
 
 ******************************************************************************/
 
-long DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
+LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 {
 	LPIDROPTARGET_NOTIFY pdtn;
 	HTREEITEM DnDItem;
@@ -927,12 +927,13 @@ long DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		}
 		switch(pdtn->cfFormat)
 		{
-		case CF_TEXT:
-			p = GlobalLock(pdtn->hMem);
-			if(IsTerminatedMem(pdtn->hMem, p) == TRUE && GetProtocolIndex(p) != -1){
-				DnDCur = FMT_TEXT;
+		case CF_UNICODETEXT:
+			if((p = UnicodeMemToText(pdtn->hMem)) != NULL){
+				if(GetProtocolIndex(p) != -1){
+					DnDCur = FMT_TEXT;
+				}
+				GlobalFree(p);
 			}
-			GlobalUnlock(pdtn->hMem);
 			break;
 
 		case CF_HDROP:
@@ -1012,13 +1013,14 @@ long DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		}else{
 			switch(pdtn->cfFormat)
 			{
-			case CF_TEXT:
-				p = GlobalLock(pdtn->hMem);
-				if(IsTerminatedMem(pdtn->hMem, p) == TRUE && GetProtocolIndex(p) != -1){
-					_SetForegroundWindow(hWnd);
-					Item_UrlAdd(hWnd, NEWITEMNAME, p, 0, NULL);
+			case CF_UNICODETEXT:
+				if((p = UnicodeMemToText(pdtn->hMem)) != NULL){
+					if(GetProtocolIndex(p) != -1){
+						_SetForegroundWindow(hWnd);
+						Item_UrlAdd(hWnd, NEWITEMNAME, p, 0, NULL);
+					}
+					GlobalFree(p);
 				}
-				GlobalUnlock(pdtn->hMem);
 				break;
 
 			case CF_HDROP:

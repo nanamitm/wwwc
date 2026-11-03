@@ -18,7 +18,6 @@
 #define _INC_OLE
 #include <windows.h>
 #undef  _INC_OLE
-#include <winsock.h>
 #include <commctrl.h>
 #include <richedit.h>
 
@@ -30,6 +29,7 @@
 #include "archive.h"
 
 #include "resource.h"
+#include "../shared/DataDirectory.h"
 
 
 /**************************************************************************
@@ -44,7 +44,7 @@
 	Global Variables
 **************************************************************************/
 
-char app_path[BUFSIZE];
+char app_path[PATH_BUFSIZE];
 
 HINSTANCE ghinst;
 HANDLE hRTFLibdll = NULL;
@@ -87,7 +87,6 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	char CuDir[BUFSIZE];
 	char buf[BUFSIZE];
 	char pbuf[PASS_BUFSIZE];
-	DWORD i;
 
 	GetModuleFileName(ghinst, CuDir, BUFSIZE - 1);
 	p = r = CuDir;
@@ -101,20 +100,9 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	}
 	*r = '\0';
 
-	//インストーラでインストールした場合 (wwwc_app.ini の portable=0) は設定とフィルタを
-	//本体と同じ %LOCALAPPDATA%\WWWC に保存する
-	if(lstrlen(CuDir) + lstrlen("\\" APP_INI) < BUFSIZE){
-		wsprintf(buf, "%s\\%s", CuDir, APP_INI);
-		if(GetPrivateProfileInt("GENERAL", "portable", 1, buf) == 0){
-			i = GetEnvironmentVariable("LOCALAPPDATA", buf, BUFSIZE);
-			if(i > 0 && i + lstrlen("\\" APP_DATA_DIR) < BUFSIZE){
-				for(p = buf + lstrlen(buf); p > buf && *(p - 1) == '\\'; p--);
-				*p = '\0';
-				wsprintf(CuDir, "%s\\%s", buf, APP_DATA_DIR);
-				CreateDirectory(CuDir, NULL);
-			}
-		}
-	}
+	//本体と同じ優先順位で既存のポータブルデータを検索する。
+	if(!WwwcDefaultDataDirectory(CuDir, CuDir, BUFSIZE)) return -1;
+	CreateDirectory(CuDir, NULL);
 	if(lstrlen(CuDir) + lstrlen("\\wwwc.ini") >= BUFSIZE){
 		//パスが長すぎる場合は設定ファイルを使用しない
 		*app_path = '\0';
@@ -153,6 +141,13 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	GetPrivateProfileString("PROXY", "pUser", "", pUser, BUFSIZE - 1, app_path);
 	GetPrivateProfileString("PROXY", "pPass", "", pbuf, PASS_BUFSIZE - 1, app_path);
 	DecodePassword(pbuf, pPass, BUFSIZE);
+	if(*pbuf && !IsEncryptedPassword(pbuf)){
+		char encrypted[PASS_ENC_SIZE];
+		if(EncodePassword(pPass, encrypted, sizeof(encrypted))){
+			WritePrivateProfileString("PROXY", "pPass", encrypted, app_path);
+		}
+		SecureZeroMemory(encrypted, sizeof(encrypted));
+	}
 	SecureZeroMemory(pbuf, sizeof(pbuf));
 
 	GetPrivateProfileString("HTTP", "BrowserPath", "", BrowserPath, BUFSIZE - 1, app_path);
@@ -262,18 +257,6 @@ __declspec(dllexport) int CALLBACK GetToolList(int cnt, struct TP_TOOLS *tpToolI
 	switch(cnt)
 	{
 	case 0:
-		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_BROWSINFO);
-		tpToolInfo->Action = TOOL_EXEC_WINDOWMENU;
-		lstrcpy(tpToolInfo->func, "GetBrowserInfo");
-		break;
-
-	case 1:
-		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_BROWSINFOLIST);
-		tpToolInfo->Action = TOOL_EXEC_WINDOWMENU;
-		lstrcpy(tpToolInfo->func, "GetBrowserInfoList");
-		break;
-
-	case 2:
 		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_OPENURL);
 		tpToolInfo->Action = TOOL_EXEC_ITEMMENU | TOOL_EXEC_INITITEM;
 		tpToolInfo->MenuIndex = 2;
@@ -281,7 +264,7 @@ __declspec(dllexport) int CALLBACK GetToolList(int cnt, struct TP_TOOLS *tpToolI
 		lstrcpy(tpToolInfo->func, "DDE_OpenURL");
 		break;
 
-	case 3:
+	case 1:
 		lstrcpy(tpToolInfo->title, STR_TOOL_TITLE_FILTERRELOAD);
 		tpToolInfo->Action = TOOL_EXEC_CHECKSTART | TOOL_EXEC_WINDOWMENU;
 		lstrcpy(tpToolInfo->func, "FilterReload");
@@ -350,7 +333,7 @@ int ExecItem(HWND hWnd, char *buf, char *cmdline)
 {
 	int ret;
 
-	ret = (int)ShellExecute((HWND)NULL, (LPCTSTR)NULL, (LPCTSTR)buf, cmdline, NULL, SW_SHOWNORMAL);
+	ret = (int)(INT_PTR)ShellExecute((HWND)NULL, (LPCTSTR)NULL, (LPCTSTR)buf, cmdline, NULL, SW_SHOWNORMAL);
 	if(ret <= 32){			//エラーの場合は、エラーの文字列を取得してメッセージボックスを表示する
 		ret = GetLastError();
 		ErrMsg(hWnd, ret, STR_ERR_TITLE_OPEN);

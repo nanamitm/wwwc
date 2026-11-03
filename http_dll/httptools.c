@@ -223,7 +223,7 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 ******************************************************************************/
 
-BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM **ItemList;
 	BROWSER_PAGE *pages;
@@ -237,7 +237,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLong(hDlg, DWL_USER, (long)lParam);
+		SetWindowLongPtr(hDlg, DWLP_USER, (long)lParam);
 
 		i = 0;
 		lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -261,8 +261,8 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		ListView_InsertColumn(GetDlgItem(hDlg, IDC_LIST), i, &lvc);
 
 		//リストビューのスタイルの設定
-		SetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
-			GetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SHOWSELALWAYS);
+		SetWindowLongPtr(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
+			GetWindowLongPtr(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SHOWSELALWAYS);
 		SendMessage(GetDlgItem(hDlg, IDC_LIST), LVM_SETEXTENDEDLISTVIEWSTYLE, 0,
 			LVS_EX_ONECLICKACTIVATE | LVS_EX_FULLROWSELECT |
 			SendMessage(GetDlgItem(hDlg, IDC_LIST), LVM_GETEXTENDEDLISTVIEWSTYLE, 0, 0));
@@ -289,8 +289,8 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			ShowWindow(GetDlgItem(hDlg, IDC_CHECK_CHECKURL), SW_HIDE);
 		}else{
 			//プロパティからの呼び出し
-			SetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
-				GetWindowLong(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SINGLESEL);
+			SetWindowLongPtr(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE,
+				GetWindowLongPtr(GetDlgItem(hDlg, IDC_LIST), GWL_STYLE) | LVS_SINGLESEL);
 		}
 		ListView_SetItemState(GetDlgItem(hDlg, IDC_LIST), 0, LVIS_FOCUSED, LVIS_FOCUSED);
 		break;
@@ -302,7 +302,7 @@ BOOL CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		switch(wParam)
 		{
 		case IDOK:
-			pWnd = (HWND)GetWindowLong(hDlg, DWL_USER);
+			pWnd = (HWND)GetWindowLongPtr(hDlg, DWLP_USER);
 			if((SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), -1, LVNI_SELECTED)) == -1){
 				break;
 			}
@@ -435,7 +435,7 @@ __declspec(dllexport) int CALLBACK GetBrowserInfoList(HWND hWnd, struct TPITEM *
 
 ******************************************************************************/
 
-static BOOL CALLBACK SetBrowserProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SetBrowserProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 

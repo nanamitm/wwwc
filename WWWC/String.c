@@ -114,71 +114,22 @@ char *iStrCpy(char *ret, char *buf)
 
 /******************************************************************************
 
-	GetStrLen
+	lstrcmpn / lstrcmpni
 
-	比較用の文字列の長さを取得する
-
-******************************************************************************/
-
-static int GetStrLen(const char *buf, int len)
-{
-	int i;
-
-	if(len < 0) return len;
-
-	for(i = 0; i < len; i++){
-		if(*buf == '\0'){
-			break;
-		}
-		buf++;
-	}
-	return i;
-}
-
-
-/******************************************************************************
-
-	lstrcmpn
-
-	２つの文字列を文字数分比較を行う
+	2つの文字列を先頭から len バイトまで比較する (lstrcmpni は ASCII の大文字と小文字を区別しない)
+	HTML やヘッダの解析、識別子の比較に使うため、言語に依存しない比較にする
+	(以前は CompareString を使っていた)
 
 ******************************************************************************/
 
 int lstrcmpn(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		0, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return strncmp(buf1, buf2, (size_t)len);
 }
-
-
-/******************************************************************************
-
-	lstrcmpni
-
-	2つの文字列を大文字、小文字を区別しないで比較を行う
-
-******************************************************************************/
 
 int lstrcmpni(char *buf1, char *buf2, int len)
 {
-	int ret;
-	int len1, len2;
-
-	len1 = GetStrLen(buf1, len);
-	len2 = GetStrLen(buf2, len);
-
-	ret = CompareString(MAKELCID(MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), SORT_DEFAULT),
-		NORM_IGNORECASE, buf1, len1, buf2, len2);
-
-	return ret - 2;
+	return _strnicmp(buf1, buf2, (size_t)len);
 }
 
 
@@ -618,6 +569,130 @@ char *GetIndexToString(struct TPITEM *tpItemInfo, int Index)
 		break;
 	}
 	return ((p != NULL) ? p : "");
+}
+
+/******************************************************************************
+
+	TextMemToUnicode
+
+	文字列 (UTF-8) のメモリを CF_UNICODETEXT のメモリに変換する (元のメモリは解放する)
+	CF_TEXT は他のアプリケーションではシステムの文字コードとして扱われるため、
+	クリップボードとドラッグ＆ドロップでは CF_UNICODETEXT を使う
+
+******************************************************************************/
+
+HANDLE TextMemToUnicode(HANDLE hText)
+{
+	HANDLE hMem;
+	char *buf;
+	WCHAR *wbuf;
+	int len;
+
+	if(hText == NULL){
+		return NULL;
+	}
+	if((buf = GlobalLock(hText)) == NULL){
+		GlobalFree(hText);
+		return NULL;
+	}
+	len = MultiByteToWideChar(CP_ACP, 0, buf, -1, NULL, 0);
+	hMem = GlobalAlloc(GHND, sizeof(WCHAR) * (len + 1));
+	if(hMem != NULL){
+		if((wbuf = GlobalLock(hMem)) != NULL){
+			MultiByteToWideChar(CP_ACP, 0, buf, -1, wbuf, len);
+			GlobalUnlock(hMem);
+		}
+	}
+	GlobalUnlock(hText);
+	GlobalFree(hText);
+	return hMem;
+}
+
+
+/******************************************************************************
+
+	UnicodeMemToText
+
+	CF_UNICODETEXT のメモリから文字列 (UTF-8) を作成する (戻り値は GlobalFree で解放)
+
+******************************************************************************/
+
+char *UnicodeMemToText(HANDLE hMem)
+{
+	WCHAR *wbuf;
+	char *buf;
+	int len;
+
+	if(hMem == NULL || (wbuf = GlobalLock(hMem)) == NULL){
+		return NULL;
+	}
+	{
+		SIZE_T count = GlobalSize(hMem) / sizeof(WCHAR), n;
+		for(n = 0; n < count && wbuf[n]; n++);
+		if(n == count){ GlobalUnlock(hMem); return NULL; }
+	}
+	len = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
+	buf = (char *)GlobalAlloc(GPTR, len + 1);
+	if(buf != NULL){
+		WideCharToMultiByte(CP_ACP, 0, wbuf, -1, buf, len, NULL, NULL);
+	}
+	GlobalUnlock(hMem);
+	return buf;
+}
+
+/******************************************************************************
+
+	CopyDisplayText
+
+	表示用に文字列を size バイト (終端を含む) までコピーする
+	収まらない場合は UTF-8 の文字の途中で切らない
+
+******************************************************************************/
+
+void CopyDisplayText(char *ret, const char *buf, int size)
+{
+	int len, i, need;
+
+	if(size <= 0){
+		return;
+	}
+	lstrcpyn(ret, (buf != NULL) ? buf : "", size);
+	len = lstrlen(ret);
+	if(buf == NULL || buf[len] == '\0'){
+		return;
+	}
+	//切り詰めた場合は末尾の不完全な文字を除く
+	for(i = len; i > 0 && ((unsigned char)ret[i - 1] & 0xC0) == 0x80; i--);
+	if(i > 0 && (unsigned char)ret[i - 1] >= 0xC0){
+		need = ((unsigned char)ret[i - 1] >= 0xF0) ? 4 : (((unsigned char)ret[i - 1] >= 0xE0) ? 3 : 2);
+		if(len - (i - 1) < need){
+			ret[i - 1] = '\0';
+		}
+	}
+}
+
+/******************************************************************************
+
+	PathCompare
+
+	パスやフォルダ名の比較 (0 で一致)
+	ファイルシステムと同じく大文字と小文字を区別せず、言語 (ロケール) に依存しない。
+	(lstrcmpi は言語に依存した比較のため、無視される文字があったり、トルコ語の
+	 I と i のように大文字と小文字の対応が異なったりする)
+
+******************************************************************************/
+
+int PathCompare(const char *buf1, const char *buf2)
+{
+	WCHAR w1[BUFSIZE], w2[BUFSIZE];
+	int ret;
+
+	if(MultiByteToWideChar(CP_ACP, 0, buf1, -1, w1, BUFSIZE) == 0 ||
+		MultiByteToWideChar(CP_ACP, 0, buf2, -1, w2, BUFSIZE) == 0){
+		return strcmp(buf1, buf2);
+	}
+	ret = CompareStringOrdinal(w1, -1, w2, -1, TRUE);
+	return (ret == 0) ? strcmp(buf1, buf2) : ret - CSTR_EQUAL;
 }
 
 

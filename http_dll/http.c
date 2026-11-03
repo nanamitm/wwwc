@@ -115,9 +115,9 @@ extern char TimeFormat[];
 **************************************************************************/
 
 //View
-static DWORD CALLBACK EditStreamProc(DWORD dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb);
+static DWORD CALLBACK EditStreamProc(DWORD_PTR dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb);
 static void SetViewControlPos(HWND hDlg);
-static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 //Title
 static char *GetTitle(char *buf);
@@ -165,7 +165,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 ******************************************************************************/
 
-static DWORD CALLBACK EditStreamProc(DWORD dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb)
+static DWORD CALLBACK EditStreamProc(DWORD_PTR dwCookie, LPBYTE pbBuf, LONG cb, LONG *pcb)
 {
 	int len;
 
@@ -214,8 +214,9 @@ static void SetViewControlPos(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	BOOL dark;
 	struct TPITEM *tpItemInfo;
 	struct TPHTTP *tpHTTP;
 	EDITSTREAM eds;
@@ -264,6 +265,18 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 
 		SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETTEXTMODE, TM_RICHTEXT, 0);
+		dark = (BOOL)SendMessage(tpHTTP->hWnd, WM_GETDARKMODE, 0, 0);
+		if(dark == TRUE){
+			//ダークモード: 背景と既定の文字色
+			CHARFORMAT cf;
+
+			SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETBKGNDCOLOR, 0, VIEW_DARK_BACK);
+			ZeroMemory(&cf, sizeof(CHARFORMAT));
+			cf.cbSize = sizeof(CHARFORMAT);
+			cf.dwMask = CFM_COLOR;
+			cf.crTextColor = VIEW_DARK_TEXT;
+			SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_SETCHARFORMAT, SCF_DEFAULT, (LPARAM)&cf);
+		}
 		if(tpItemInfo->Param3 == 1){
 			buf = (char *)GlobalAlloc(GMEM_FIXED, lstrlen(STR_TITLE_HEADVIEW) + lstrlen(tpItemInfo->CheckURL) + 1);
 			if(buf != NULL){
@@ -278,7 +291,7 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 			filter_title = "";
 			if(tpHTTP->FilterFlag == TRUE){
 				//Shiftが押されている場合はフィルタを処理
-				tpHTTP->FilterFlag = FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
+				tpHTTP->FilterFlag = FilterCheck(tpItemInfo->CheckURL, &tpHTTP->buf, HeaderSize(tpHTTP->buf));
 				if(tpHTTP->FilterFlag == TRUE){
 					filter_title = STR_TITLE_FILTER;
 				}else if(FilterMatch(tpItemInfo->CheckURL) == TRUE){
@@ -288,13 +301,13 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			buf = SrcConv(tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
 			if(buf != NULL){
-				i = GetHtml2RtfSize(buf);
+				i = GetHtml2RtfSize(buf, (BOOL)SendMessage(tpHTTP->hWnd, WM_GETDARKMODE, 0, 0));
 				ret = (char *)GlobalAlloc(GMEM_FIXED, i + 1);
 				if(ret != NULL){
-					Html2Rtf(buf, ret);
+					Html2Rtf(buf, ret, (BOOL)SendMessage(tpHTTP->hWnd, WM_GETDARKMODE, 0, 0));
 					SendDlgItemMessage(hDlg, IDC_EDIT_VIEW, EM_LIMITTEXT, i + 1, 0);
 					srcLen = 0;
-					eds.dwCookie = (DWORD)ret;
+					eds.dwCookie = (DWORD_PTR)ret;
 					eds.dwError = 0;
 					eds.pfnCallback = EditStreamProc;
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_STREAMIN, SF_RTF, (LPARAM)&eds);
@@ -367,7 +380,7 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXGETSEL, 0, (LPARAM)&seltext);
 			if(seltext.cpMin == seltext.cpMax){
 				settext.cpMin = 0;
-				settext.cpMax = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
+				settext.cpMax = (LONG)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&settext);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_COPY, 0, 0);
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&seltext);
@@ -404,7 +417,7 @@ static BOOL CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 				break;
 			}
 			seltext.cpMin = 0;
-			seltext.cpMax = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
+			seltext.cpMax = (LONG)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), WM_GETTEXTLENGTH, 0, 0);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEW), EM_EXSETSEL, 0, (LPARAM)&seltext);
 			break;
 		}
@@ -1105,7 +1118,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 		if(SizeRet == 0){
 			//フィルタ処理
 			if(tpHTTP->FilterFlag == TRUE &&
-				FilterCheck(tpItemInfo->CheckURL, tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size) == FALSE){
+				FilterCheck(tpItemInfo->CheckURL, &tpHTTP->buf, HeaderSize(tpHTTP->buf)) == FALSE){
 				tpHTTP->FilterFlag = FALSE;
 				if(tpItemInfo->Date != NULL){
 					GlobalFree(tpItemInfo->Date);
@@ -1170,7 +1183,7 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			if(tpItemInfo->Param2 != 0){
 				GlobalFree((HGLOBAL)tpItemInfo->Param2);
 			}
-			tpItemInfo->Param2 = (long)p;
+			tpItemInfo->Param2 = (LONG_PTR)p;
 
 			//リクエストの初期化
 			return CHECK_NO;
@@ -1386,7 +1399,7 @@ __declspec(dllexport) int CALLBACK HTTP_Cancel(HWND hWnd, struct TPITEM *tpItemI
 	case 1:
 	case 2:
 		//ヘッダ、ソース表示
-		vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (long)tpItemInfo);
+		vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 		ShowWindow(vWnd, SW_SHOW);
 		break;
 
@@ -1493,7 +1506,11 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 		pt = pPort;
 	}
 
-	if((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2){
+	tpHTTP->ProxyMode = ProxyFlag == 2 ? PROXY_NAMED : PROXY_NONE;
+	if(ProxyFlag == 0){
+		tpHTTP->ProxyMode = GetOptionInt(tpItemInfo->Option2, OP2_SETPROXY) == 1 ? PROXY_NAMED : Proxy;
+	}
+	if(tpHTTP->ProxyMode == PROXY_NAMED){
 		//Proxyのサーバ名とポート番号を取得
 		tpHTTP->SvName = (char *)GlobalAlloc(GPTR, lstrlen(px) + 1);
 		if(tpHTTP->SvName == NULL){
@@ -1638,7 +1655,7 @@ static BOOL CheckServer(HWND hWnd, char *RealServer)
 	int i, j;
 	int Port;
 
-	j = SendMessage(hWnd, WM_GETCHECKLISTCNT, 0, 0);
+	j = (int)SendMessage(hWnd, WM_GETCHECKLISTCNT, 0, 0);
 	CheckItemList = (struct TPITEM **)SendMessage(hWnd, WM_GETCHECKLIST, 0, 0);
 	if(CheckItemList == NULL){
 		return FALSE;
@@ -1904,6 +1921,25 @@ static WCHAR *AllocWideString(char *buf)
 
 ******************************************************************************/
 
+static void MigrateItemPassword(struct TPITEM *tpItemInfo)
+{
+	char enc[PASS_ENC_SIZE];
+	char pass[BUFSIZE];
+	char *p;
+
+	if(GetOptionStringEx(tpItemInfo->Option2, enc, PASS_ENC_SIZE, OP2_PASS) == FALSE ||
+		IsEncryptedPassword(enc) == TRUE){
+		return;
+	}
+	DecodePassword(enc, pass, BUFSIZE);
+	if(EncodePassword(pass, enc, PASS_ENC_SIZE) == TRUE &&
+		(p = SetOptionString(tpItemInfo->Option2, OP2_PASS, enc)) != NULL){
+		GlobalFree(tpItemInfo->Option2);
+		tpItemInfo->Option2 = p;
+	}
+	SecureZeroMemory(pass, sizeof(pass));
+}
+
 static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 {
 	char BaseStr1[BUFSIZE * 2 + 2];
@@ -1920,6 +1956,8 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	BOOL AuthFlag;
 	int ProxyFlag;
 
+	MigrateItemPassword(tpItemInfo);
+
 	//要求するURL
 	tpHTTP->ReqURL = AllocWideString((char *)tpItemInfo->Param2);
 	if(tpHTTP->ReqURL == NULL){
@@ -1928,7 +1966,11 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 
 	//プロキシ
 	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
-	if((ProxyFlag == 0 && Proxy == 1) || ProxyFlag == 2){
+	tpHTTP->ProxyMode = PROXY_NONE;
+	if(ProxyFlag == 0){
+		tpHTTP->ProxyMode = GetOptionInt(tpItemInfo->Option2, OP2_SETPROXY) == 1 ? PROXY_NAMED : Proxy;
+	}
+	if(tpHTTP->ProxyMode == PROXY_NAMED){
 		wsprintf(proxy, "http://%s:%d", tpHTTP->SvName, tpHTTP->Port);
 		tpHTTP->ProxyName = AllocWideString(proxy);
 		if(tpHTTP->ProxyName == NULL){
@@ -1937,8 +1979,9 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	}
 
 	//処理の種類
+	tpHTTP->IgnoreCert = GetOptionInt(tpItemInfo->Option2, OP2_IGNORECERT) == 1;
 	tpHTTP->HeadRequest = (tpItemInfo->user2 == REQUEST_HEAD) ? TRUE : FALSE;
-	tpHTTP->Mode = tpItemInfo->Param3;
+	tpHTTP->Mode = (int)tpItemInfo->Param3;
 	tpHTTP->NeedBody = (tpItemInfo->Param3 >= 2 || tpHTTP->FilterFlag == TRUE ||
 		GetOptionInt(tpItemInfo->Option1, OP1_META) == 1 ||
 		GetOptionInt(tpItemInfo->Option1, OP1_MD5) == 1 ||
@@ -1948,7 +1991,7 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	//プロキシ認証
 	//ヘッダで送るとプロキシを経由しない接続 (ループバック等) やHTTPSのトンネル内で接続先サーバに
 	//送られるため、WinHTTPの資格情報として設定してプロキシから要求された場合にのみ送る
-	if(tpHTTP->ProxyName != NULL && pUsePass == 1){
+	if(tpHTTP->ProxyMode != PROXY_NONE && pUsePass == 1){
 		tpHTTP->ProxyUser = AllocWideString(pUser);
 		tpHTTP->ProxyPass = AllocWideString(pPass);
 		if(tpHTTP->ProxyUser == NULL || tpHTTP->ProxyPass == NULL){
@@ -2154,6 +2197,8 @@ static BOOL HTTP_Request(struct TPHTTP *tpHTTP)
 	agent = (tpHTTP->UserAgent != NULL) ? tpHTTP->UserAgent : USER_AGENT;
 	if(tpHTTP->ProxyName != NULL){
 		hInternet = WinHttpOpen(agent, WINHTTP_ACCESS_TYPE_NAMED_PROXY, tpHTTP->ProxyName, WINHTTP_NO_PROXY_BYPASS, 0);
+	}else if(tpHTTP->ProxyMode == PROXY_SYSTEM){
+		hInternet = WinHttpOpen(agent, WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	}else{
 		hInternet = WinHttpOpen(agent, WINHTTP_ACCESS_TYPE_NO_PROXY, WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 	}
@@ -2220,10 +2265,15 @@ static BOOL HTTP_Request(struct TPHTTP *tpHTTP)
 		return FALSE;
 	}
 
+	if(tpHTTP->IgnoreCert){
+		dwFlags = SECURITY_FLAG_IGNORE_UNKNOWN_CA | SECURITY_FLAG_IGNORE_CERT_WRONG_USAGE |
+			SECURITY_FLAG_IGNORE_CERT_CN_INVALID | SECURITY_FLAG_IGNORE_CERT_DATE_INVALID;
+		WinHttpSetOption(hInternet, WINHTTP_OPTION_SECURITY_FLAGS, &dwFlags, sizeof(dwFlags));
+	}
 	//プロキシ認証 (プロキシから要求された場合にWinHTTPが送る)
 	if(tpHTTP->ProxyUser != NULL && tpHTTP->ProxyPass != NULL){
-		WinHttpSetOption(hInternet, WINHTTP_OPTION_PROXY_USERNAME, tpHTTP->ProxyUser, lstrlenW(tpHTTP->ProxyUser));
-		WinHttpSetOption(hInternet, WINHTTP_OPTION_PROXY_PASSWORD, tpHTTP->ProxyPass, lstrlenW(tpHTTP->ProxyPass));
+		WinHttpSetCredentials(hInternet, WINHTTP_AUTH_TARGET_PROXY, WINHTTP_AUTH_SCHEME_BASIC,
+			tpHTTP->ProxyUser, tpHTTP->ProxyPass, NULL);
 	}
 	//認証情報を送る場合は自動リダイレクトを行わない (リダイレクトはチェック処理側で行う)
 	if(tpHTTP->NoRedirect == TRUE){
@@ -2604,7 +2654,7 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	if(tpHTTP == NULL){
 		return CHECK_ERROR;
 	}
-	tpItemInfo->Param1 = (long)tpHTTP;
+	tpItemInfo->Param1 = (LONG_PTR)tpHTTP;
 
 	//タイマーの初期化
 	tpItemInfo->user1 = 0;
@@ -2612,13 +2662,13 @@ __declspec(dllexport) int CALLBACK HTTP_Start(HWND hWnd, struct TPITEM *tpItemIn
 	//チェック以外の場合に表示するURLの情報を使用する
 	if(tpItemInfo->Param2 == 0){
 		if(tpItemInfo->Param3 == 3 && tpItemInfo->ViewURL != NULL && *tpItemInfo->ViewURL != '\0'){
-			if((tpItemInfo->Param2 = (long)GlobalAlloc(GPTR, lstrlen(tpItemInfo->ViewURL) + 1)) == 0){
+			if((tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(tpItemInfo->ViewURL) + 1)) == 0){
 				HTTP_FreeItem(tpItemInfo);
 				return CHECK_ERROR;
 			}
 			lstrcpy((char*)tpItemInfo->Param2, tpItemInfo->ViewURL);
 		}else{
-			if((tpItemInfo->Param2 = (long)GlobalAlloc(GPTR, lstrlen(tpItemInfo->CheckURL) + 1)) == 0){
+			if((tpItemInfo->Param2 = (LONG_PTR)GlobalAlloc(GPTR, lstrlen(tpItemInfo->CheckURL) + 1)) == 0){
 				HTTP_FreeItem(tpItemInfo);
 				return CHECK_ERROR;
 			}
@@ -2705,7 +2755,7 @@ __declspec(dllexport) int CALLBACK HTTP_ItemCheckEnd(HWND hWnd, struct TPITEM *t
 				break;
 			}
 			//ヘッダ、ソース表示
-			vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (long)tpItemInfo);
+			vWnd = CreateDialogParam(ghinst, MAKEINTRESOURCE(IDD_DIALOG_VIEW), NULL, ViewProc, (LPARAM)tpItemInfo);
 			if(vWnd != NULL){
 				ShowWindow(vWnd, SW_SHOW);
 				SetFocus(GetDlgItem(vWnd, IDC_EDIT_VIEW));

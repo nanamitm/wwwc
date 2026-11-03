@@ -33,8 +33,11 @@
 
 #pragma comment(lib, "crypt32.lib")
 
-#define PASS_PREFIX			"dp:"
-#define PASS_ENTROPY		"WWWC password"
+#define AUTHOR_PASS_PREFIX "dp:"
+#define PASS_ENTROPY "WWWC password"
+static int NumericEntityToUtf8(const char *p, char *ret, const char **end);
+static int Utf8ToRtf(const char *p, char *ret, int *len);
+static char *SjisToAcp(char *buf);
 
 /**************************************************************************
 	Define
@@ -42,12 +45,18 @@
 
 #define ESC					0x1B		/* エスケープコード */
 
-//RTFヘッダ
-#define RTF_HEAD	"{\\rtf1\\ansi\\ansicpg932\\deff0\\deflang1033\\deflangfe1041"\
+//RTFヘッダ (色の表: cf1 タグ, cf2 属性値, cf3 テキスト, cf4 コメント)
+#define RTF_HEAD_FONT	"{\\rtf1\\ansi\\ansicpg932\\deff0\\deflang1033\\deflangfe1041"\
 	"{\\fonttbl{\\f0\\fnil\\fprq2\\fcharset128 \\'82\\'6c\\'82\\'72 \\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}"\
-	"{\\f1\\froman\\fprq1\\fcharset128 \\'82\\'6c\\'82\\'72 \\'82\\'6f\\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}}\r\n"\
+	"{\\f1\\froman\\fprq1\\fcharset128 \\'82\\'6c\\'82\\'72 \\'82\\'6f\\'83\\'53\\'83\\'56\\'83\\'62\\'83\\'4e;}}\r\n"
+#define RTF_HEAD_BODY	"\\viewkind4\\uc1\\pard\\cf1\\lang1041\\f0\\fs18 "
+#define RTF_HEAD	RTF_HEAD_FONT\
 	"{\\colortbl ;\\red0\\green0\\blue128;\\red0\\green128\\blue128;\\red0\\green0\\blue0;\\red0\\green128\\blue0;}\r\n"\
-	"\\viewkind4\\uc1\\pard\\cf1\\lang1041\\f0\\fs18 "
+	RTF_HEAD_BODY
+//ダークモード用
+#define RTF_HEAD_DARK	RTF_HEAD_FONT\
+	"{\\colortbl ;\\red86\\green156\\blue214;\\red206\\green145\\blue120;\\red212\\green212\\blue212;\\red106\\green153\\blue85;}\r\n"\
+	RTF_HEAD_BODY
 
 #define to_lower(c)		((c >= TEXT('A') && c <= TEXT('Z')) ? (c - TEXT('A') + TEXT('a')) : c)
 
@@ -135,7 +144,7 @@ void BadNameCheck(char *buf, char NewChar)
 
 ******************************************************************************/
 
-void EncodePassword(char *pass, char *ret, int size)
+void AuthorEncodePassword(char *pass, char *ret, int size)
 {
 	DATA_BLOB in, out, entropy;
 	char *r;
@@ -151,8 +160,8 @@ void EncodePassword(char *pass, char *ret, int size)
 		entropy.pbData = (BYTE *)PASS_ENTROPY;
 		entropy.cbData = sizeof(PASS_ENTROPY);
 		if(CryptProtectData(&in, L"WWWC", &entropy, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out) == TRUE){
-			if(lstrlen(PASS_PREFIX) + (int)out.cbData * 2 < size){
-				r = iStrCpy(ret, PASS_PREFIX);
+			if(lstrlen(AUTHOR_PASS_PREFIX) + (int)out.cbData * 2 < size){
+				r = iStrCpy(ret, AUTHOR_PASS_PREFIX);
 				for(i = 0; i < out.cbData; i++, r += 2){
 					wsprintf(r, "%02x", out.pbData[i]);
 				}
@@ -179,7 +188,7 @@ void EncodePassword(char *pass, char *ret, int size)
 
 ******************************************************************************/
 
-BOOL DecodePassword(char *buf, char *ret, int size)
+BOOL AuthorDecodePassword(char *buf, char *ret, int size)
 {
 	DATA_BLOB in, out, entropy;
 	char tmp[3];
@@ -191,7 +200,7 @@ BOOL DecodePassword(char *buf, char *ret, int size)
 	if(buf == NULL || size <= 0){
 		return FALSE;
 	}
-	if(lstrcmpn(buf, PASS_PREFIX, lstrlen(PASS_PREFIX)) != 0){
+	if(lstrcmpn(buf, AUTHOR_PASS_PREFIX, lstrlen(AUTHOR_PASS_PREFIX)) != 0){
 		//従来の形式
 		tmp[2] = '\0';
 		for(p = buf, r = ret; *p != '\0' && *(p + 1) != '\0' && r < ret + size - 1; p += 2, r++){
@@ -203,7 +212,7 @@ BOOL DecodePassword(char *buf, char *ret, int size)
 		return TRUE;
 	}
 
-	p = buf + lstrlen(PASS_PREFIX);
+	p = buf + lstrlen(AUTHOR_PASS_PREFIX);
 	len = lstrlen(p) / 2;
 	if(len <= 0){
 		return FALSE;
@@ -640,7 +649,7 @@ char *CreateMoveURL(char *FromURL, char *ToURL)
 			if(ret == NULL){
 				return NULL;
 			}
-			lstrcpyn(ret, FromURL, e - FromURL + 1);
+			lstrcpyn(ret, FromURL, (int)(e - FromURL + 1));
 			lstrcat(ret, "/");
 			lstrcat(ret, ToURL);
 			return ret;
@@ -651,7 +660,7 @@ char *CreateMoveURL(char *FromURL, char *ToURL)
 	if(ret == NULL){
 		return NULL;
 	}
-	lstrcpyn(ret, FromURL, p - FromURL + 1);
+	lstrcpyn(ret, FromURL, (int)(p - FromURL + 1));
 	lstrcat(ret, ToURL);
 	return ret;
 }
@@ -1061,7 +1070,7 @@ long HeaderSize(char *buf)
 			break;
 		}
 	}
-	return p - buf;
+	return (long)(p - buf);
 }
 
 
@@ -1425,12 +1434,14 @@ int DelTagSize(char *buf)
 
 void ConvHTMLChar(char *buf)
 {
-	char *r, *t, *s;
+	char *r, *t;
+	const char *end;
+	int len;
 
 	r = t = buf;
 
 	while(*r != '\0'){
-		if(IS_LEAD_BYTE(r)){
+		if(IsDBCSLeadByte((BYTE)*r) == TRUE && *(r + 1) != '\0'){
 			*(t++) = *(r++);
 			*(t++) = *(r++);
 			continue;
@@ -1468,14 +1479,13 @@ void ConvHTMLChar(char *buf)
 				r += lstrlen("copy;");
 				*(t++) = 'c';
 			}else if(*r == '#'){
-				for(s = r + 1; *s >= '0' && *s <= '9'; s++);
-				//制御文字や範囲外の値は変換しない
-				if(*s != ';' || s - (r + 1) > 3 || atoi(r + 1) < 0x20 || atoi(r + 1) > 0x7E){
+				len = NumericEntityToUtf8(r, t, &end);
+				if(len == 0){
 					r--;
 					*(t++) = *(r++);
 				}else{
-					*(t++) = atoi(r + 1);
-					r = s + 1;
+					t += len;
+					r = (char *)end;
 				}
 			}else{
 				r--;
@@ -1876,6 +1886,7 @@ char *JIS_SJIS(char *buf, char *ret)
 	unsigned int c, d, j;
 	BOOL jiskanji, hankaku;
 	char *p, *r;
+#define JIS_NEXT()	((*p != '\0') ? *(p++) : '\0')
 
 	*ret = '\0';
 
@@ -1888,8 +1899,8 @@ char *JIS_SJIS(char *buf, char *ret)
 		j++;
 		c = *(p++);
 		if(c == ESC){
-			if((c = NextChar(&p)) == '$'){
-				if((c = NextChar(&p)) == '@' || c == 'B'){
+			if((c = JIS_NEXT()) == '$'){
+				if((c = JIS_NEXT()) == '@' || c == 'B'){
 					jiskanji = TRUE;
 				}else{
 					*(r++) = ESC;
@@ -1899,7 +1910,7 @@ char *JIS_SJIS(char *buf, char *ret)
 					}
 				}
 			}else if(c == '('){
-				if((c = NextChar(&p)) == 'H' || c == 'J' || c == 'B'){
+				if((c = JIS_NEXT()) == 'H' || c == 'J' || c == 'B'){
 					jiskanji = FALSE;
 				}else{
 					*(r++) = ESC;
@@ -1909,13 +1920,13 @@ char *JIS_SJIS(char *buf, char *ret)
 					}
 				}
 			}else if(c == '*'){
-				if((c = NextChar(&p)) == 'B'){
+				if((c = JIS_NEXT()) == 'B'){
 					hankaku = FALSE;
 				}else if(c == 'I'){
 					hankaku = TRUE;
 				}
 			}else if(hankaku == TRUE && c == 'N'){
-				c = NextChar(&p);
+				c = JIS_NEXT();
 				*(r++) = c + 0x80;
 			}else if(c == 'K'){
 				jiskanji = TRUE;
@@ -1928,7 +1939,7 @@ char *JIS_SJIS(char *buf, char *ret)
 				}
 			}
 		}else if(jiskanji && c >= 0x21 && c <= 0x7E){
-			if((d = NextChar(&p)) >= 0x21 && d <= 0x7E){
+			if((d = JIS_NEXT()) >= 0x21 && d <= 0x7E){
 				SjisShift((int *)&c, (int *)&d);
 			}
 			*(r++) = c;
@@ -1936,7 +1947,7 @@ char *JIS_SJIS(char *buf, char *ret)
 				*(r++) = d;
 			}
 		}else if(c >= 0xA1 && c <= 0xFE){
-			if((d = NextChar(&p)) >= 0xA1 && d <= 0xFE){
+			if((d = JIS_NEXT()) >= 0xA1 && d <= 0xFE){
 				d &= 0x7E;
 				c &= 0x7E;
 				SjisShift((int *)&c, (int *)&d);
@@ -1958,6 +1969,7 @@ char *JIS_SJIS(char *buf, char *ret)
 	}
 	*r = '\0';
 	return r;
+#undef JIS_NEXT
 }
 
 
@@ -2013,8 +2025,8 @@ int GetKanjiType(unsigned char *str)
     unsigned char b1, b2, b3;
 
     b1 = *str++;
-    b2 = (b1 != '\0') ? *str++ : 0;
-    b3 = (b2 != '\0') ? *str : 0;
+    b2 = *str++;
+    b3 = (b2 != 0) ? *str : 0;
     if (b1 == 0x1b) {
         if (b2 == '$' && b3 == 'B') return 16;
         if (b2 == '$' && b3 == '@') return 32;
@@ -2026,7 +2038,7 @@ int GetKanjiType(unsigned char *str)
         (b2 >= 0x40 && b2 <= 0xfc && b2 != 0x7f)) val |= 2;
     if (b1 == 0x8e && (b2 >= 0xa0 && b2 <= 0xdf)) val |= 4;
     if ((b1 >= 0xa1 && b1 <= 0xfe) &&
-        (b2 >= 0xa1 && b2 <= 0xfe)) val |= 8;
+        (b2 >= 0xa1 && b1 <= 0xfe)) val |= 8;
 
     return val;
 }
@@ -2100,26 +2112,18 @@ static char *convUtf8(char *buf) {
 	char *cbuf;
 	int clen;
 
-	wlen = MultiByteToWideChar(CP_UTF8, 0, buf, -1, NULL, 0);
+	//UTF-8 として正しくない場合は失敗する
+	//(以前は変換し直した文字列を lstrcmp で比べていたが、lstrcmp は文字列としての
+	// 比較のため、プロセスの文字コードが UTF-8 だと不正なバイトと U+FFFD が等しくなる)
+	wlen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buf, -1, NULL, 0);
 	if (wlen <= 0) {
 		return NULL;
 	}
 	wbuf = (WCHAR *)GlobalAlloc(GMEM_FIXED, (wlen + 1) * sizeof(WCHAR));
-	MultiByteToWideChar(CP_UTF8, 0, buf, -1, wbuf, wlen);
-
-	clen = WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, NULL, 0, NULL, NULL);
-	if (clen <= 0) {
-		GlobalFree(wbuf);
+	if (wbuf == NULL) {
 		return NULL;
 	}
-	cbuf = (char *)GlobalAlloc(GMEM_FIXED, (clen + 1) * sizeof(char));
-	WideCharToMultiByte(CP_UTF8, 0, wbuf, -1, cbuf, clen, NULL, NULL);
-	if (lstrcmp(buf, cbuf) != 0) {
-		GlobalFree(cbuf);
-		GlobalFree(wbuf);
-		return NULL;
-	}
-	GlobalFree(cbuf);
+	MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, buf, -1, wbuf, wlen);
 
 	clen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
 	if (clen <= 0) {
@@ -2143,16 +2147,28 @@ static char *convUtf8(char *buf) {
 char *SrcConv(char *buf, long Size)
 {
 	char *tmp;
+	char *p;
 
-	tmp = convUtf8(buf);
-	if (tmp != NULL) {
-		return tmp;
+	//JIS は7ビットなのでUTF-8としても正しく見える。エスケープシーケンスがあればUTF-8の判定をしない
+	for (p = buf; *p != '\0' && !(*p == ESC && (*(p + 1) == '$' || *(p + 1) == '(')); p++);
+	if (*p == '\0') {
+		tmp = convUtf8(buf);
+		if (tmp != NULL) {
+			return tmp;
+		}
 	}
-	tmp = (char *)GlobalAlloc(GMEM_FIXED, Size + 1);
+	tmp = (char *)GlobalAlloc(GMEM_FIXED, lstrlen(buf) + 1);
 	if(tmp == NULL){
 		abort();
 	}
 	ConvStrCode(buf, tmp);
+	if(GetACP() != 932){
+		char *acp = SjisToAcp(tmp);
+		if(acp != NULL){
+			GlobalFree(tmp);
+			tmp = acp;
+		}
+	}
 	return tmp;
 }
 
@@ -2165,7 +2181,7 @@ char *SrcConv(char *buf, long Size)
 
 ******************************************************************************/
 
-int GetHtml2RtfSize(char *buf)
+int GetHtml2RtfSize(char *buf, BOOL dark)
 {
 	char *p, *t;
 	BOOL TagFlag = FALSE;
@@ -2177,7 +2193,7 @@ int GetHtml2RtfSize(char *buf)
 
 	if(buf == NULL) return 0;
 
-	len = lstrlen(RTF_HEAD);
+	len = lstrlen((dark == TRUE) ? RTF_HEAD_DARK : RTF_HEAD);
 	for(p = buf; *p != '\0'; p++){
 		switch(*p)
 		{
@@ -2278,10 +2294,11 @@ int GetHtml2RtfSize(char *buf)
 			break;
 
 		default:
-			if(IS_LEAD_BYTE(p)){
-				//Html2Rtf と同じく2バイト目も消費する (別の文字として扱うと状態がずれてサイズが不足する)
-				len += 8;
-				p++;
+			if((unsigned char)*p >= 0x80){
+				int l;
+
+				p += Utf8ToRtf(p, NULL, &l) - 1;
+				len += l;
 			}else{
 				if(cfFlag == TRUE){
 					len++;
@@ -2305,7 +2322,7 @@ int GetHtml2RtfSize(char *buf)
 
 ******************************************************************************/
 
-void Html2Rtf(char *buf, char *ret)
+void Html2Rtf(char *buf, char *ret, BOOL dark)
 {
 	char *p, *r, *t;
 	BOOL TagFlag = FALSE;
@@ -2317,7 +2334,7 @@ void Html2Rtf(char *buf, char *ret)
 	if(buf == NULL || ret == NULL) return;
 
 	r = ret;
-	r = iStrCpy(r, RTF_HEAD);
+	r = iStrCpy(r, (dark == TRUE) ? RTF_HEAD_DARK : RTF_HEAD);
 	for(p = buf; *p != '\0'; p++){
 		switch(*p)
 		{
@@ -2433,11 +2450,11 @@ void Html2Rtf(char *buf, char *ret)
 			break;
 
 		default:
-			if(IS_LEAD_BYTE(p)){
-				wsprintf(r, "\\'%2x", (unsigned char)*(p++));
-				r += 4;
-				wsprintf(r, "\\'%2x", (unsigned char)*p);
-				r += 4;
+			if((unsigned char)*p >= 0x80){
+				int l;
+
+				p += Utf8ToRtf(p, r, &l) - 1;
+				r += l;
 			}else{
 				if(cfFlag == TRUE){
 					*(r++) = ' ';
@@ -2567,3 +2584,304 @@ void FreeResStr(void)
 	}
 }
 /* End of source */
+
+
+static int Utf8ToRtf(const char *p, char *ret, int *len)
+{
+	const unsigned char *s = (const unsigned char *)p;
+	unsigned long c = 0;
+	char tmp[32];
+	int n, i;
+
+	if(s[0] >= 0xF0 && s[0] <= 0xF4){
+		n = 4; c = s[0] & 0x07;
+	}else if(s[0] >= 0xE0 && s[0] <= 0xEF){
+		n = 3; c = s[0] & 0x0F;
+	}else if(s[0] >= 0xC2 && s[0] <= 0xDF){
+		n = 2; c = s[0] & 0x1F;
+	}else{
+		n = 0;
+	}
+	for(i = 1; i < n; i++){
+		if((s[i] & 0xC0) != 0x80){
+			n = 0;
+			break;
+		}
+		c = (c << 6) | (s[i] & 0x3F);
+	}
+	if(n == 0){
+		wsprintf(tmp, "\\'%02x", s[0]);
+		n = 1;
+	}else if(c >= 0x10000){
+		//サロゲートペア
+		c -= 0x10000;
+		wsprintf(tmp, "\\u%d?\\u%d?", (short)(0xD800 + (c >> 10)), (short)(0xDC00 + (c & 0x3FF)));
+	}else{
+		wsprintf(tmp, "\\u%d?", (short)c);
+	}
+	if(ret != NULL){
+		lstrcpy(ret, tmp);
+	}
+	*len = lstrlen(tmp);
+	return n;
+}
+
+
+static int NumericEntityToUtf8(const char *p, char *ret, const char **end)
+{
+	const char *s = p + 1;
+	unsigned long value = 0;
+	int base = 10, digit, count = 0, len;
+	BOOL invalid = FALSE;
+	WCHAR w[2];
+
+	if(*s == 'x' || *s == 'X'){
+		base = 16;
+		s++;
+	}
+	for(; *s != '\0'; s++){
+		if(*s >= '0' && *s <= '9') digit = *s - '0';
+		else if(base == 16 && *s >= 'a' && *s <= 'f') digit = *s - 'a' + 10;
+		else if(base == 16 && *s >= 'A' && *s <= 'F') digit = *s - 'A' + 10;
+		else break;
+		if(value > (0x10FFFFUL - digit) / base) invalid = TRUE;
+		if(invalid == FALSE) value = value * base + digit;
+		count++;
+	}
+	if(*s != ';' || count == 0 || invalid || value == 0 || (value >= 0xD800 && value <= 0xDFFF)){
+		return 0;
+	}
+	if(value <= 0xFFFF){
+		w[0] = (WCHAR)value;
+		count = 1;
+	}else{
+		value -= 0x10000;
+		w[0] = (WCHAR)(0xD800 + (value >> 10));
+		w[1] = (WCHAR)(0xDC00 + (value & 0x3FF));
+		count = 2;
+	}
+	len = WideCharToMultiByte(CP_UTF8, 0, w, count, ret, 4, NULL, NULL);
+	if(len != 0) *end = s + 1;
+	return len;
+}
+
+
+static char *SjisToAcp(char *buf)
+{
+	WCHAR *wbuf;
+	char *cbuf;
+	int wlen, clen;
+
+	wlen = MultiByteToWideChar(932, 0, buf, -1, NULL, 0);
+	if(wlen <= 0 || (wbuf = (WCHAR *)GlobalAlloc(GMEM_FIXED, sizeof(WCHAR) * (wlen + 1))) == NULL){
+		return NULL;
+	}
+	MultiByteToWideChar(932, 0, buf, -1, wbuf, wlen);
+	clen = WideCharToMultiByte(CP_ACP, 0, wbuf, -1, NULL, 0, NULL, NULL);
+	cbuf = (clen > 0) ? (char *)GlobalAlloc(GMEM_FIXED, clen + 1) : NULL;
+	if(cbuf != NULL){
+		WideCharToMultiByte(CP_ACP, 0, wbuf, -1, cbuf, clen, NULL, NULL);
+	}
+	GlobalFree(wbuf);
+	return cbuf;
+}
+
+
+#define PASS_PREFIX			"DP2:"
+#define PASS_PREFIX_SJIS	"DP1:"
+
+static BOOL HasPrefix(const char *str, const char *prefix)
+{
+	for(; *prefix != '\0'; prefix++, str++){
+		if(*str != *prefix){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+//Shift_JIS の文字列をプロセスの文字コードに変換する (以前の形式のパスワード)
+static void SjisToAcpInPlace(char *buf, int size)
+{
+	WCHAR wbuf[BUFSIZE];
+
+	if(GetACP() == 932 || MultiByteToWideChar(932, 0, buf, -1, wbuf, BUFSIZE) == 0){
+		return;
+	}
+	if(WideCharToMultiByte(CP_ACP, 0, wbuf, -1, buf, size, NULL, NULL) == 0){
+		*buf = '\0';
+	}
+	SecureZeroMemory(wbuf, sizeof(wbuf));
+}
+
+BOOL EncodePassword(const char *plain, char *ret, int size)
+{
+	DATA_BLOB in, out, entropy;
+	DWORD len;
+	int prefix_len = lstrlen(PASS_PREFIX);
+
+	*ret = '\0';
+	if(PassProtect == 0){ AuthorEncodePassword((char *)plain, ret, size); return TRUE; }
+	if(*plain == '\0'){
+		return TRUE;
+	}
+	in.pbData = (BYTE *)plain;
+	in.cbData = lstrlen(plain);
+	entropy.pbData = (BYTE *)PASS_ENTROPY;
+	entropy.cbData = lstrlen(PASS_ENTROPY);
+	if(CryptProtectData(&in, NULL, &entropy, NULL, NULL,
+		CRYPTPROTECT_LOCAL_MACHINE | CRYPTPROTECT_UI_FORBIDDEN, &out) == FALSE){
+		return FALSE;
+	}
+	len = size - prefix_len;
+	lstrcpy(ret, PASS_PREFIX);
+	if(size <= prefix_len ||
+		CryptBinaryToStringA(out.pbData, out.cbData, CRYPT_STRING_BASE64 | CRYPT_STRING_NOCRLF, ret + prefix_len, &len) == FALSE){
+		*ret = '\0';
+		LocalFree(out.pbData);
+		return FALSE;
+	}
+	LocalFree(out.pbData);
+	return TRUE;
+}
+
+
+/******************************************************************************
+
+	IsEncryptedPassword
+
+	EncodePassword で暗号化した文字列か
+
+******************************************************************************/
+
+BOOL IsEncryptedPassword(const char *enc)
+{
+	return (HasPrefix(enc, PASS_PREFIX) == TRUE || HasPrefix(enc, PASS_PREFIX_SJIS) == TRUE) ? TRUE : FALSE;
+}
+
+
+
+void DecodePassword(const char *enc, char *ret, int size)
+{
+	DATA_BLOB in, out, entropy;
+	const char *p;
+	char tmp[3];
+	DWORD len;
+	int i;
+
+	*ret = '\0';
+	if(size <= 0 || *enc == '\0'){
+		return;
+	}
+
+	if(HasPrefix(enc, AUTHOR_PASS_PREFIX)){
+		AuthorDecodePassword((char *)enc, ret, size);
+		return;
+	}
+	if(IsEncryptedPassword(enc) == TRUE){
+		BOOL sjis = HasPrefix(enc, PASS_PREFIX_SJIS);
+
+		p = enc + lstrlen(PASS_PREFIX);
+		len = 0;
+		if(CryptStringToBinaryA(p, 0, CRYPT_STRING_BASE64, NULL, &len, NULL, NULL) == FALSE || len == 0){
+			return;
+		}
+		in.pbData = (BYTE *)LocalAlloc(LMEM_FIXED, len);
+		if(in.pbData == NULL){
+			return;
+		}
+		in.cbData = len;
+		if(CryptStringToBinaryA(p, 0, CRYPT_STRING_BASE64, in.pbData, &in.cbData, NULL, NULL) == FALSE){
+			LocalFree(in.pbData);
+			return;
+		}
+		entropy.pbData = (BYTE *)PASS_ENTROPY;
+		entropy.cbData = lstrlen(PASS_ENTROPY);
+		if(CryptUnprotectData(&in, NULL, &entropy, NULL, NULL, CRYPTPROTECT_UI_FORBIDDEN, &out) == TRUE){
+			len = (out.cbData < (DWORD)(size - 1)) ? out.cbData : (DWORD)(size - 1);
+			CopyMemory(ret, out.pbData, len);
+			ret[len] = '\0';
+			SecureZeroMemory(out.pbData, out.cbData);
+			LocalFree(out.pbData);
+			if(sjis == TRUE){
+				SjisToAcpInPlace(ret, size);
+			}
+		}
+		LocalFree(in.pbData);
+		return;
+	}
+
+	//以前の形式
+	tmp[2] = '\0';
+	i = 0;
+	for(p = enc; *p != '\0' && *(p + 1) != '\0' && i < size - 1; p += 2){
+		*tmp = *p;
+		*(tmp + 1) = *(p + 1);
+		ret[i++] = (char)((unsigned char)strtol(tmp, NULL, 16) ^ 0xFF);
+	}
+	ret[i] = '\0';
+	SjisToAcpInPlace(ret, size);
+}
+long x2d(const char *str)
+{
+	int num = 0;
+	int m;
+
+	for(; *str != '\0'; str++){
+		if(*str >= '0' && *str <= '9'){
+			m = *str - '0';
+		}else if(*str >= 'A' && *str <= 'F'){
+			m = *str - 'A' + 10;
+		}else if(*str >= 'a' && *str <= 'f'){
+			m = *str - 'a' + 10;
+		}else{
+			break;
+		}
+		num = 16 * num + m;
+		if(num > 32768){
+			break;
+		}
+	}
+	return num;
+}
+char *SetOptionString(char *buf, int num, char *value)
+{
+	char *ret, *r, *p;
+	int len, i;
+
+	if(buf == NULL){
+		buf = "";
+	}
+	//区切り (";;") が足りない場合の分も確保する
+	len = lstrlen(buf) + lstrlen(value) + (num + 1) * 2 + 1;
+	ret = (char *)GlobalAlloc(GPTR, len);
+	if(ret == NULL){
+		return NULL;
+	}
+	r = ret;
+	i = 0;
+	p = buf;
+	while(1){
+		if(i == num){
+			//置き換える値を書き込み、元の値は読み飛ばす
+			r = iStrCpy(r, value);
+			for(; *p != '\0' && !(*p == ';' && *(p + 1) == ';'); p++);
+			lstrcpy(r, p);
+			break;
+		}
+		if(*p == '\0'){
+			//項目が足りない場合は空の項目を追加する
+			r = iStrCpy(r, ";;");
+			i++;
+			continue;
+		}
+		if(*p == ';' && *(p + 1) == ';'){
+			*(r++) = *(p++);
+			*(r++) = *(p++);
+			i++;
+			continue;
+		}
+		*(r++) = *(p++);
+	}
+	return ret;
+}

@@ -22,8 +22,11 @@
 #include <winsock.h>
 
 #include "General.h"
+#include "../shared/DataDirectory.h"
+#include "Charset.h"
 #include "OleDragDrop.h"
 #include "Profile.h"
+#include "DarkMode.h"
 
 
 /**************************************************************************
@@ -169,6 +172,7 @@ extern int EndCheckMsg;
 
 extern int AutoCheck;
 extern int StartCheck;
+extern int DarkModeType;
 
 extern int AllInitMsg;
 
@@ -188,8 +192,9 @@ static LRESULT NotifyProc(HWND hWnd, LPARAM lParam);
 static BOOL CreateControls(HWND hWnd);
 static void SetControls(HWND hWnd);
 static BOOL InitWindow(HWND hWnd, BOOL StartFlag);
+static void DpiChanged(HWND hWnd, int dpi, const RECT *rc);
 static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag);
-static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void DelLastYen(char *p);
 static BOOL GetAppPath(HINSTANCE hinst);
 static void CommandLineFunc(HWND hWnd, char *StrCmdLine);
@@ -221,7 +226,7 @@ BOOL _SetForegroundWindow(HWND hWnd)
 
 	ret = SetForegroundWindow(hWnd);
 
-	SystemParametersInfo(_SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (PVOID)nTimeout, 0);
+	SystemParametersInfo(_SPI_SETFOREGROUNDLOCKTIMEOUT, 0, (PVOID)(UINT_PTR)nTimeout, 0);
 	return ret;
 }
 
@@ -392,10 +397,17 @@ static void SetOption(HWND hWnd)
 {
 	char buf[BUFSIZE];
 	HICON hIcon;
+	int OldDarkModeType = DarkModeType;
 
 	//オプション画面表示
 	if(ViewProperties(hWnd) == 0){
 		return;
+	}
+
+	//表示テーマの変更を反映
+	if(DarkModeType != OldDarkModeType){
+		DarkMode_SetMode(hWnd, DarkModeType);
+		TbApplyTheme(hWnd);
 	}
 
 	//設定変更
@@ -473,7 +485,7 @@ static void WindowRefresh(HWND hWnd)
 	WaitCursor(TRUE);
 
 	SetDirTree(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
-	CallTreeItem(hWnd, RootItem, (FARPROC)FindTreeDir, 0);
+	CallTreeItem(hWnd, RootItem, FindTreeDir, 0);
 
 	ListView_SetRedraw(GetDlgItem(hWnd, WWWC_LIST), LDF_NODRAW);
 	ListView_DeleteAllItems(GetDlgItem(hWnd, WWWC_LIST));
@@ -484,8 +496,8 @@ static void WindowRefresh(HWND hWnd)
 	ListView_ShowItem(hWnd, TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE)));
 	ListView_SetItemState(GetDlgItem(hWnd, WWWC_LIST), 0, LVIS_FOCUSED, LVIS_FOCUSED);
 
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_SetIconState, 0);
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_SetIconState, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeItem, 0);
 
 	SetProtocolMenu(hWnd);
 	SetSbText(hWnd);
@@ -552,7 +564,7 @@ static void SaveIniFile(HWND hWnd)
 	wl ^= ABS(LvStyle);
 	SetWindowLong(GetDlgItem(hWnd, WWWC_LIST), GWL_STYLE, wl | LVS_REPORT);
 	for(ret = 0;ret < LvColCnt;ret++){
-		LvColSize[ret] = ListView_GetColumnWidth(GetDlgItem(hWnd, WWWC_LIST), ret);
+		LvColSize[ret] = DpiUnscale(ListView_GetColumnWidth(GetDlgItem(hWnd, WWWC_LIST), ret));
 	}
 	//iniファイルの書き込み
 	PutINI();
@@ -576,7 +588,7 @@ static void SaveIniFile(HWND hWnd)
 static void RefreshIniFile(HWND hWnd)
 {
 	if(gCheckFlag != 0){
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+		CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 	}
 	WaitCursor(TRUE);
 
@@ -776,11 +788,11 @@ static void SetControls(HWND hWnd)
 	//アニメーション用ダイアログの移動
 	MoveWindow(AniWnd, WinRec.right - STEPSIZE - 2, 0, STEPSIZE + 2, STEPSIZE + 2, TRUE);
 	//TreeViewの位置、サイズの設定
-	MoveWindow(GetDlgItem(hWnd, WWWC_TREE), 0, TBSize, SEPSIZE, WinRec.bottom - SBSize - TBSize, TRUE);
+	MoveWindow(GetDlgItem(hWnd, WWWC_TREE), 0, TBSize, DpiScale(SEPSIZE), WinRec.bottom - SBSize - TBSize, TRUE);
 	UpdateWindow(GetDlgItem(hWnd, WWWC_TREE));
 	//ListViewの位置、サイズの設定
-	MoveWindow(GetDlgItem(hWnd, WWWC_LIST), SEPSIZE + (FRAME_CNT * 2), TBSize,
-		WinRec.right - SEPSIZE - (FRAME_CNT * 2), WinRec.bottom - SBSize - TBSize, TRUE);
+	MoveWindow(GetDlgItem(hWnd, WWWC_LIST), DpiScale(SEPSIZE) + (FRAME_CNT * 2), TBSize,
+		WinRec.right - DpiScale(SEPSIZE) - (FRAME_CNT * 2), WinRec.bottom - SBSize - TBSize, TRUE);
 	UpdateWindow(GetDlgItem(hWnd, WWWC_LIST));
 
 
@@ -791,6 +803,81 @@ static void SetControls(HWND hWnd)
 		InvalidateRect(AniWnd, NULL, FALSE);
 		UpdateWindow(AniWnd);
 	}
+}
+
+
+/******************************************************************************
+
+	DpiChanged
+
+	DPI の変更 (WM_DPICHANGED)
+	アイコン、フォント、ツールバー、カラムの幅をその DPI で作り直し、
+	推奨された位置と大きさにウィンドウを移動する
+
+******************************************************************************/
+
+static void DpiChanged(HWND hWnd, int dpi, const RECT *rc)
+{
+	HWND hList = GetDlgItem(hWnd, WWWC_LIST);
+	int widths[100];
+	HICON hIcon;
+	int old = g_Dpi;
+	int i;
+	long wl;
+
+	if(dpi <= 0){
+		return;
+	}
+	if(dpi != old && hList != NULL){
+		//カラムの幅を 96 DPI での値にしておく (詳細表示でないと取得できない)
+		wl = GetWindowLong(hList, GWL_STYLE);
+		SetWindowLong(hList, GWL_STYLE, (wl & ~LVS_TYPEMASK) | LVS_REPORT);
+		for(i = 0; i < LvColCnt && i < 100; i++){
+			widths[i] = MulDiv(ListView_GetColumnWidth(hList, i), USER_DEFAULT_SCREEN_DPI, old);
+		}
+
+		g_Dpi = dpi;
+		Dpi_ApplyIconSizes();
+
+		for(i = 0; i < LvColCnt && i < 100; i++){
+			ListView_SetColumnWidth(hList, i, DpiScale(widths[i]));
+		}
+		SetWindowLong(hList, GWL_STYLE, wl);
+
+		//アイコン
+		TreeView_CreateImageList(hWnd);
+		ListView_SetItemImage(hList, LvLIconSize, LVSIL_NORMAL);
+		ListView_SetItemImage(hList, LvSIconSize, LVSIL_SMALL);
+		SetProtocolImage(hWnd);
+
+		//フォント
+		if(ListFont != NULL){
+			DeleteObject(ListFont);
+		}
+		ListFont = (*ListFontName != '\0') ? CreateListFont(ListFontName, ListFontSize, ListFontCharSet) : Dpi_CreateDefaultFont();
+		SendMessage(GetDlgItem(hWnd, WWWC_TREE), WM_SETFONT, (WPARAM)ListFont, MAKELPARAM(TRUE, 0));
+		SendMessage(hList, WM_SETFONT, (WPARAM)ListFont, MAKELPARAM(TRUE, 0));
+
+		//ツールバー
+		TbRecreate(hWnd);
+
+		//ステータスバー (チェック中はアイコンも差し替える)
+		Dpi_SetStatusBarFont(GetDlgItem(hWnd, WWWC_SB));
+		hIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, DpiScale(SICONSIZE), DpiScale(SICONSIZE), 0);
+		if(hIcon != NULL){
+			if(SendDlgItemMessage(hWnd, WWWC_SB, SB_GETICON, 0, 0) != 0){
+				SendDlgItemMessage(hWnd, WWWC_SB, SB_SETICON, 0, (LPARAM)hIcon);
+			}
+			DestroyIcon(StCheckIcon);
+			StCheckIcon = hIcon;
+		}
+	}
+	if(rc != NULL){
+		SetWindowPos(hWnd, NULL, rc->left, rc->top, rc->right - rc->left, rc->bottom - rc->top,
+			SWP_NOZORDER | SWP_NOACTIVATE);
+	}
+	SetControls(hWnd);
+	InvalidateRect(hWnd, NULL, TRUE);
 }
 
 
@@ -815,11 +902,18 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	//ドラッグターゲットに登録
 	cf[0] = WWWC_ClipFormat;
 	cf[1] = CF_HDROP;
-	cf[2] = CF_TEXT;
+	cf[2] = CF_UNICODETEXT;
 	OLE_IDropTarget_RegisterDragDrop(hWnd, WM_DRAGMSG, cf, CLIPFORMAT_CNT);
 
 	//ウィンドウのタイトルを設定
 	SetWinTitle(hWnd);
+
+	//ウィンドウの DPI (サイズの設定は 96 DPI での値)
+	if(StartFlag == TRUE){
+		g_Dpi = (int)GetDpiForWindow(hWnd);
+		if(g_Dpi == 0) g_Dpi = USER_DEFAULT_SCREEN_DPI;
+		Dpi_ApplyIconSizes();
+	}
 
 	//フォント作成
 	if(*ListFontName != '\0'){
@@ -827,6 +921,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 			DeleteObject(ListFont);
 		}
 		ListFont = CreateListFont(ListFontName, ListFontSize, ListFontCharSet);
+	}else if(StartFlag == TRUE){
+		//フォントの設定がない場合、システムと違う DPI ではその DPI のフォントを使う
+		ListFont = Dpi_CreateDefaultFont();
 	}
 
 	//ウィンドウ内のコントロールを作成
@@ -843,13 +940,17 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	WindowFlag = TRUE;
 
 	//アイコンをロード
-	TrayIcon_Main = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
-	TrayIcon_Chaeck = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
-	TrayIcon_Up = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_UP), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+	//タスクトレイのアイコンはシステムの DPI の小さいアイコンのサイズ
+	TrayIcon_Main = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	TrayIcon_Chaeck = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
+	TrayIcon_Up = LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_UP), IMAGE_ICON,
+		GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), 0);
 	TrayIcon_Main_Win = LoadIcon(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN));
 	TrayIcon_Chaeck_Win = LoadIcon(g_hinst, MAKEINTRESOURCE(IDI_ICON_MAIN_CHECK));
 
-	StCheckIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, SICONSIZE, SICONSIZE, 0);
+	StCheckIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_CHECK), IMAGE_ICON, DpiScale(SICONSIZE), DpiScale(SICONSIZE), 0);
 
 	//タスクトレイにアイコンを追加
 	GetWindowText(hWnd, buf, BUFSIZE - 1);
@@ -868,9 +969,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	SetProtocolMenu(hWnd);
 	//メニューに新規作成メニューを関連付ける
 	ModifyMenu(GetSubMenu(GetMenu(hWnd), MENU_HWND_FILE), ID_MENUITEM_POP_NEWITEM, MF_POPUP,
-		(UINT)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
+		(UINT_PTR)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
 	ModifyMenu(GetSubMenu(hPOPUP, MENU_POP_FOLDER), ID_MENUITEM_POP_NEWITEM, MF_POPUP,
-		(UINT)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
+		(UINT_PTR)GetSubMenu(hPOPUP, MENU_POP_NEW), MENU_STR_NEWITEM);
 
 	//自動チェック用タイマーの設定
 	GetAutoTime();
@@ -893,7 +994,7 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	//TreeViewの初期状態設定
 	TreeView_Expand(GetDlgItem(hWnd, WWWC_TREE), RootItem, TVE_EXPAND);
 	if(StartExpand != 0){
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_AllExpand, StartExpand);
+		CallTreeItem(hWnd, RootItem, TreeView_AllExpand, StartExpand);
 	}
 	switch(StartDirOpen)
 	{
@@ -920,7 +1021,7 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 			TreeView_EnsureVisible(GetDlgItem(hWnd, WWWC_TREE), hItem);
 		}
 	}
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeItem, 0);
 
 	//コントロールのフォーカスを設定
 	FocusWnd = GetDlgItem(hWnd, WWWC_TREE);
@@ -936,6 +1037,9 @@ static BOOL InitWindow(HWND hWnd, BOOL StartFlag)
 	}
 
 	WaitCursor(FALSE);
+
+	//ダークモード
+	DarkMode_ApplyMainWindow(hWnd);
 
 	//起動時ではない場合は関数を抜ける
 	if(StartFlag == FALSE){
@@ -995,7 +1099,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 				return FALSE;
 			}
 		}
-		CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+		CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 	}
 
 	//現在開いているフォルダを保存
@@ -1064,7 +1168,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 	}
 
 	//ツリー情報を解放
-	CallTreeItem(hWnd, RootItem, (FARPROC)TreeView_FreeTreeItem, 0);
+	CallTreeItem(hWnd, RootItem, TreeView_FreeTreeItem, 0);
 	//カラム情報を解放
 	GlobalFree(ColumnInfo);
 	ColumnInfo = NULL;
@@ -1144,7 +1248,7 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 
 ******************************************************************************/
 
-static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static BOOL SepMoveFlag;
 	int ret, i;
@@ -1246,7 +1350,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			if((ret = FrameDrawEnd(hWnd)) == -1){
 				break;
 			}
-			SEPSIZE = ret;
+			SEPSIZE = DpiUnscale(ret);		//96 DPI での幅
 			SetControls(hWnd);
 		}
 		break;
@@ -1336,7 +1440,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 					InvalidateRect(GetDlgItem(hWnd, WWWC_LIST), NULL, FALSE);
 					UpdateWindow(GetDlgItem(hWnd, WWWC_LIST));
 				}
-				CallTreeItem(hWnd, RootItem, (FARPROC)TreeCheckAutoTime, 0);
+				CallTreeItem(hWnd, RootItem, TreeCheckAutoTime, 0);
 			}
 			break;
 
@@ -1735,7 +1839,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			}
 			WaitCursor(TRUE);
 
-			CallTreeItem(hWnd, RootItem, (FARPROC)TreeCancelItem, 0);
+			CallTreeItem(hWnd, RootItem, TreeCancelItem, 0);
 
 			WaitCursor(FALSE);
 
@@ -1778,7 +1882,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 			}
 			WaitCursor(TRUE);
 
-			CallTreeItem(hWnd, RootItem, (FARPROC)TreeItemIni, 0);
+			CallTreeItem(hWnd, RootItem, TreeItemIni, 0);
 
 			WaitCursor(FALSE);
 
@@ -1813,7 +1917,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case ID_MENUITEM_ABOUT:
 			MessageBox(hWnd,
-				APP_NAME" Ver "APP_VERSION"\n"APP_COPYRIGHT"\n\nWEB SITE: "APP_URL"\nE-MAIL: "APP_MAIL,
+				APP_NAME" Ver "APP_VERSION APP_PLATFORM"\n"ABOUT_MODIFIED"\n\n"APP_COPYRIGHT"\n\nWEB SITE: "APP_URL"\nE-MAIL: "APP_MAIL,
 				ABOUTTITLE, MB_OK | MB_ICONINFORMATION);
 			break;
 
@@ -1986,7 +2090,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	case WM_LV_INITICON:
 		{
 			struct TPITEM *tpItemInfo;
-			tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), wParam);
+			tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), (int)wParam);
 			if(tpItemInfo == NULL){
 				break;
 			}
@@ -2083,8 +2187,8 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		WWWCDropFlag = FALSE;
 		switch(wParam)
 		{
-		case CF_TEXT:
-			*((HGLOBAL *)lParam) = Clipboard_Set_TEXT(hWnd, DgdpItem);
+		case CF_UNICODETEXT:
+			*((HGLOBAL *)lParam) = TextMemToUnicode(Clipboard_Set_TEXT(hWnd, DgdpItem));
 			break;
 
 		case CF_HDROP:
@@ -2114,7 +2218,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		if (gCheckFlag == 0) {
 			break;
 		}
-		if (ResultCheckStatus(hWnd, ((struct TPITEM *)lParam), wParam) == FALSE) {
+		if (ResultCheckStatus(hWnd, ((struct TPITEM *)lParam), (int)wParam) == FALSE) {
 			//チェックアイテムリストの初期化
 			InitCheckItemList(hWnd, ((struct TPITEM *)lParam));
 		}
@@ -2150,7 +2254,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	//アイテムリストの要求
 	case WM_GETCHECKLIST:
-		return (long)CheckItemList;
+		return (LRESULT)CheckItemList;
 
 	//アイテムリスト数の要求
 	case WM_GETCHECKLISTCNT:
@@ -2158,7 +2262,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	//アイテムをセットするメッセージ
 	case WM_SETITEMLIST:
-		if(Item_ListAdd(hWnd, (struct TPITEM **)lParam, wParam) == TRUE){
+		if(Item_ListAdd(hWnd, (struct TPITEM **)lParam, (int)wParam) == TRUE){
 			FocusWnd = GetDlgItem(hWnd, WWWC_LIST);
 			SetFocus(FocusWnd);
 		}
@@ -2166,7 +2270,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 
 	//アイテムの実体を要求
 	case WM_GETMAINITEM:
-		return (long)FindMainItem(hWnd, (struct TPITEM *)lParam);
+		return (LRESULT)FindMainItem(hWnd, (struct TPITEM *)lParam);
 
 	//アイテムを実行
 	case WM_ITEMEXEC:
@@ -2225,6 +2329,22 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 		break;
 
+	//DPI の変更 (別の DPI のモニタへの移動、表示倍率の変更)
+	case WM_DPICHANGED:
+		DpiChanged(hWnd, HIWORD(wParam), (const RECT *)lParam);
+		break;
+
+	//ダークモードで表示しているか
+	case WM_GETDARKMODE:
+		return DarkMode_IsDark();
+
+	//Windows の設定変更 (表示テーマが「Windows の設定に従う」の場合に追従)
+	case WM_SETTINGCHANGE:
+		if(DarkMode_OnSettingChange(hWnd, lParam) == TRUE){
+			TbApplyTheme(hWnd);
+		}
+		break;
+
 	//設定の読み直し
 	case WM_WWWC_GETINI:
 		RefreshIniFile(hWnd);
@@ -2238,7 +2358,8 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	//INIファイルの保存先のパスを取得
 	case WM_WWWC_GETINIPATH:
 		if(lParam != 0){
-			lstrcpy((char *)lParam, CuDir);
+			//wParam はバッファのサイズ (0 の場合は以前のプラグインと同じ 256)
+			lstrcpyn((char *)lParam, CuDir, (wParam > 0) ? (int)wParam : PLUGIN_STRSIZE);
 		}
 		break;
 
@@ -2285,7 +2406,7 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 	//フォルダの同期
 	case WM_FOLDER_REFRESH:
 		SetDirTree(GetDlgItem(hWnd, WWWC_TREE), CuDir, RootItem);
-		CallTreeItem(hWnd, RootItem, (FARPROC)FindTreeDir, 0);
+		CallTreeItem(hWnd, RootItem, FindTreeDir, 0);
 		break;
 
 	//イベント処理
@@ -2336,7 +2457,6 @@ static BOOL GetAppPath(HINSTANCE hinst)
 	char gIniFile[BUFSIZE];
 	char *user;
 	char *p, *r;
-	int i;
 
 	//アプリケーションのパスを取得
 	GetModuleFileName(hinst, DefDirPath, BUFSIZE - 1);
@@ -2361,22 +2481,14 @@ static BOOL GetAppPath(HINSTANCE hinst)
 	//デフォルトアイテム
 	wsprintf(DefItem, "%s\\DefItem", DefDirPath);
 
-	//インストーラでインストールした場合 (wwwc_app.ini の portable=0) はデータを
-	//実行ファイルの場所ではなく %LOCALAPPDATA%\WWWC に保存する
-	wsprintf(gIniFile, "%s\\%s", DefDirPath, APP_INI);
-	profile_initialize(gIniFile, TRUE);
-	i = profile_get_int("GENERAL", "portable", 1, gIniFile);
-	profile_free();
-	if(i == 0){
-		i = GetEnvironmentVariable("LOCALAPPDATA", gIniFile, BUFSIZE);
-		if(i == 0 || i + 1 + lstrlen(APP_DATA_DIR) + 1 + lstrlen(GENERAL_INI) >= BUFSIZE){
-			MessageBox(NULL, EMSG_PATHLENGTH, EMSG_PATHLENGTH_TITLE, MB_ICONERROR);
-			return FALSE;
-		}
-		DelLastYen(gIniFile);
-		wsprintf(DefDirPath, "%s\\%s", gIniFile, APP_DATA_DIR);
-		CreateDirectory(DefDirPath, NULL);
+	//既存の設定・ユーザフォルダを実行ファイルの場所から先に検索する。
+	//無い場合だけインストーラの portable=0 に従い LocalAppData を使用する。
+	if(!WwwcDefaultDataDirectory(DefDirPath, DefDirPath, BUFSIZE)){
+		MessageBox(NULL, EMSG_PATHLENGTH, EMSG_PATHLENGTH_TITLE, MB_ICONERROR);
+		return FALSE;
 	}
+	CreateDirectory(DefDirPath, NULL);
+	if(Charset_ConvertAppDir(DefDirPath) == FALSE) return FALSE;
 
 	//共通の設定を使用する場合のユーザ名の取得
 	wsprintf(gIniFile, "%s\\%s", DefDirPath, GENERAL_INI);
@@ -2417,8 +2529,9 @@ static BOOL GetAppPath(HINSTANCE hinst)
 		lstrcpy(CurrentUser, CmdUser);
 	}else{
 		//現在のログインユーザ名の取得
-		i = BUFSIZE - 1;
-		if(GetUserName(CurrentUser, &i) == FALSE) {
+		DWORD UserLen = BUFSIZE - 1;
+
+		if(GetUserName(CurrentUser, &UserLen) == FALSE) {
 			lstrcpy(CurrentUser, DEFAULTUSER);
 		}
 	}
@@ -2438,6 +2551,10 @@ static BOOL GetAppPath(HINSTANCE hinst)
 		//ユーザディレクトリの作成
 		CreateDirectory(CuDir, NULL);
 		CopyDirTree(NULL, DefItem, DefDirPath, user, NULL);
+	}
+	//以前のバージョン (Shift_JIS) のアイテム情報と設定を UTF-8 に変換
+	if(Charset_ConvertDataDir(CuDir) == FALSE){
+		return FALSE;
 	}
 	SetEnvironmentVariable("USER_DIR", CuDir);
 	return TRUE;
@@ -2479,7 +2596,7 @@ static void CommandLineFunc(HWND hWnd, char *StrCmdLine)
 			}else{
 				for(r = p; *r != '\0' && *r != ' '; r++);
 			}
-			lstrcpyn(buf, p, r - p + 1);
+			lstrcpyn(buf, p, (int)(r - p + 1));
 			p = r;
 			if(*p != '\0') p++;
 
@@ -2634,7 +2751,7 @@ static void StartCommandLine(char *StrCmdLine)
 				}else{
 					for(r = p; *r != '\0' && *r != ' '; r++);
 				}
-				lstrcpyn(CmdDirPath, p, (r - p + 1 < BUFSIZE) ? r - p + 1 : BUFSIZE);
+				lstrcpyn(CmdDirPath, p, (int)((r - p + 1 < BUFSIZE) ? r - p + 1 : BUFSIZE));
 				p = r;
 				if(*p == '\"') p++;
 				break;
@@ -2651,7 +2768,7 @@ static void StartCommandLine(char *StrCmdLine)
 				}else{
 					for(r = p; *r != '\0' && *r != ' '; r++);
 				}
-				lstrcpyn(CmdUser, p, (r - p + 1 < BUFSIZE) ? r - p + 1 : BUFSIZE);
+				lstrcpyn(CmdUser, p, (int)((r - p + 1 < BUFSIZE) ? r - p + 1 : BUFSIZE));
 				p = r;
 				if(*p == '\"') p++;
 				break;
@@ -2736,6 +2853,9 @@ static HWND InitInstance(HANDLE hInstance, int nCmdShow)
 	initWinsock
 
 	WinSockの初期化
+	WWWC と HTTP のプロトコル DLL (WinHTTP) は Winsock を使わないが、非同期の
+	Winsock を使うプロトコル DLL のために、初期化と WM_WSOCK_GETHOST /
+	WM_WSOCK_SELECT の転送 (XXX_Gethost / XXX_Select) は残している
 
 ******************************************************************************/
 
@@ -2827,8 +2947,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	HANDLE hMutex = NULL;
 	INITCOMMONCONTROLSEX iccex;
 	HINSTANCE hLib;
-	FARPROC _InitCommonControlsEx;
-	FARPROC _SetDllDirectory;
+	BOOL (WINAPI *_InitCommonControlsEx)(const INITCOMMONCONTROLSEX *picce);
+	BOOL (WINAPI *_SetDllDirectory)(LPCSTR path);
+
+	//文字列は UTF-8 で扱う (マニフェストの activeCodePage)
+	if(Charset_Check() == FALSE){
+		return 0;
+	}
 
 	if((hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, MUTEX)) == NULL){
 		hMutex = CreateMutex(NULL, TRUE, MUTEX);
@@ -2841,14 +2966,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	SetResLanguage(NULL);
 
 	//DLLの検索パスからカレントディレクトリを除外する
-	_SetDllDirectory = GetProcAddress(GetModuleHandle("kernel32.dll"), "SetDllDirectoryA");
+	_SetDllDirectory = (BOOL (WINAPI *)(LPCSTR))GetProcAddress(GetModuleHandle("kernel32.dll"), "SetDllDirectoryA");
 	if(_SetDllDirectory != NULL){
 		_SetDllDirectory("");
 	}
 
 	StartCommandLine(lpCmdLine);
 	if(GetAppPath(hInstance) == FALSE){
-		return 0;
+		MessageBoxW(NULL, L"データの文字コードを変換できませんでした。\nファイルへのアクセス権、空き容量、他のアプリで開かれていないかを確認してから再起動してください。",
+			L"WWWC", MB_OK | MB_ICONERROR);
+		if(hMutex != NULL) CloseHandle(hMutex);
+		return 1;
 	}
 
 	// CommonControlの初期化を行う
@@ -2856,7 +2984,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	// 新しいCommonControlの初期化を行う
 	hLib = LoadLibrary("comctl32.dll");
 	if(hLib != NULL){
-		_InitCommonControlsEx = GetProcAddress((HMODULE)hLib, "InitCommonControlsEx");
+		_InitCommonControlsEx = (BOOL (WINAPI *)(const INITCOMMONCONTROLSEX *))GetProcAddress((HMODULE)hLib, "InitCommonControlsEx");
 		if(_InitCommonControlsEx != NULL){
 			iccex.dwSize = sizeof(INITCOMMONCONTROLSEX);
 			iccex.dwICC = ICC_COOL_CLASSES | ICC_BAR_CLASSES;
@@ -2880,6 +3008,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	//設定を読み込む
 	GetINI();
 	GetProtocolInfo();
+
+	//ダークモードの初期化
+	DarkMode_Initialize(DarkModeType);
+	//ダイアログのリストビューとツリービューで UTF-8 の文字列が化けないようにする
+	Font_InstallDialogHook();
 
 	//終了処理
 	if(atexit(AppExit)){
@@ -2958,6 +3091,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		MessageFunc(hWnd, &msg);
 	}
 
+	Font_UninstallDialogHook();
+	Dpi_Uninitialize();
+	DarkMode_Uninitialize();
 	DestroyMenu(hPOPUP);
 	if(hMutex != NULL){
 		CloseHandle(hMutex);

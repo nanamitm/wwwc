@@ -27,9 +27,9 @@
 #define ID_MENUITEM_COPY				40056
 #define ID_MENUITEM_ALLSELECT			40057
 
-#define BUFSIZE							256
+#define BUFSIZE							1024
 #define MAXSIZE							32768
-#define PASS_BUFSIZE					1024				/* 暗号化したパスワード文字列の最大 */
+#define PASS_BUFSIZE					(BUFSIZE * 4)
 #define TITLE_MAX						1024				/* 取得するアイテムのタイトルの最大 (終端を含む) */
 #define RECVSIZE						32768				/* 受信サイズ */
 #define MAX_RECVSIZE					(32 * 1024 * 1024)	/* 最大受信サイズ */
@@ -55,12 +55,22 @@
 #define OP2_USER						5
 #define OP2_PASS						6
 #define OP2_REFERER						7
-#define OP2_NOARCHIVE						8				/* アーカイブしない */
-#define OP2_ARCHIVE_NOIMAGE				9				/* 画像をアーカイブしない */
-#define OP2_ARCHIVE_NOCSS					10				/* CSSをアーカイブしない */
-#define OP2_ARCHIVE_JS					11				/* JavaScriptをアーカイブする */
-#define OP2_ARCHIVE_GEN					12				/* 保存する世代数 (0 は 1) */
-#define OP2_USERAGENT					13				/* User-Agent (空の場合は USER_AGENT) */
+#define OP2_IGNORECERT 8
+
+#define OP2_NOARCHIVE						9				/* アーカイブしない */
+#define OP2_ARCHIVE_NOIMAGE				10				/* 画像をアーカイブしない */
+#define OP2_ARCHIVE_NOCSS					11				/* CSSをアーカイブしない */
+#define OP2_ARCHIVE_JS					12				/* JavaScriptをアーカイブする */
+#define OP2_ARCHIVE_GEN					13				/* 保存する世代数 (0 は 1) */
+#define OP2_USERAGENT					14				/* User-Agent (空の場合は USER_AGENT) */
+
+#define PASS_ENC_SIZE (BUFSIZE * 4)
+#define PATH_BUFSIZE BUFSIZE
+#define PROXY_NONE 0
+#define PROXY_NAMED 1
+#define PROXY_SYSTEM 2
+#define VIEW_DARK_BACK RGB(30,30,30)
+#define VIEW_DARK_TEXT RGB(212,212,212)
 
 #define USER_AGENT						L"WWWC/1.20"
 
@@ -105,6 +115,8 @@ struct TPHTTP{
 	void *hConnect;
 	void *hRequest;
 	WCHAR *ReqURL;						/* 要求するURL */
+	int ProxyMode;
+	BOOL IgnoreCert;
 	WCHAR *ProxyName;					/* プロキシ (使用しない場合はNULL) */
 	WCHAR *SendHeader;					/* 送信ヘッダ */
 	WCHAR *ProxyUser;					/* HTTPS接続時のプロキシ認証 */

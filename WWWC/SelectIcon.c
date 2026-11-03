@@ -82,7 +82,7 @@ static int SetListIcon(HWND hListView, char *path, int index)
 	//イメージリストの作成、設定
 	IconList = ListView_GetImageList(hListView, LVSIL_NORMAL);
 	if(IconList == NULL){
-		IconList = ImageList_Create(32, 32, ILC_COLOR16 | ILC_MASK, 0, 0);
+		IconList = ImageList_Create(DpiScaleFor(hListView, LICONSIZE), DpiScaleFor(hListView, LICONSIZE), ILC_COLOR32 | ILC_MASK, 0, 0);
 		ImageList_SetBkColor(IconList, GetSysColor(COLOR_WINDOW));
 		ListView_SetImageList(hListView, IconList, LVSIL_NORMAL);
 	}else{
@@ -124,7 +124,7 @@ static int SetListIcon(HWND hListView, char *path, int index)
 
 ******************************************************************************/
 
-static BOOL CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	static ICON_INFO *icon_info;
 	char buf[BUFSIZE];
@@ -189,7 +189,7 @@ static BOOL CALLBACK SelectIconProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM 
 				break;
 			}
 			SendDlgItemMessage(hDlg, IDC_EDIT_FILE, WM_GETTEXT, BUFSIZE - 1, (LPARAM)icon_info->path);
-			icon_info->index = ListView_GetlParam(GetDlgItem(hDlg, IDC_LIST_ICON), i);
+			icon_info->index = (int)ListView_GetlParam(GetDlgItem(hDlg, IDC_LIST_ICON), i);
 
 			ImageList_Destroy((void *)ListView_GetImageList(GetDlgItem(hDlg, IDC_LIST_ICON), LVSIL_NORMAL));
 			EndDialog(hDlg, TRUE);

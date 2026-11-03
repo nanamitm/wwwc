@@ -45,11 +45,12 @@
 #define WM_ITEMINIT					(WM_USER + 13)		/* アイテムを初期化 */
 #define WM_GETUPWINDOW				(WM_USER + 14)		/* 更新メッセージのハンドルを取得 */
 #define WM_GETFINDWINDOW			(WM_USER + 15)		/* 検索ウィンドウのハンドルを取得 */
+#define WM_GETDARKMODE				(WM_USER + 16)		/* ダークモードで表示しているか (TRUE/FALSE, 未対応のWWWCは0) */
 
 /* INIファイル処理メッセージ */
 #define WM_WWWC_GETINI				(WM_USER + 20)		/* INIファイルから設定を読み直す */
 #define WM_WWWC_PUTINI				(WM_USER + 21)		/* INIファイルに設定を書き込む */
-#define WM_WWWC_GETINIPATH			(WM_USER + 22)		/* INIファイルの保存先のパスを取得 */
+#define WM_WWWC_GETINIPATH			(WM_USER + 22)		/* INIファイルの保存先のパスを取得 (lParam: バッファ, wParam: バッファのサイズ。0 の場合は 256) */
 
 /* フォルダ操作メッセージ */
 #define WM_FOLDER_SAVE				(WM_USER + 31)		/* 開いているフォルダの内容を保存 */
@@ -132,7 +133,7 @@
 struct TPITEM{
 	long iSize;						/* 構造体のサイズ */
 
-	long hItem;						/* アイテムが格納されているフォルダのハンドル (HTREEITEM) */
+	LONG_PTR hItem;						/* アイテムが格納されているフォルダのハンドル (HTREEITEM) */
 
 	char *Title;					/* タイトル */
 	char *CheckURL;					/* チェックを行うURL */
@@ -158,14 +159,14 @@ struct TPITEM{
 /* 以下保存されない情報 */
 	int IconStatus;					/* アイコンの状態 (ICON_ST_) */
 
-	int Soc1;						/* ソケット1 */
-	int Soc2;						/* ソケット2 */
+	UINT_PTR Soc1;						/* ソケット1 */
+	UINT_PTR Soc2;						/* ソケット2 */
 	HANDLE hGetHost1;				/* ホスト情報のハンドル1 */
 	HANDLE hGetHost2;				/* ホスト情報のハンドル1 */
-	long Param1;					/* DLL用long値1 */
-	long Param2;					/* DLL用long値2 */
-	long Param3;					/* DLL用long値3 */
-	long Param4;					/* DLL用long値4 */
+	LONG_PTR Param1;					/* DLL用long値1 */
+	LONG_PTR Param2;					/* DLL用long値2 */
+	LONG_PTR Param3;					/* DLL用long値3 */
+	LONG_PTR Param4;					/* DLL用long値4 */
 	int user1;						/* DLL用int値1 */
 	int user2;						/* DLL用int値2 */
 

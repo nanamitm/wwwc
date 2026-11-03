@@ -79,13 +79,13 @@ static void AddItemInfo(HWND hWnd, struct TPITEM *tpItemInfo);
 static struct TPITEM *GetItemInfo(HWND hWnd);
 static void DeleteItemInfo(struct TPITEM *tpItemInfo);
 static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i);
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 static void ReqTypeEnable(HWND hDlg);
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
-static BOOL CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+static INT_PTR CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 /******************************************************************************
@@ -231,7 +231,7 @@ static void DrawScrollControl(LPDRAWITEMSTRUCT lpDrawItem, UINT i)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char tmp[BUFSIZE];
@@ -326,7 +326,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 			if(tpItemInfo->Title != NULL){
 				GlobalFree(tpItemInfo->Title);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->Title = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->Title != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXT, len, (LPARAM)tpItemInfo->Title);
@@ -334,7 +334,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
 			/* URLを設定する */
 			if(tpItemInfo->CheckURL != NULL){
-				len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+				len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 				buf = GlobalAlloc(GPTR, len + 1);
 				if(buf != NULL){
 					SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)buf);
@@ -368,7 +368,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 				}
 				GlobalFree(tpItemInfo->CheckURL);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->CheckURL = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->CheckURL != NULL){
 				SendMessage(GetDlgItem(hDlg,IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)tpItemInfo->CheckURL);
@@ -378,7 +378,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 			if(tpItemInfo->ViewURL != NULL){
 				GlobalFree(tpItemInfo->ViewURL);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->ViewURL = GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->ViewURL != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_VIEWURL), WM_GETTEXT, len, (LPARAM)tpItemInfo->ViewURL);
@@ -388,7 +388,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 			if(tpItemInfo->Comment != NULL){
 				GlobalFree(tpItemInfo->Comment);
 			}
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1;
 			tpItemInfo->Comment = (char *)GlobalAlloc(GPTR, len + 1);
 			if(tpItemInfo->Comment != NULL){
 				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT, len, (LPARAM)tpItemInfo->Comment);
@@ -401,7 +401,7 @@ static BOOL CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lP
 
 		case IDC_BUTTON_CHANGE:		//URLの入れ替え
 			/* チェックするURLの取得 */
-			len = SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
+			len = (int)SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1;
 			p = GlobalAlloc(GPTR, len + 1);
 			if(p != NULL){
 				SendMessage(GetDlgItem(hDlg,IDC_EDIT_URL), WM_GETTEXT, len, (LPARAM)p);
@@ -441,7 +441,7 @@ static void ReqTypeEnable(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -585,7 +585,7 @@ static BOOL CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPAR
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char buf[BUFSIZE];
@@ -597,7 +597,8 @@ static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 	char referer[BUFSIZE];
 	char ua[BUFSIZE];
 	char nb[16], sb[16], ub[16];
-	char *vals[8];
+	char *vals[9];
+	char ignorecert[2];
 	char *opt, *opt2;
 	BOOL EnableFlag;
 
@@ -639,6 +640,7 @@ static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_REFERER), WM_SETTEXT, 0, (LPARAM)buf);
 		}
 
+		CheckDlgButton(hDlg, IDC_CHECK_IGNORECERT, GetOptionInt(tpItemInfo->Option2, OP2_IGNORECERT));
 		if(GetOptionString(tpItemInfo->Option2, buf, OP2_USERAGENT) == TRUE){
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_USERAGENT), WM_SETTEXT, 0, (LPARAM)buf);
 		}
@@ -719,7 +721,10 @@ static BOOL CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPA
 			vals[OP2_USER] = user;
 			vals[OP2_PASS] = epass;
 			vals[OP2_REFERER] = referer;
-			opt = ReplaceOptionFields(tpItemInfo->Option2, 0, 8, vals);
+						ignorecert[0] = IsDlgButtonChecked(hDlg, IDC_CHECK_IGNORECERT) ? '1' : '0';
+			ignorecert[1] = '\0';
+			vals[OP2_IGNORECERT] = ignorecert;
+			opt = ReplaceOptionFields(tpItemInfo->Option2, 0, 9, vals);
 			SecureZeroMemory(epass, sizeof(epass));
 			if(opt != NULL){
 				//User-Agent (アーカイブの設定の後の項目)
@@ -773,7 +778,7 @@ static void ArchiveEnable(HWND hDlg)
 
 ******************************************************************************/
 
-static BOOL CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
 	char val[5][16];
@@ -899,7 +904,7 @@ static BOOL CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 
 ******************************************************************************/
 
-static BOOL CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static INT_PTR CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	char buf[BUFSIZE];
 	char path[MAX_PATH];
@@ -1000,7 +1005,7 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 	hpsp[3] = CreatePropertySheetPage(&psp);
 
 	ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
-	psh.dwSize = sizeof_PROPSHEETHEADER;
+	psh.dwSize = sizeof(PROPSHEETHEADER);
 	psh.dwFlags = PSH_NOAPPLYNOW;
 	psh.hInstance = ghinst;
 	psh.hwndParent = hWnd;
@@ -1030,11 +1035,24 @@ __declspec(dllexport) int CALLBACK HTTP_Property(HWND hWnd, struct TPITEM *tpIte
 
 ******************************************************************************/
 
-static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+static void EnableProxyControls(HWND hDlg)
 {
+	BOOL named = (IsDlgButtonChecked(hDlg, IDC_RADIO_USEPROXY) == BST_CHECKED) ? TRUE : FALSE;
+	BOOL any = (named == TRUE || IsDlgButtonChecked(hDlg, IDC_RADIO_SYSPROXY) == BST_CHECKED) ? TRUE : FALSE;
+	BOOL pass = (any == TRUE && IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == BST_CHECKED) ? TRUE : FALSE;
+
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), named);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), named);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), any);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), any);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), pass);
+	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), pass);
+}
+
+static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	char encpass[PASS_ENC_SIZE];
 	char buf[BUFSIZE];
-	char epass[PASS_BUFSIZE];
-	BOOL EnableFlag;
 
 	switch (uMsg)
 	{
@@ -1044,13 +1062,8 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 		CheckDlgButton(hDlg, IDC_CHECK_REQGET, CheckType);
 
-		CheckDlgButton(hDlg, IDC_CHECK_PROXY, Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), Proxy);
-		EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), Proxy);
+		CheckDlgButton(hDlg, (Proxy == PROXY_NAMED) ? IDC_RADIO_USEPROXY :
+			((Proxy == PROXY_SYSTEM) ? IDC_RADIO_SYSPROXY : IDC_RADIO_NOPROXY), BST_CHECKED);
 
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PSERVER), WM_SETTEXT, 0, (LPARAM)pServer);
 		wsprintf(buf,"%ld", pPort);
@@ -1062,10 +1075,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_SETTEXT, 0, (LPARAM)pUser);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_SETTEXT, 0, (LPARAM)pPass);
 
-		if(IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 0){
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), FALSE);
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), FALSE);
-		}
+		EnableProxyControls(hDlg);
 		break;
 
 	case WM_NOTIFY:
@@ -1074,35 +1084,11 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 	case WM_COMMAND:
 		switch(wParam)
 		{
-		case IDC_CHECK_PROXY:
-			if(IsDlgButtonChecked(hDlg, IDC_CHECK_PROXY) == 1){
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), TRUE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), TRUE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), TRUE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS),TRUE);
-				if(IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 1){
-					EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), TRUE);
-					EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), TRUE);
-				}
-			}else{
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PSERVER), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PPORT), FALSE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_NOCACHE), FALSE);
-
-				EnableWindow(GetDlgItem(hDlg, IDC_CHECK_USEPASS), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), FALSE);
-				EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), FALSE);
-			}
-			break;
-
+		case IDC_RADIO_NOPROXY:
+		case IDC_RADIO_SYSPROXY:
+		case IDC_RADIO_USEPROXY:
 		case IDC_CHECK_USEPASS:
-			EnableFlag = (IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS) == 1) ? TRUE : FALSE;
-
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_USER), EnableFlag);
-			EnableWindow(GetDlgItem(hDlg, IDC_EDIT_PASS), EnableFlag);
+			EnableProxyControls(hDlg);
 			break;
 
 		case IDOK:
@@ -1110,7 +1096,8 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 			TimeOut = atoi(buf);
 			CheckType = IsDlgButtonChecked(hDlg, IDC_CHECK_REQGET);
 
-			Proxy = IsDlgButtonChecked(hDlg, IDC_CHECK_PROXY);
+			Proxy = (IsDlgButtonChecked(hDlg, IDC_RADIO_USEPROXY) == BST_CHECKED) ? PROXY_NAMED :
+				((IsDlgButtonChecked(hDlg, IDC_RADIO_SYSPROXY) == BST_CHECKED) ? PROXY_SYSTEM : PROXY_NONE);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PSERVER), WM_GETTEXT, BUFSIZE - 1, (LPARAM)pServer);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PPORT), WM_GETTEXT, BUFSIZE - 1, (LPARAM)buf);
 			pPort = atoi(buf);
@@ -1119,8 +1106,7 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 
 			pUsePass = IsDlgButtonChecked(hDlg, IDC_CHECK_USEPASS);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_GETTEXT, BUFSIZE - 1, (LPARAM)pUser);
-			//暗号化すると2倍の長さになるため半分までとする
-			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_GETTEXT, BUFSIZE / 2, (LPARAM)pPass);
+			SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_GETTEXT, BUFSIZE - 1, (LPARAM)pPass);
 
 			wsprintf(buf, "%ld", TimeOut);
 			WritePrivateProfileString("CHECK", "TimeOut", buf, app_path);
@@ -1139,8 +1125,10 @@ static BOOL CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wPar
 			wsprintf(buf, "%ld", pUsePass);
 			WritePrivateProfileString("PROXY", "pUsePass", buf, app_path);
 			WritePrivateProfileString("PROXY", "pUser", pUser, app_path);
-			EncodePassword(pPass, epass, PASS_BUFSIZE);
-			WritePrivateProfileString("PROXY", "pPass", epass, app_path);
+			if(EncodePassword(pPass, encpass, PASS_ENC_SIZE) == FALSE){
+				*encpass = '\0';
+			}
+			WritePrivateProfileString("PROXY", "pPass", encpass, app_path);
 			break;
 		}
 		break;
@@ -1180,7 +1168,7 @@ __declspec(dllexport) int CALLBACK HTTP_ProtocolProperty(HWND hWnd)
 	hpsp[1] = CreatePropertySheetPage(&psp);
 
 	ZeroMemory(&psh, sizeof(PROPSHEETHEADER));
-	psh.dwSize = sizeof_PROPSHEETHEADER;
+	psh.dwSize = sizeof(PROPSHEETHEADER);
 	psh.dwFlags = PSH_NOAPPLYNOW;
 	psh.hInstance = ghinst;
 	psh.hwndParent = hWnd;

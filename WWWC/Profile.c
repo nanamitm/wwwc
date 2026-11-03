@@ -102,7 +102,7 @@ static BOOL write_ascii_file(const HANDLE hFile, const TCHAR *buf, const int len
 		return FALSE;
 	}
 	WideCharToMultiByte(CP_ACP, 0, buf, -1, str, clen, NULL, NULL);
-	if (WriteFile(hFile, str, clen - 1, &ret, NULL) == FALSE) {
+	if (WriteFile(hFile, str, clen - 1, &ret, NULL) == FALSE || ret != (DWORD)(clen - 1)) {
 		mem_free(&str);
 		return FALSE;
 	}
@@ -111,7 +111,7 @@ static BOOL write_ascii_file(const HANDLE hFile, const TCHAR *buf, const int len
 #else
 	DWORD ret;
 
-	return WriteFile(hFile, buf, len, &ret, NULL);
+	return WriteFile(hFile, buf, len, &ret, NULL) && ret == (DWORD)len;
 #endif
 }
 
@@ -164,7 +164,7 @@ static int section_find(const TCHAR *section_name)
 		if ((section_info + i)->hash != hash) {
 			continue;
 		}
-		if (lstrcmpi((section_info + i)->section_name, section_name) == 0) {
+		if (_stricmp((section_info + i)->section_name, section_name) == 0) {
 			return i;
 		}
 	}
@@ -230,7 +230,7 @@ static int key_find(const SECTION_INFO *si, const TCHAR *key_name)
 			(si->key_info + i)->hash != hash) {
 			continue;
 		}
-		if (lstrcmpi((si->key_info + i)->key_name, key_name) == 0) {
+		if (_stricmp((si->key_info + i)->key_name, key_name) == 0) {
 			return i;
 		}
 	}
@@ -374,6 +374,7 @@ BOOL profile_flush(const TCHAR *file_path)
 	TCHAR *buf, *p;
 	int len;
 	int i, j;
+	BOOL ok;
 
 	if (section_info == NULL) {
 		return FALSE;
@@ -463,9 +464,9 @@ BOOL profile_flush(const TCHAR *file_path)
 	// メモリの解放
 	mem_free(&buf);
 	// ファイルを閉じる
-	FlushFileBuffers(hFile);
+	ok = FlushFileBuffers(hFile);
 	CloseHandle(hFile);
-	return TRUE;
+	return ok;
 }
 
 /*

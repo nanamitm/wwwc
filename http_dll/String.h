@@ -1,4 +1,4 @@
-/**************************************************************************
+﻿/**************************************************************************
 
 	WWWC (wwwc.dll)
 
@@ -18,8 +18,11 @@
 **************************************************************************/
 
 void BadNameCheck(char *buf, char NewChar);
-void EncodePassword(char *pass, char *ret, int size);
-BOOL DecodePassword(char *buf, char *ret, int size);
+BOOL EncodePassword(const char *pass, char *ret, int size);
+BOOL IsEncryptedPassword(const char *enc);
+long x2d(const char *str);
+char *SetOptionString(char *buf, int num, char *value);
+void DecodePassword(const char *buf, char *ret, int size);
 UINT str2hash(const TCHAR *str);
 int lstrcmpn(char *buf1, char *buf2, int len);
 int lstrcmpni(char *buf1, char *buf2, int len);
@@ -55,8 +58,8 @@ char *EUC_SJIS(char *buf, char *ret);
 int GetKanjiType(unsigned char *str);
 char *ConvStrCode(char *buf, char *ret);
 char *SrcConv(char *buf, long Size);
-int GetHtml2RtfSize(char *buf);
-void Html2Rtf(char *buf, char *ret);
+int GetHtml2RtfSize(char *buf, BOOL dark);
+void Html2Rtf(char *buf, char *ret, BOOL dark);
 void SetResLanguage(void);
 char *GetResStr(UINT id);
 void FreeResStr(void);

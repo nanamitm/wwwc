@@ -4,7 +4,7 @@
 
 	File.c
 
-	Copyright (C) 1996-2026 by Ohno Tomoaki. All rights reserved.
+	Copyright (C) 1996-2008 by Nakashima Tomoaki. All rights reserved.
 		http://www.nakka.com/
 		nakka@nakka.com
 
@@ -55,10 +55,7 @@ extern int SaveDriveCheck;
 **************************************************************************/
 
 static char *AllocItemStr(char *t, char **ret);
-static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct TPITEM *tpItemInfo);
-static BOOL IsBatchFile(char *FileName);
-
-static BOOL ExecArgBadChar;				//埋め込んだアイテムの情報にコマンド解釈される文字が含まれる
+static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *tpItemInfo);
 
 
 /******************************************************************************
@@ -168,51 +165,8 @@ BOOL GetPathToFilename(char *fPath, char *ret)
 	}
 	FindClose(hFindFile);
 
-	lstrcpyn(ret, FindData.cFileName, BUFSIZE);
+	lstrcpy(ret, FindData.cFileName);
 	return TRUE;
-}
-
-
-/******************************************************************************
-
-	GetDirChildPathLength
-
-	サブフォルダを含めたパスの最大の長さ (指定フォルダからの相対) を取得する
-
-******************************************************************************/
-
-int GetDirChildPathLength(char *Path)
-{
-	WIN32_FIND_DATA FindData;
-	HANDLE hFindFile;
-	char sPath[PATH_BUFSIZE];
-	char buf[PATH_BUFSIZE];
-	int len, max = 0;
-
-	if(lstrlen(Path) + 2 >= PATH_BUFSIZE){
-		return PATH_BUFSIZE;
-	}
-	wsprintf(sPath, "%s\\*", Path);
-	if((hFindFile = FindFirstFile(sPath, &FindData)) == INVALID_HANDLE_VALUE){
-		return 0;
-	}
-	do{
-		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ||
-			lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
-			continue;
-		}
-		if(lstrlen(Path) + 1 + lstrlen(FindData.cFileName) >= PATH_BUFSIZE){
-			max = PATH_BUFSIZE;
-			break;
-		}
-		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
-		len = 1 + lstrlen(FindData.cFileName) + GetDirChildPathLength(buf);
-		if(len > max){
-			max = len;
-		}
-	} while(FindNextFile(hFindFile, &FindData) == TRUE);
-	FindClose(hFindFile);
-	return max;
 }
 
 
@@ -230,10 +184,10 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
 	HTREEITEM hItem;
-	char sPath[PATH_BUFSIZE];
-	char nPath[PATH_BUFSIZE];
-	char buf[PATH_BUFSIZE];
-	char buf2[PATH_BUFSIZE];
+	char sPath[BUFSIZE];
+	char nPath[BUFSIZE];
+	char buf[BUFSIZE];
+	char buf2[BUFSIZE];
 	char *ItemPath;
 	int cnt = 1;
 	int FromCnt, i;
@@ -244,12 +198,12 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 
 	//コピー先の名前の設定
 	wsprintf(nPath, "%s\\%s", NewPath, name);
-	if(lstrcmpi(nPath, Path) == 0){
+	if(PathCompare(nPath, Path) == 0){
 		wsprintf(buf, STR_COPYNAME, name);
 		while(GetDirSerch(nPath) == TRUE){
 			wsprintf(nPath, "%s\\%s", NewPath, buf);
 			if(ret != NULL){
-				lstrcpyn(ret, buf, BUFSIZE);
+				lstrcpy(ret, buf);
 			}
 			//コピーに失敗し続ける場合はエラーとする
 			cnt++;
@@ -275,7 +229,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 	do{
 		//ディレクトリのコピー
 		if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-			if(lstrcmp(FindData.cFileName, ".") != 0 && lstrcmp(FindData.cFileName, "..") != 0){
+			if(strcmp(FindData.cFileName, ".") != 0 && strcmp(FindData.cFileName, "..") != 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				if(CopyDirTree(hWnd, buf, nPath, FindData.cFileName, NULL) == -1){
 					FindClose(hFindFile);
@@ -289,7 +243,7 @@ int CopyDirTree(HWND hWnd, char *Path, char *NewPath, char *name, char *ret)
 		wsprintf(buf2, "%s\\%s", nPath, FindData.cFileName);
 
 		//ファイルのコピー
-		if(lstrcmpi(FindData.cFileName, DATAFILENAME) != 0 ||
+		if(_stricmp(FindData.cFileName, DATAFILENAME) != 0 ||
 			lstrcmpni(nPath, CuDir, lstrlen(CuDir)) != 0 || hWnd == NULL){
 			CopyFile(buf, buf2, TRUE);
 			continue;
@@ -351,8 +305,8 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[PATH_BUFSIZE];
-	char buf[PATH_BUFSIZE];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 
 	if(Path == NULL || *Path == '\0'){
 		return FALSE;
@@ -365,15 +319,15 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 
 	do{
 		if(FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY){
-			if(lstrcmp(FindData.cFileName, ".") != 0 && lstrcmp(FindData.cFileName, "..") != 0){
+			if(strcmp(FindData.cFileName, ".") != 0 && strcmp(FindData.cFileName, "..") != 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteDirTree(buf, AllFlag);
 				RemoveDirectory(buf);
 			}
 		}else{
 			if(AllFlag == TRUE ||
-				lstrcmpi(FindData.cFileName, DATAFILENAME) == 0 ||
-				lstrcmpi(FindData.cFileName, FOLDERFILENAME) == 0){
+				_stricmp(FindData.cFileName, DATAFILENAME) == 0 ||
+				_stricmp(FindData.cFileName, FOLDERFILENAME) == 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteFile(buf);
 			}
@@ -397,8 +351,8 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[PATH_BUFSIZE];
-	char buf[PATH_BUFSIZE];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 	HTREEITEM pItem;
 
 	wsprintf(sPath, "%s\\*", Path);
@@ -411,11 +365,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0){
 			continue;
 		}
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
-			continue;
-		}
-		//パスが長すぎるフォルダは扱わない
-		if(lstrlen(Path) + 1 + lstrlen(FindData.cFileName) > MAX_TREEPATH){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
@@ -447,7 +397,7 @@ void SetDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 ******************************************************************************/
 
-void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, long Param)
+void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, LPARAM Param)
 {
 	char buf[BUFSIZE];
 
@@ -459,7 +409,7 @@ void CALLBACK FindTreeDir(HWND hWnd, HTREEITEM hItem, long Param)
 
 	if(GetDirSerch(buf) == FALSE){
 		//ツリーの削除
-		CallTreeItem(hWnd, hItem, (FARPROC)TreeView_FreeItem, 0);
+		CallTreeItem(hWnd, hItem, TreeView_FreeItem, 0);
 		TreeView_DeleteItem(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	}
 }
@@ -477,8 +427,8 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 {
 	WIN32_FIND_DATA FindData;
 	HANDLE hFindFile;
-	char sPath[PATH_BUFSIZE];
-	char buf[PATH_BUFSIZE];
+	char sPath[BUFSIZE];
+	char buf[BUFSIZE];
 	HTREEITEM pItem;
 
 	wsprintf(sPath, "%s\\*", Path);
@@ -491,11 +441,7 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0){
 			continue;
 		}
-		if(lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
-			continue;
-		}
-		//パスが長すぎるフォルダは扱わない
-		if(lstrlen(Path) + 1 + lstrlen(FindData.cFileName) > MAX_TREEPATH){
+		if(strcmp(FindData.cFileName, ".") == 0 || strcmp(FindData.cFileName, "..") == 0){
 			continue;
 		}
 		//フォルダ情報の保存
@@ -522,13 +468,13 @@ void SaveDirTree(HWND hTreeView, char *Path, HTREEITEM hItem)
 
 void mkDirStr(char *buf)
 {
-	char tmp[MAX_PATH];
+	char tmp[BUFSIZE];
 	char *p, *r;
 
 	p = buf;
 	r = tmp;
-	while(*p != '\0'){
-		if(IS_LEAD_BYTE(p)){
+	while(*p != '\0' && r - tmp < BUFSIZE - 2){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *(p++);
 		}else if(*p == '\\' || *p == '/'){
@@ -625,15 +571,10 @@ char *LineSetItemInfo(struct TPITEM *tpItemList, char *t)
 
 	//Status
 	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++){
-		if(r < Tmpbuf + BUFSIZE - 1){
-			*(r++) = *t;
-		}
+		if(r - Tmpbuf < BUFSIZE - 1) *(r++) = *t;
 	}
 	*r = '\0';
 	tpItemList->Status = atoi(Tmpbuf);
-	if(tpItemList->Status < 0 || tpItemList->Status >= 10){
-		tpItemList->Status = 0;
-	}
 	if(*t != '\t') return t;
 
 	//CheckDate
@@ -666,15 +607,10 @@ char *LineSetItemInfo(struct TPITEM *tpItemList, char *t)
 
 	//Status
 	for(t++, r = Tmpbuf;*t != '\t' && *t != '\r' && *t != '\n' && *t != '\0';t++){
-		if(r < Tmpbuf + BUFSIZE - 1){
-			*(r++) = *t;
-		}
+		if(r - Tmpbuf < BUFSIZE - 1) *(r++) = *t;
 	}
 	*r = '\0';
 	tpItemList->CheckSt = atoi(Tmpbuf);
-	if(tpItemList->CheckSt < 0 || tpItemList->CheckSt >= 10){
-		tpItemList->CheckSt = 0;
-	}
 	if(*t != '\t') return t;
 
 	//ErrStatus
@@ -708,7 +644,7 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	char *buf;
 	char *p;
 	long FileSize;
-	int MaxLineCnt = 0;
+	int LineCnt = 0;
 	DWORD ret;
 
 	*cnt = 0;
@@ -743,23 +679,39 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 	FileSize = ret;
 	*(buf + FileSize) = '\0';
 
-	//行数のカウント (CRのみの改行や最終行の改行なしも1行として扱う)
-	for(p = buf; *p != '\0'; p++){
-		if(*p == '\r' || *p == '\n'){
-			MaxLineCnt++;
+	//行数のカウント (下のアイテム作成と同じく、改行で区切られた空でない行を数える)
+	p = buf;
+	while(*p != '\0'){
+		for(; *p == '\r' || *p == '\n'; p++);
+		if(*p == '\0'){
+			break;
 		}
+		LineCnt++;
+		for(; *p != '\0' && *p != '\r' && *p != '\n'; p++);
 	}
-	MaxLineCnt++;
+	*cnt = LineCnt;
+
+	//空行だけの場合
+	if(LineCnt == 0){
+		GlobalFree(buf);
+		tpItemList = (struct TPITEM **)GlobalAlloc(GPTR, 0);
+		if(tpItemList == NULL){
+			abort();
+		}
+		return tpItemList;
+	}
 
 	//アイテム情報を確保
-	tpRetItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * MaxLineCnt);
+	tpRetItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * (*cnt));
 	if(tpRetItemList == NULL){
 		abort();
 	}
 	tpItemList = tpRetItemList;
 	//アイテム情報を取得
 	p = buf;
-	while(*p != '\0' && tpItemList - tpRetItemList < MaxLineCnt){
+	for(; *p == '\r' || *p == '\n'; p++);
+	*cnt = 0;
+	while(*p != '\0' && *cnt < LineCnt){
 		if((*tpItemList = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM))) == NULL){
 			abort();
 		}
@@ -770,8 +722,8 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 		p = LineSetItemInfo(*tpItemList, p);
 		for(; (*p == '\r' || *p == '\n'); p++);
 		tpItemList++;
+		(*cnt)++;
 	}
-	*cnt = tpItemList - tpRetItemList;
 
 	GlobalFree(buf);
 	return tpRetItemList;
@@ -789,8 +741,8 @@ struct TPITEM **ReadItemList(char *FileName, int *cnt, HTREEITEM hItem)
 BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 {
 	struct TPTREE *tpTreeInfo;
-	char buf[MAX_PATH];
-	char FileName[MAX_PATH];
+	char buf[BUFSIZE];
+	char FileName[BUFSIZE];
 
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(GetDlgItem(hWnd, WWWC_TREE), hItem);
 	if(tpTreeInfo == NULL){
@@ -867,29 +819,6 @@ int ItemSize(struct TPITEM *tpItemInfo)
 
 /******************************************************************************
 
-	iStrCpyField
-
-	アイテムの項目をコピーする (区切り文字のタブと改行は空白に変換)
-
-******************************************************************************/
-
-static char *iStrCpyField(char *ret, char *buf)
-{
-	if(buf == NULL){
-		*ret = '\0';
-		return ret;
-	}
-	while(*buf != '\0'){
-		*(ret++) = (*buf == '\t' || *buf == '\r' || *buf == '\n') ? ' ' : *buf;
-		buf++;
-	}
-	*ret = '\0';
-	return ret;
-}
-
-
-/******************************************************************************
-
 	SetItemString
 
 	アイテム情報からアイテムの文字列を作成する
@@ -904,54 +833,54 @@ char *SetItemString(struct TPITEM *tpItemInfo, char *p)
 		return p;
 	}
 
-	p = iStrCpyField(p, tpItemInfo->Title);
+	p = iStrCpy(p, tpItemInfo->Title);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->CheckURL);
+	p = iStrCpy(p, tpItemInfo->CheckURL);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->Size);
+	p = iStrCpy(p, tpItemInfo->Size);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->Date);
+	p = iStrCpy(p, tpItemInfo->Date);
 	*(p++) = '\t';
 
-	wsprintf(Tmpbuf, "%ld", (tpItemInfo->Status >= 0 && tpItemInfo->Status < 10) ? tpItemInfo->Status : 0);
+	wsprintf(Tmpbuf, "%ld", (tpItemInfo->Status < 10) ? tpItemInfo->Status : 0);
 	p = iStrCpy(p, Tmpbuf);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->CheckDate);
+	p = iStrCpy(p, tpItemInfo->CheckDate);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->OldSize);
+	p = iStrCpy(p, tpItemInfo->OldSize);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->OldDate);
+	p = iStrCpy(p, tpItemInfo->OldDate);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->ViewURL);
+	p = iStrCpy(p, tpItemInfo->ViewURL);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->Option1);
+	p = iStrCpy(p, tpItemInfo->Option1);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->Option2);
+	p = iStrCpy(p, tpItemInfo->Option2);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->Comment);
+	p = iStrCpy(p, tpItemInfo->Comment);
 	*(p++) = '\t';
 
-	wsprintf(Tmpbuf, "%ld", (tpItemInfo->CheckSt >= 0 && tpItemInfo->CheckSt < 10) ? tpItemInfo->CheckSt : 0);
+	wsprintf(Tmpbuf, "%ld", (tpItemInfo->CheckSt < 10) ? tpItemInfo->CheckSt : 0);
 	p = iStrCpy(p, Tmpbuf);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->ErrStatus);
+	p = iStrCpy(p, tpItemInfo->ErrStatus);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->DLLData1);
+	p = iStrCpy(p, tpItemInfo->DLLData1);
 	*(p++) = '\t';
 
-	p = iStrCpyField(p, tpItemInfo->DLLData2);
+	p = iStrCpy(p, tpItemInfo->DLLData2);
 
 	*(p++) = '\r';
 	*(p++) = '\n';
@@ -1070,8 +999,8 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem)
 {
 	struct TPTREE *tpTreeInfo;
-	char FileName[MAX_PATH];
-	char buf[MAX_PATH];
+	char FileName[BUFSIZE];
+	char buf[BUFSIZE];
 	int ret, f;
 
 	tpTreeInfo = (struct TPTREE *)TreeView_GetlParam(hTreeView, hItem);
@@ -1157,33 +1086,20 @@ void FreeGetDiskFreeSpaceEx()
 int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, char *def, int Index)
 {
 	OPENFILENAME of;
-	char tmp[MAX_PATH];
-	char filter[BUFSIZE];
-	char *p;
+	char tmp[BUFSIZE];
 
 	lstrcpy(tmp, oFile);
-
-	//フィルタの区切りの '|' を '\0' に置き換える (終端は '\0' を2つ)
-	lstrcpyn(filter, oFilter, BUFSIZE - 1);
-	for(p = filter; *p != '\0'; p++){
-		if(IS_LEAD_BYTE(p)){
-			p++;
-		}else if(*p == '|'){
-			*p = '\0';
-		}
-	}
-	*(p + 1) = '\0';
 
 	of.lStructSize = sizeof(of);
 	of.hInstance = NULL;
 	of.hwndOwner = hDlg;
-	of.lpstrFilter = filter;
+	of.lpstrFilter = oFilter;
 	of.lpstrTitle = oTitle;
 	of.lpstrCustomFilter = NULL;
 	of.nMaxCustFilter = 40;
 	of.nFilterIndex = Index;
 	of.lpstrFile = tmp;
-	of.nMaxFile = MAX_PATH - 1;
+	of.nMaxFile = BUFSIZE - 1;
 	of.lpstrFileTitle = NULL;
 	of.nMaxFileTitle = 0;
 	of.lpstrInitialDir = NULL;
@@ -1211,18 +1127,18 @@ int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, c
 
 ******************************************************************************/
 
-static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct TPITEM *tpItemInfo)
+static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *tpItemInfo)
 {
-	char FolderPath[MAX_PATH];
-	char *p, *r, *t, *s, *e;
+	char FolderPath[BUFSIZE];
+	char *p, *r, *t;
 
 	if(buf == NULL){
 		return;
 	}
 
 	// %文字 の変換を行う
-	for(p = buf, r = ret;*p != '\0' && r < ret + size - 2;p++){
-		if(IS_LEAD_BYTE(p)){
+	for(p = buf, r = ret;*p != '\0';p++){
+		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			*(r++) = *(p++);
 			*(r++) = *p;
 
@@ -1321,7 +1237,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct
 			case 'F':
 				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
 					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
-				GetShortPathName(FolderPath, FolderPath, MAX_PATH - 1);
+				GetShortPathName(FolderPath, FolderPath, BUFSIZE - 1);
 				t = FolderPath;
 				break;
 
@@ -1332,31 +1248,13 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct
 
 			//ユーザディレクトリのパス (短い形式)
 			case 'P':
-				GetShortPathName(CuDir, FolderPath, MAX_PATH - 1);
+				GetShortPathName(CuDir, FolderPath, BUFSIZE - 1);
 				t = FolderPath;
 				break;
 			}
 			if(t != NULL){
-				s = r;
-				for(; *t != '\0' && r < ret + size - 1; t++){
-					//引数の区切りを変えられないよう埋め込む文字列内の引用符は除く
-					if(*t == '\"'){
-						continue;
-					}
-					if(IS_LEAD_BYTE(t)){
-						*(r++) = *(t++);
-						if(r >= ret + size - 1) break;
-					}else if(*t == '&' || *t == '|' || *t == '^' || *t == '<' || *t == '>' || *t == '\r' || *t == '\n'){
-						ExecArgBadChar = TRUE;
-					}
-					*(r++) = *t;
-				}
-				//直後が引用符の場合は末尾の \ が引用符をエスケープしないよう重ねる
-				if(*(p + 1) == '\"'){
-					for(e = r; e > s && *(e - 1) == '\\' && r < ret + size - 1; e--){
-						*(r++) = '\\';
-					}
-				}
+				while(*(r++) = *(t++));
+				r--;
 			}
 		}
 	}
@@ -1375,7 +1273,7 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct
 int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tpItemInfo, int SyncFlag)
 {
 	SHELLEXECUTEINFO sei;
-	char buf[MAXSIZE];
+	char buf[BUFSIZE];
 	char *ExeFilePath;
 	char *CommnadLineString;
 	int ret;
@@ -1383,13 +1281,7 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 
 	*buf = '\0';
 	//コマンドラインの作成
-	ExecArgBadChar = FALSE;
-	SetExecCommandLine(hWnd, CommandLine, buf, MAXSIZE, tpItemInfo);
-	//バッチファイルでは引数の文字がコマンドとして解釈されるため、該当する文字を含む場合は実行しない
-	if(ExecArgBadChar == TRUE && IsBatchFile(FileName) == TRUE){
-		MessageBox(hWnd, EMSG_EXEC_BATCH, EMSG_EXEC_TITLE, MB_ICONEXCLAMATION);
-		return -1;
-	}
+	SetExecCommandLine(hWnd, CommandLine, buf, tpItemInfo);
 
 	ExeFilePath = FileName;
 	CommnadLineString = buf;
@@ -1447,38 +1339,6 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 
 /******************************************************************************
 
-	IsBatchFile
-
-	cmd.exe で実行されるファイルかどうかチェックする
-
-******************************************************************************/
-
-static BOOL IsBatchFile(char *FileName)
-{
-	char *p, *ext;
-
-	if(FileName == NULL){
-		return FALSE;
-	}
-	ext = NULL;
-	for(p = FileName; *p != '\0'; p++){
-		if(IS_LEAD_BYTE(p)){
-			p++;
-		}else if(*p == '.'){
-			ext = p;
-		}else if(*p == '\\' || *p == '/'){
-			ext = NULL;
-		}
-	}
-	if(ext == NULL){
-		return FALSE;
-	}
-	return (lstrcmpi(ext, ".bat") == 0 || lstrcmpi(ext, ".cmd") == 0) ? TRUE : FALSE;
-}
-
-
-/******************************************************************************
-
 	CreateDropFileMem
 
 	ドロップファイルの作成
@@ -1489,14 +1349,15 @@ HDROP CreateDropFileMem(char **FileName, int cnt)
 {
 	HDROP hDrop;
 	LPDROPFILES lpDropFile;
-	char *buf;
-	int flen = 0;
+	WCHAR *buf;
+	int wlen = 0;
 	int i;
 
+	//ファイル名は UTF-16 で渡す (ANSI だと受け取る側の文字コードで解釈される)
 	for (i = 0; i < cnt; i++) {
-		flen += lstrlen(*(FileName + i)) + 1;
+		wlen += MultiByteToWideChar(CP_ACP, 0, *(FileName + i), -1, NULL, 0);
 	}
-	hDrop = (HDROP)GlobalAlloc(GHND, sizeof(DROPFILES) + flen + 1);
+	hDrop = (HDROP)GlobalAlloc(GHND, sizeof(DROPFILES) + sizeof(WCHAR) * (wlen + 1));
 	if(hDrop == NULL){
 		return NULL;
 	}
@@ -1506,16 +1367,50 @@ HDROP CreateDropFileMem(char **FileName, int cnt)
 	lpDropFile->pt.x = 0;
 	lpDropFile->pt.y = 0;
 	lpDropFile->fNC = FALSE;
-	lpDropFile->fWide = FALSE;
+	lpDropFile->fWide = TRUE;
 
 	//構造体の後ろにファイル名のリストをコピー(ファイル名\0ファイル名\0ファイル名\0\0)
-	buf = (char *)(lpDropFile + 1);
+	buf = (WCHAR *)(lpDropFile + 1);
 	for (i = 0; i < cnt; i++) {
-		lstrcpy(buf, *(FileName + i));
-		buf += lstrlen(*(FileName + i)) + 1;
+		buf += MultiByteToWideChar(CP_ACP, 0, *(FileName + i), -1, buf, wlen);
 	}
-	buf = '\0';
+	*buf = L'\0';
 	GlobalUnlock(hDrop);
 	return(hDrop);
 }
 /* End of source */
+
+
+int GetDirChildPathLength(char *Path)
+{
+	WIN32_FIND_DATA FindData;
+	HANDLE hFindFile;
+	char sPath[PATH_BUFSIZE];
+	char buf[PATH_BUFSIZE];
+	int len, max = 0;
+
+	if(lstrlen(Path) + 2 >= PATH_BUFSIZE){
+		return PATH_BUFSIZE;
+	}
+	wsprintf(sPath, "%s\\*", Path);
+	if((hFindFile = FindFirstFile(sPath, &FindData)) == INVALID_HANDLE_VALUE){
+		return 0;
+	}
+	do{
+		if((FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0 ||
+			lstrcmp(FindData.cFileName, ".") == 0 || lstrcmp(FindData.cFileName, "..") == 0){
+			continue;
+		}
+		if(lstrlen(Path) + 1 + lstrlen(FindData.cFileName) >= PATH_BUFSIZE){
+			max = PATH_BUFSIZE;
+			break;
+		}
+		wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
+		len = 1 + lstrlen(FindData.cFileName) + GetDirChildPathLength(buf);
+		if(len > max){
+			max = len;
+		}
+	} while(FindNextFile(hFindFile, &FindData) == TRUE);
+	FindClose(hFindFile);
+	return max;
+}
