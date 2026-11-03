@@ -171,13 +171,9 @@ foreach ($from in $targetFiles.Keys) {
 	}
 }
 
-# 収集元がすべて ZIP より古い場合は作り直さない
+# SourceDir を x86/x64 間で切り替えても別のバイナリを再利用しないよう、
+# 選択したファイルから毎回 payload を作成する。
 $zipPath = Join-Path $OutDir "payload.zip"
-$latest = ($targetFiles.Keys | ForEach-Object { (Get-Item $_).LastWriteTimeUtc } |
-	Sort-Object -Descending | Select-Object -First 1)
-if ((Test-Path $zipPath) -and (Get-Item $zipPath).LastWriteTimeUtc -gt $latest) {
-	exit 0
-}
 
 $stageDir = Join-Path $OutDir "files"
 if (Test-Path $stageDir) {
