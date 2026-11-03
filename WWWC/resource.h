@@ -275,6 +275,7 @@
 #define ID_MENUITEM_UPSELECT            40124
 #define ID_MENUITEM_AUTOCHECK           40125
 #define ID_KEY_TABCHANGE                40126
+#define ID_MENUITEM_VIEWARCHIVE         40127
 
 #define IDS_NEWITEMNAME                 50000
 #define IDS_FOLDERNAME                  50001

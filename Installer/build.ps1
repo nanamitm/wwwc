@@ -6,7 +6,7 @@
 .DESCRIPTION
 	WWWC 本体と wwwc.dll のビルド、インストールするファイルの収集、ZIP の作成、
 	インストーラのビルドまでを一括で行います。
-	出力するファイル名は wwwc<バージョン>.exe になります。(Ver 1.2.0 なら wwwc120.exe)
+	出力するファイル名は wwwc<バージョン>.exe になります。(Ver 1.2.1 なら wwwc121.exe)
 
 	インストールするファイルの収集と ZIP の作成は、Installer.vcxproj の
 	ビルド前のイベントから prepare.ps1 が行います。Visual Studio で

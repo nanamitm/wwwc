@@ -30,8 +30,8 @@
 #define BANDSIZE_Y			22
 
 #define BUTTON_MAX			100			//ボタンの最大数
-#define TBMAXBUTTON			26			//ボタンの数
-#define TBMAXBITMAP			14			//ボタンビットマップの数
+#define TBMAXBUTTON			27			//ボタンの数
+#define TBMAXBITMAP			15			//ボタンビットマップの数
 #define TBICONSIZE_X		16			//ボタンビットマップのサイズ
 #define TBICONSIZE_Y		16
 
@@ -72,6 +72,8 @@ static TBBUTTON tbb[] = {
 	{11,				ID_MENUITEM_SERACH,				TBSTATE_ENABLED, TBSTYLE_BUTTON, 0, 0},
 	{12,				ID_MENUITEM_PREV_HISTORY,		TBSTATE_ENABLED, TBSTYLE_BUTTON, 0, 0},
 	{13,				ID_MENUITEM_NEXT_HISTORY,		TBSTATE_ENABLED, TBSTYLE_BUTTON, 0, 0},
+	//保存したツールバーの設定はこの並びの番号のため、追加するボタンは末尾に加える
+	{14,				ID_MENUITEM_VIEWARCHIVE,		TBSTATE_ENABLED, TBSTYLE_BUTTON, 0, 0},
 };
 static TBBUTTON _tbb[sizeof(tbb) / sizeof(TBBUTTON)];
 

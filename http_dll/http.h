@@ -59,10 +59,11 @@
 #define OP2_ARCHIVE_NOIMAGE				9				/* 画像をアーカイブしない */
 #define OP2_ARCHIVE_NOCSS					10				/* CSSをアーカイブしない */
 #define OP2_ARCHIVE_JS					11				/* JavaScriptをアーカイブする */
-#define OP2_ARCHIVE_GEN					12				/* 保存する世代数 (0 は 1) */
+#define OP2_ARCHIVE_GEN					12				/* 保存する世代数 (0 は無制限、未設定は 1) */
 #define OP2_USERAGENT					13				/* User-Agent (空の場合は USER_AGENT) */
+#define OP2_ARCHIVE_BROWSER				14				/* ブラウザで表示した内容をアーカイブする */
 
-#define USER_AGENT						L"WWWC/1.20"
+#define USER_AGENT						L"WWWC/1.21"
 
 #define LVM_FIRST						0x1000      // ListView messages
 #define LVM_SETEXTENDEDLISTVIEWSTYLE	(LVM_FIRST + 54)

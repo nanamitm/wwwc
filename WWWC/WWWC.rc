@@ -101,6 +101,7 @@ BEGIN
         MENUITEM "ツール バー(&T)",                  ID_MENUITEM_VIEW_TB
         MENUITEM "ステータス バー(&B)",                ID_MENUITEM_VIEW_SB
         MENUITEM "更新メッセージ(&U)...\tCtrl+U",      ID_MENUITEM_VIEWUPMSG
+        MENUITEM "アーカイブの進捗状況(&A)...",         ID_MENUITEM_VIEWARCHIVE
         MENUITEM SEPARATOR
         MENUITEM "大きいアイコン(&G)",                 ID_MENUITEM_VIEW_ICON
         MENUITEM "小さいアイコン(&M)",                 ID_MENUITEM_VIEW_SMALLICON
@@ -377,6 +378,7 @@ BEGIN
     BUTTON      ID_BUTTON40114
     BUTTON      ID_BUTTON40122
     BUTTON      ID_BUTTON40123
+    BUTTON      ID_MENUITEM_VIEWARCHIVE
 END
 
 
@@ -920,8 +922,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,2,0,0
- PRODUCTVERSION 1,2,0,0
+ FILEVERSION 1,2,1,0
+ PRODUCTVERSION 1,2,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -937,12 +939,12 @@ BEGIN
         BLOCK "041104b0"
         BEGIN
             VALUE "FileDescription", "WWWC"
-            VALUE "FileVersion", "1.2.0.0"
+            VALUE "FileVersion", "1.2.1.0"
             VALUE "InternalName", "WWWC"
             VALUE "LegalCopyright", "Copyright (C) 1996-2018 by Ohno Tomoaki. All rights reserved."
             VALUE "OriginalFilename", "WWWC.exe"
             VALUE "ProductName", "WWWC"
-            VALUE "ProductVersion", "1.2.0.0"
+            VALUE "ProductVersion", "1.2.1.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -1023,6 +1025,7 @@ END
 STRINGTABLE
 BEGIN
     ID_MENUITEM_VIEWUPMSG   "更新メッセージ"
+    ID_MENUITEM_VIEWARCHIVE "アーカイブの進捗状況"
     ID_MENUITEM_FOLDERTREECHECK "階層チェック"
     ID_MENUITEM_SERACH      "検索"
 END
@@ -1268,6 +1271,7 @@ BEGIN
         MENUITEM "&Toolbar",                    ID_MENUITEM_VIEW_TB
         MENUITEM "Status &Bar",                 ID_MENUITEM_VIEW_SB
         MENUITEM "&Update Message...\tCtrl+U",  ID_MENUITEM_VIEWUPMSG
+        MENUITEM "&Archive Progress...",        ID_MENUITEM_VIEWARCHIVE
         MENUITEM SEPARATOR
         MENUITEM "Lar&ge Icons",                ID_MENUITEM_VIEW_ICON
         MENUITEM "S&mall Icons",                ID_MENUITEM_VIEW_SMALLICON
@@ -1850,6 +1854,7 @@ END
 STRINGTABLE
 BEGIN
     ID_MENUITEM_VIEWUPMSG   "Update Message"
+    ID_MENUITEM_VIEWARCHIVE "Archive Progress"
     ID_MENUITEM_FOLDERTREECHECK "Check with Subfolders"
     ID_MENUITEM_SERACH      "Find"
 END

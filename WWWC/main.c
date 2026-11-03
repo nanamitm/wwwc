@@ -580,7 +580,7 @@ static void RefreshIniFile(HWND hWnd)
 	}
 	WaitCursor(TRUE);
 
-	EndProtocolNotify();
+	EndProtocolNotify(TRUE);
 	FreeProtocol();
 
 	GetINI();
@@ -1026,7 +1026,8 @@ static BOOL EndWindow(HWND hWnd, int Flag, int EndFlag)
 	WindowFlag = FALSE;
 	WaitCursor(TRUE);
 
-	EndProtocolNotify();
+	//設定の読み直し (Flag が 1) の場合は再読み込みの通知にする
+	EndProtocolNotify((Flag == 1) ? TRUE : FALSE);
 
 	if(StartDirOpen == 2){
 		//次回起動時に開くフォルダの取得
@@ -1204,6 +1205,11 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		if(HIWORD(lParam) == FALSE && ((HMENU)wParam == GetSubMenu(GetMenu(hWnd), MENU_HWND_FILE) ||
 			(HMENU)wParam == GetSubMenu(hPOPUP, MENU_POP_ITEM))){
 			SetProtocolItemMenuState(hWnd, (HMENU)wParam, FALSE);
+		}
+		//アーカイブの進捗状況はアーカイブを行うプロトコルがある場合のみ
+		if(HIWORD(lParam) == FALSE && (HMENU)wParam == GetSubMenu(GetMenu(hWnd), MENU_HWND_VIEW)){
+			EnableMenuItem((HMENU)wParam, ID_MENUITEM_VIEWARCHIVE,
+				(HasProtocolArchiveProgress() == TRUE) ? MF_ENABLED : MF_GRAYED);
 		}
 		return (DefWindowProc(hWnd, uMsg, wParam, lParam));
 
@@ -1541,6 +1547,10 @@ static LONG APIENTRY MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam
 		case ID_MENUITEM_VIEWUPMSG:
 			ShowWindow(UpWnd, SW_SHOW);
 			_SetForegroundWindow(UpWnd);
+			break;
+
+		case ID_MENUITEM_VIEWARCHIVE:
+			ShowProtocolArchiveProgress(hWnd);
 			break;
 
 		case ID_MENUITEM_OPTION:
@@ -2772,6 +2782,8 @@ void __cdecl AppExit(void)
 	//GetDiskFreeSpaceEx 用に読み込んだライブラリの解放
 	FreeGetDiskFreeSpaceEx();
 
+	//ウィンドウを閉じた後にプロトコルの処理 (アーカイブの取得) の完了を待つ
+	EndProtocolWait();
 	//プロトコル情報を解放
 	FreeProtocol();
 	//ツール情報を解放

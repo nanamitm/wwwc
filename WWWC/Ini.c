@@ -737,7 +737,7 @@ void GetProtocolInfo(void)
 
 	if(tpProtocol != NULL){
 		if(gCheckFlag == 0){
-			EndProtocolNotify();
+			EndProtocolNotify(TRUE);
 		}
 		FreeProtocol();
 	}

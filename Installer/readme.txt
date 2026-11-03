@@ -31,7 +31,7 @@ PowerShell で以下を実行すると、WWWC 本体と wwwc.dll のビルドか
   PS> .\build.ps1
 
 作成したインストーラは Installer\out に出力されます。
-出力するファイル名は wwwc<バージョン>.exe です。Ver 1.2.0 なら wwwc120.exe に
+出力するファイル名は wwwc<バージョン>.exe です。Ver 1.2.1 なら wwwc121.exe に
 なります。バージョンは WWWC\WWWC.rc の FILEVERSION から取得します。
 インストーラに含まれるのは Release 構成でビルドした WWWC.exe と wwwc.dll です。
 
@@ -126,7 +126,7 @@ WWWC と wwwc.dll は実行ファイルと同じフォルダの wwwc_app.ini で
 コントロールパネルから実行できます。
 インストーラに引数を指定して実行することもできます。
 
-  wwwc120.exe /uninstall
+  wwwc121.exe /uninstall
 
 インストール先に配置される uninstall.exe も同じ動作です。
 

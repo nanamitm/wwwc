@@ -597,14 +597,33 @@ static ATTR *FindAttr(ATTR *attr, int cnt, const char *name)
 	return NULL;
 }
 
-/* 属性の処理方法 */
-static int AttrAction(const char *tag, long tlen, ATTR *attr, int cnt, ATTR *a, int *type, BOOL js)
+/* 先頭に挿入できる文字コード名か */
+static BOOL ValidCharset(const char *charset)
+{
+	const char *p;
+
+	if(charset == NULL || *charset == '\0' || lstrlen(charset) >= 40){
+		return FALSE;
+	}
+	for(p = charset; *p != '\0'; p++){
+		if(!(IS_ALPHA(*p) || IS_DIGIT(*p) || *p == '-' || *p == '_' || *p == '.' || *p == ':')){
+			return FALSE;
+		}
+	}
+	return TRUE;
+}
+
+/* 属性の処理方法 (hdrcs は先頭に文字コードを挿入する場合で、ページ内の文字コードの指定を無効にする) */
+static int AttrAction(const char *tag, long tlen, ATTR *attr, int cnt, ATTR *a, int *type, BOOL js, BOOL hdrcs)
 {
 	ATTR *rel;
 	char *v;
 	int ret;
 
 	*type = RES_LINK;
+	if(hdrcs == TRUE && EqualI(tag, tlen, "meta") == TRUE && EqualI(a->name, a->nlen, "charset") == TRUE){
+		return A_RENAME;
+	}
 	if(js == FALSE){
 		//イベントハンドラの属性は削除する
 		if(a->nlen > 2 && TO_LOWER(a->name[0]) == 'o' && TO_LOWER(a->name[1]) == 'n'){
@@ -629,7 +648,7 @@ static int AttrAction(const char *tag, long tlen, ATTR *attr, int cnt, ATTR *a, 
 	}
 	if(EqualI(tag, tlen, "meta") == TRUE && EqualI(a->name, a->nlen, "http-equiv") == TRUE){
 		v = AttrValue(a);
-		ret = (v != NULL && (lstrcmpi(v, "refresh") == 0)) ? A_RENAME : A_NONE;
+		ret = (v != NULL && (lstrcmpi(v, "refresh") == 0 || (hdrcs == TRUE && lstrcmpi(v, "content-type") == 0))) ? A_RENAME : A_NONE;
 		if(v != NULL) HeapFree(GetProcessHeap(), 0, v);
 		return ret;
 	}
@@ -645,6 +664,8 @@ static int AttrAction(const char *tag, long tlen, ATTR *attr, int cnt, ATTR *a, 
 			*type = RES_IMAGE;
 		}else if(EqualI(tag, tlen, "script") == TRUE){
 			*type = RES_JS;
+		}else if(EqualI(tag, tlen, "iframe") == TRUE || EqualI(tag, tlen, "frame") == TRUE){
+			*type = RES_FRAME;
 		}
 		return A_URL;
 	}
@@ -694,8 +715,9 @@ static BOOL KeepRawUrl(const char *v)
 	return FALSE;
 }
 
-/* 属性を書き換えて出力 */
-static void EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *base, ARCHIVE_RESOLVE cb, void *ctx, BOOL js)
+/* 属性を書き換えて出力 (prefix はページから見たリソースの場所、アーカイブしたファイルにした場合は TRUE を返す) */
+static BOOL EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *base, const char *prefix,
+					 ARCHIVE_RESOLVE cb, void *ctx, BOOL js)
 {
 	char *v, *abs, *css;
 	const char *local = NULL;
@@ -704,12 +726,12 @@ static void EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *
 	switch(action)
 	{
 	case A_DELETE:
-		return;
+		return FALSE;
 
 	case A_RENAME:
 		Buf_Str(b, "data-wwwc-");
 		Buf_Add(b, a->start, (long)(a->end - a->start));
-		return;
+		return FALSE;
 
 	case A_URL:
 		v = AttrValue(a);
@@ -725,7 +747,7 @@ static void EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *
 			Buf_Add(b, a->name, a->nlen);
 			Buf_Str(b, "=\"");
 			if(local != NULL){
-				Buf_Str(b, ARCHIVE_RES_PREFIX);
+				Buf_Str(b, prefix);
 				AddAttrValue(b, local);
 			}else{
 				AddAttrValue(b, abs);
@@ -734,11 +756,11 @@ static void EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *
 		}
 		if(v != NULL) HeapFree(GetProcessHeap(), 0, v);
 		if(abs != NULL) HeapFree(GetProcessHeap(), 0, abs);
-		return;
+		return (local != NULL) ? TRUE : FALSE;
 
 	case A_STYLE:
 		v = AttrValue(a);
-		css = (v != NULL) ? Archive_RewriteCss(v, lstrlen(v), base, ARCHIVE_RES_PREFIX, cb, ctx, &clen) : NULL;
+		css = (v != NULL) ? Archive_RewriteCss(v, lstrlen(v), base, prefix, cb, ctx, &clen) : NULL;
 		if(css == NULL){
 			Buf_Add(b, a->start, (long)(a->end - a->start));
 		}else{
@@ -749,9 +771,10 @@ static void EmitAttr(ARCHIVE_BUF *b, ATTR *a, int action, int type, const char *
 			Archive_Free(css);
 		}
 		if(v != NULL) HeapFree(GetProcessHeap(), 0, v);
-		return;
+		return FALSE;
 	}
 	Buf_Add(b, a->start, (long)(a->end - a->start));
+	return FALSE;
 }
 
 /* <base href> を取得する */
@@ -787,21 +810,12 @@ static void GetBaseHref(const char *html, const char *end, const char *url, char
 static void MakeHead(ARCHIVE_BUF *h, const char *url, const char *charset, BOOL js)
 {
 	char buf[64];
-	const char *p;
-	BOOL valid = TRUE;
 
 	//文字コード (HTTPヘッダで指定されたもの)
-	if(charset != NULL && *charset != '\0' && lstrlen(charset) < 40){
-		for(p = charset; *p != '\0'; p++){
-			if(!(IS_ALPHA(*p) || IS_DIGIT(*p) || *p == '-' || *p == '_' || *p == '.' || *p == ':')){
-				valid = FALSE;
-			}
-		}
-		if(valid == TRUE){
-			Buf_Str(h, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=");
-			Buf_Str(h, charset);
-			Buf_Str(h, "\">\r\n");
-		}
+	if(ValidCharset(charset) == TRUE){
+		Buf_Str(h, "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=");
+		Buf_Str(h, charset);
+		Buf_Str(h, "\">\r\n");
 	}
 	//スクリプトとプラグインの制限
 	Buf_Str(h, "<meta http-equiv=\"Content-Security-Policy\" content=\"");
@@ -837,10 +851,11 @@ static const char *FindEndTag(const char *p, const char *end, const char *tag)
 	Archive_RewriteHtml
 
 	HTML内のURLをアーカイブのファイル名または絶対URLに書き換える
+	prefix はページから見たリソースの場所 (世代のページは "res/"、res 内の iframe のページは "")
 
 ******************************************************************************/
 
-char *Archive_RewriteHtml(const char *html, long len, const char *url, const char *charset, BOOL js,
+char *Archive_RewriteHtml(const char *html, long len, const char *url, const char *charset, BOOL js, const char *prefix,
 						ARCHIVE_RESOLVE cb, void *ctx, long *outlen)
 {
 	ARCHIVE_BUF b, h;
@@ -851,13 +866,15 @@ char *Archive_RewriteHtml(const char *html, long len, const char *url, const cha
 	long nlen, clen, insertAt = -1, htmlPos = -1, doctypeEnd = -1;
 	int cnt, i, action, type;
 	BOOL jis = FALSE;
-	BOOL endtag, over;
+	BOOL endtag, over, framelocal, hdrcs;
 
 	base = (char *)HeapAlloc(GetProcessHeap(), 0, ARCHIVE_URL_MAX + 1);
 	if(base == NULL){
 		return NULL;
 	}
 	GetBaseHref(html, end, url, base, ARCHIVE_URL_MAX + 1);
+	//HTTPヘッダの文字コードを先頭に挿入する場合は、ページ内の文字コードの指定より優先させる
+	hdrcs = ValidCharset(charset);
 
 	ZeroMemory(&b, sizeof(ARCHIVE_BUF));
 	ZeroMemory(&h, sizeof(ARCHIVE_BUF));
@@ -940,13 +957,16 @@ char *Archive_RewriteHtml(const char *html, long len, const char *url, const cha
 
 		//属性を書き換えてタグを出力
 		seg = p;
+		framelocal = FALSE;
 		for(i = 0; i < cnt; i++){
-			action = AttrAction(name, nlen, attr, cnt, &attr[i], &type, js);
+			action = AttrAction(name, nlen, attr, cnt, &attr[i], &type, js, hdrcs);
 			if(action == A_NONE){
 				continue;
 			}
 			Buf_Add(&b, seg, (long)(attr[i].start - seg));
-			EmitAttr(&b, &attr[i], action, type, base, cb, ctx, js);
+			if(EmitAttr(&b, &attr[i], action, type, base, prefix, cb, ctx, js) == TRUE && type == RES_FRAME){
+				framelocal = TRUE;
+			}
 			seg = attr[i].end;
 		}
 		if(js == TRUE){
@@ -958,7 +978,9 @@ char *Archive_RewriteHtml(const char *html, long len, const char *url, const cha
 				Buf_Add(&b, seg, (long)(tail - seg));
 			}
 			if(EqualI(name, nlen, "iframe") == TRUE){
-				Buf_Str(&b, " sandbox");
+				//アーカイブした iframe のページはローカルのリソースを読めるように同じオリジンとして扱う
+				//(スクリプトは許可しない。ページ内のスクリプトも削除済み)
+				Buf_Str(&b, (framelocal == TRUE) ? " sandbox=\"allow-same-origin\"" : " sandbox");
 			}
 			Buf_Str(&b, ">");
 		}
@@ -975,7 +997,7 @@ char *Archive_RewriteHtml(const char *html, long len, const char *url, const cha
 		//生テキストの要素
 		if(EqualI(name, nlen, "style") == TRUE){
 			q = FindEndTag(p, end, "style");
-			css = Archive_RewriteCss(p, (long)(q - p), base, ARCHIVE_RES_PREFIX, cb, ctx, &clen);
+			css = Archive_RewriteCss(p, (long)(q - p), base, prefix, cb, ctx, &clen);
 			if(css != NULL){
 				Buf_Add(&b, css, clen);
 				Archive_Free(css);

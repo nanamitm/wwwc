@@ -89,6 +89,7 @@
     <ClCompile Include="browser.c" />
     <ClCompile Include="archive.c" />
     <ClCompile Include="archivehtml.c" />
+    <ClCompile Include="archiveprog.c" />
     <ClCompile Include="file.c" />
     <ClCompile Include="http.c" />
     <ClCompile Include="httpfilter.c" />

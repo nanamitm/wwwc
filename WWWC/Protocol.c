@@ -164,10 +164,12 @@ void SetProtocolInfo(void)
 	EndProtocolNotify
 
 	プロトコル毎に終了通知を行う
+	(Reload が TRUE の場合は設定の変更による読み込み直しで、ReloadNotify が
+	 あるプロトコルにはそちらを通知する)
 
 ******************************************************************************/
 
-void EndProtocolNotify(void)
+void EndProtocolNotify(BOOL Reload)
 {
 	int i;
 	char buf[BUFSIZE];
@@ -178,10 +180,107 @@ void EndProtocolNotify(void)
 		if(tpProtocol[i].lib == NULL){
 			continue;
 		}
-		wsprintf(buf, "%sEndNotify", tpProtocol[i].FuncHeader);
-		Func_EndNotify = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_EndNotify = NULL;
+		if(Reload == TRUE){
+			wsprintf(buf, "%sReloadNotify", tpProtocol[i].FuncHeader);
+			Func_EndNotify = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		}
+		if(Func_EndNotify == NULL){
+			wsprintf(buf, "%sEndNotify", tpProtocol[i].FuncHeader);
+			Func_EndNotify = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		}
 		if(Func_EndNotify != NULL){
 			ret = Func_EndNotify();
+		}
+	}
+}
+
+
+/******************************************************************************
+
+	EndProtocolWait
+
+	終了前にプロトコル毎の処理の完了を待つ (ウィンドウを閉じた後に呼ぶ)
+
+******************************************************************************/
+
+void EndProtocolWait(void)
+{
+	int i;
+	char buf[BUFSIZE];
+	int ret;
+	FARPROC Func_EndWait;
+
+	for(i = 0;i < ProtocolCnt;i++){
+		if(tpProtocol[i].lib == NULL){
+			continue;
+		}
+		wsprintf(buf, "%sEndWait", tpProtocol[i].FuncHeader);
+		Func_EndWait = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		if(Func_EndWait != NULL){
+			ret = Func_EndWait();
+		}
+	}
+}
+
+
+/******************************************************************************
+
+	GetArchiveProgressFunc
+
+	アーカイブの進捗状況を表示する関数 (<FuncHeader>ArchiveProgress) を持つプロトコル
+
+******************************************************************************/
+
+static FARPROC GetArchiveProgressFunc(int i)
+{
+	char buf[BUFSIZE];
+
+	if(tpProtocol[i].lib == NULL){
+		return NULL;
+	}
+	wsprintf(buf, "%sArchiveProgress", tpProtocol[i].FuncHeader);
+	return GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+}
+
+
+/******************************************************************************
+
+	HasProtocolArchiveProgress
+
+	アーカイブの進捗状況を表示できるプロトコルがあるか
+
+******************************************************************************/
+
+BOOL HasProtocolArchiveProgress(void)
+{
+	int i;
+
+	for(i = 0;i < ProtocolCnt;i++){
+		if(GetArchiveProgressFunc(i) != NULL){
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
+
+/******************************************************************************
+
+	ShowProtocolArchiveProgress
+
+	プロトコル毎のアーカイブの進捗状況を表示する
+
+******************************************************************************/
+
+void ShowProtocolArchiveProgress(HWND hWnd)
+{
+	FARPROC Func_ArchiveProgress;
+	int i;
+
+	for(i = 0;i < ProtocolCnt;i++){
+		if((Func_ArchiveProgress = GetArchiveProgressFunc(i)) != NULL){
+			Func_ArchiveProgress(hWnd);
 		}
 	}
 }
@@ -910,7 +1009,7 @@ BOOL CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam
 		case IDOK:
 			if(tpProtocol != NULL){
 				if(gCheckFlag == 0){
-					EndProtocolNotify();
+					EndProtocolNotify(TRUE);
 				}
 				FreeProtocol();
 			}

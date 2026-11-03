@@ -201,18 +201,20 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "アーカイブ"
 FONT 9, "ＭＳ Ｐゴシック"
 BEGIN
-    GROUPBOX        "アーカイブ",IDC_STATIC,5,5,215,135
+    GROUPBOX        "アーカイブ",IDC_STATIC,5,5,215,160
     CONTROL         "チェックしたページをアーカイブする(&C)",IDC_CHECK_ARCHIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,18,195,10
     CONTROL         "画像をアーカイブする(&I)",IDC_CHECK_ARCHIVE_IMAGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,34,185,10
     CONTROL         "スタイルシート(CSS)をアーカイブする(&S)",IDC_CHECK_ARCHIVE_CSS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,48,185,10
     CONTROL         "JavaScriptをアーカイブする(&J)",IDC_CHECK_ARCHIVE_JS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,62,185,10
-    LTEXT           "保存する世代数(&G):",IDC_STATIC,25,80,75,8
-    EDITTEXT        IDC_EDIT_ARCHIVE_GEN,100,78,30,12,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(1～99)",IDC_STATIC,135,80,40,8
-    LTEXT           "チェックに成功してページが更新されていた場合にアーカイブします。JavaScriptをアーカイブすると、アーカイブを開いたときにページのスクリプトが実行されます。",IDC_STATIC,15,98,195,36
-    PUSHBUTTON      "アーカイブを削除(&D)",IDC_BUTTON_ARCHIVE_DELETE,10,148,100,14
-    LTEXT           "全体設定でアーカイブが無効になっています。",IDC_STATIC_ARCHIVE_GLOBAL,10,170,205,10
-    LTEXT           "認証を設定したアイテムはアーカイブしません。",IDC_STATIC_ARCHIVE_AUTH,10,184,205,10
+    CONTROL         "ブラウザで表示した内容を保存する(&B)",IDC_CHECK_ARCHIVE_BROWSER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,76,185,10
+    LTEXT           "保存する世代数(&G):",IDC_STATIC,25,94,75,8
+    EDITTEXT        IDC_EDIT_ARCHIVE_GEN,100,92,30,12,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "(0～999)",IDC_STATIC,135,94,40,8
+    LTEXT           "ページが更新されていた場合にアーカイブします。世代数が 0 の場合は上限なしで保存します。JavaScriptをアーカイブすると、開いたときにスクリプトが実行されます。「ブラウザで表示した内容を保存する」にすると、Microsoft Edge などを裏で実行し、スクリプトで読み込んだデータも表示どおりに保存します。",IDC_STATIC,15,112,195,50
+    PUSHBUTTON      "アーカイブを削除(&D)",IDC_BUTTON_ARCHIVE_DELETE,10,172,100,14
+    LTEXT           "全体設定でアーカイブが無効になっています。",IDC_STATIC_ARCHIVE_GLOBAL,10,190,205,10
+    LTEXT           "認証を設定したアイテムはアーカイブしません。",IDC_STATIC_ARCHIVE_AUTH,10,202,205,10
+    LTEXT           "ブラウザが見つからないため、取得したページをそのまま保存します。",IDC_STATIC_ARCHIVE_NOBROWSER,10,214,205,10
 END
 
 IDD_DIALOG_PROTOCOLPROP_ARCHIVE DIALOG 0, 0, 234, 225
@@ -220,10 +222,39 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "アーカイブ"
 FONT 9, "ＭＳ Ｐゴシック"
 BEGIN
-    GROUPBOX        "アーカイブ",IDC_STATIC,5,5,223,95
+    GROUPBOX        "アーカイブ",IDC_STATIC,5,5,223,150
     CONTROL         "アーカイブを使用する(&C)",IDC_CHECK_ARCHIVE_GLOBAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,18,200,10
     LTEXT           "オフにすると、すべてのアイテムでアーカイブを行いません。アーカイブする内容はアイテムのプロパティの「アーカイブ」で設定します。",IDC_STATIC,15,34,205,26
     PUSHBUTTON      "アーカイブのフォルダを開く(&F)",IDC_BUTTON_ARCHIVE_FOLDER,15,70,120,14
+    LTEXT           "ブラウザで表示した内容を保存するときに使うブラウザ(&B):",IDC_STATIC,15,96,205,8
+    EDITTEXT        IDC_EDIT_ARCHIVE_BROWSER,15,107,160,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "参照(&R)...",IDC_BUTTON_ARCHIVE_BROWSER,180,107,40,12
+    LTEXT           "空欄の場合は Microsoft Edge か Google Chrome を使用します。(Chromium 系のブラウザを指定できます)",IDC_STATIC,15,125,205,24
+END
+
+IDD_DIALOG_ARCHIVE_PROGRESS DIALOG 0, 0, 340, 250
+STYLE DS_SETFONT | WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "アーカイブの進捗状況"
+FONT 9, "ＭＳ Ｐゴシック"
+BEGIN
+    GROUPBOX        "取得中のページ",IDC_STATIC_PROG_GROUP,5,5,330,64
+    PUSHBUTTON      "中止(&S)",IDC_BUTTON_PROG_CANCEL,270,15,58,14
+    PUSHBUTTON      "すべて中止(&A)",IDC_BUTTON_PROG_CANCELALL,270,33,58,14
+    LTEXT           "名前:",IDC_STATIC,12,18,42,8
+    LTEXT           "",IDC_STATIC_PROG_TITLE,56,18,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "URL:",IDC_STATIC,12,30,42,8
+    LTEXT           "",IDC_STATIC_PROG_URL,56,30,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "状態:",IDC_STATIC,12,42,42,8
+    LTEXT           "",IDC_STATIC_PROG_STATE,56,42,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "ファイル:",IDC_STATIC,12,54,42,8
+    LTEXT           "",IDC_STATIC_PROG_FILES,56,54,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "取得待ち(&W):",IDC_STATIC_PROG_QUEUE,5,75,200,8
+    CONTROL         "",IDC_LIST_PROG_QUEUE,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,85,330,52
+    LTEXT           "履歴(&H):",IDC_STATIC_PROG_HISTORY,5,143,200,8
+    CONTROL         "",IDC_LIST_PROG_HISTORY,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,153,330,72
+    PUSHBUTTON      "アーカイブを開く(&O)",IDC_BUTTON_PROG_OPEN,5,231,75,14
+    PUSHBUTTON      "履歴を消去(&C)",IDC_BUTTON_PROG_CLEAR,85,231,65,14
+    PUSHBUTTON      "閉じる",IDOK,285,231,50,14
 END
 
 IDD_DIALOG_URLLIST DIALOGEX 0, 0, 335, 229
@@ -336,8 +367,8 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,2,0,0
- PRODUCTVERSION 1,2,0,0
+ FILEVERSION 1,2,1,0
+ PRODUCTVERSION 1,2,1,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -353,12 +384,12 @@ BEGIN
         BLOCK "041104b0"
         BEGIN
             VALUE "FileDescription", "WWWC Protocol DLL"
-            VALUE "FileVersion", "1.2.0.0"
+            VALUE "FileVersion", "1.2.1.0"
             VALUE "InternalName", "WWWC"
             VALUE "LegalCopyright", "Copyright (C) 1996-2018 by Ohno Tomoaki. All rights reserved."
             VALUE "OriginalFilename", "wwwc.dll"
             VALUE "ProductName", "WWWC Protocol DLL"
-            VALUE "ProductVersion", "1.2.0.0"
+            VALUE "ProductVersion", "1.2.1.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -415,6 +446,47 @@ BEGIN
     IDS_STR_Q_MSG_ARCHIVE_CHANGED "アーカイブするデータの設定を変更しました。\n既存のアーカイブは変更前の設定で保存されています。\n\nアーカイブを削除しますか？\n(削除すると次のチェックで新しい設定のアーカイブを作成します)"
     IDS_STR_ARCHIVE_INDEX_TITLE "アーカイブ - "
     IDS_STR_ARCHIVE_INDEX_LATEST " (最新)"
+    IDS_STR_ARCHIVE_INDEX_MONTHS "1月 2月 3月 4月 5月 6月 7月 8月 9月 10月 11月 12月"
+    IDS_STR_ARCHIVE_INDEX_WEEK "日 月 火 水 木 金 土"
+    IDS_STR_PROG_IDLE               "取得中のページはありません。"
+    IDS_STR_PROG_DISABLED           "アーカイブを使用しない設定になっています。"
+    IDS_STR_PROG_PHASE_PAGE         "ページを取得しています"
+    IDS_STR_PROG_PHASE_BROWSER      "ブラウザで表示しています"
+    IDS_STR_PROG_PHASE_RES          "画像などを取得しています"
+    IDS_STR_PROG_PHASE_SAVE         "保存しています"
+    IDS_STR_PROG_STATE              "%s (%s 秒)"
+    IDS_STR_PROG_FILES              "%d 個 (%s)"
+    IDS_STR_PROG_QUEUE              "取得待ち(&W): %d 件"
+    IDS_STR_PROG_HISTORY            "履歴(&H): %d 件"
+    IDS_STR_PROG_COL_NAME           "名前"
+    IDS_STR_PROG_COL_URL            "URL"
+    IDS_STR_PROG_COL_TIME           "日時"
+    IDS_STR_PROG_COL_RESULT         "結果"
+    IDS_STR_PROG_COL_ELAPSED        "時間"
+    IDS_STR_PROG_COL_FILES          "ファイル"
+    IDS_STR_PROG_RESULT_SAVED       "保存しました"
+    IDS_STR_PROG_RESULT_REPLACED    "最新の世代を更新しました"
+    IDS_STR_PROG_RESULT_SAME        "前回と同じため保存しませんでした"
+    IDS_STR_PROG_RESULT_FAILED      "ページを取得できませんでした"
+    IDS_STR_PROG_RESULT_FAILED_STATUS "ページを取得できませんでした (HTTP %lu)"
+    IDS_STR_PROG_RESULT_NOTHTML     "HTML ではないため保存しませんでした"
+    IDS_STR_PROG_RESULT_DISKFULL    "ディスクの空きが少ないため保存しませんでした"
+    IDS_STR_PROG_RESULT_ERROR       "保存できませんでした"
+    IDS_STR_PROG_RESULT_STOPPED     "中止しました"
+    IDS_STR_PROG_BROWSER_USED       " (ブラウザで表示)"
+    IDS_STR_PROG_BROWSER_FAILED     " (ブラウザを使用できませんでした)"
+    IDS_STR_PROG_BROWSER_FAILED_REASON " (ブラウザを使用できませんでした: %s)"
+    IDS_STR_PROG_SECONDS            "%s 秒"
+    IDS_STR_PROG_BERR_NOTFOUND      "ブラウザが見つかりません"
+    IDS_STR_PROG_BERR_PROXY         "プロキシの認証には対応していません"
+    IDS_STR_PROG_BERR_ARG           "URL をブラウザに渡せません"
+    IDS_STR_PROG_BERR_START         "起動できません (エラー %lu)"
+    IDS_STR_PROG_BERR_TIMEOUT       "時間内に終わりませんでした"
+    IDS_STR_PROG_BERR_EXIT          "終了コード %lu"
+    IDS_STR_PROG_BERR_NOOUTPUT      "出力がありません"
+    IDS_STR_PROG_BERR_TOOLARGE      "出力が大きすぎます"
+    IDS_STR_PROG_BERR_BOTCHECK      "ボット対策の確認ページが表示されました"
+    IDS_STR_PROG_PHASE_CANCEL       "中止しています"
     IDS_STR_GETINFO_HTTP_HEADER "ヘッダー表示(&H)"
     IDS_STR_GETINFO_HTTP_SOURCE "ソース表示(&S)"
     IDS_STR_GETINFO_HTTP_GETTITLE "タイトル取得(&L)"
@@ -588,18 +660,20 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Archive"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Archive",IDC_STATIC,5,5,215,135
+    GROUPBOX        "Archive",IDC_STATIC,5,5,215,160
     CONTROL         "Archive the &checked page",IDC_CHECK_ARCHIVE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,18,195,10
     CONTROL         "Archive &images",IDC_CHECK_ARCHIVE_IMAGE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,34,185,10
     CONTROL         "Archive &style sheets (CSS)",IDC_CHECK_ARCHIVE_CSS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,48,185,10
     CONTROL         "Archive &JavaScript",IDC_CHECK_ARCHIVE_JS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,62,185,10
-    LTEXT           "&Generations to keep:",IDC_STATIC,25,80,83,8
-    EDITTEXT        IDC_EDIT_ARCHIVE_GEN,110,78,30,12,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
-    LTEXT           "(1-99)",IDC_STATIC,145,80,40,8
-    LTEXT           "The page is archived when a check succeeds and the page has been updated. If JavaScript is archived, the scripts of the page run when you open the archive.",IDC_STATIC,15,96,195,40
-    PUSHBUTTON      "&Delete Archive",IDC_BUTTON_ARCHIVE_DELETE,10,148,100,14
-    LTEXT           "Archiving is disabled in the protocol settings.",IDC_STATIC_ARCHIVE_GLOBAL,10,170,205,10
-    LTEXT           "Items with authentication are not archived.",IDC_STATIC_ARCHIVE_AUTH,10,184,205,10
+    CONTROL         "Save the page as shown in a &browser",IDC_CHECK_ARCHIVE_BROWSER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,25,76,185,10
+    LTEXT           "&Generations to keep:",IDC_STATIC,25,94,83,8
+    EDITTEXT        IDC_EDIT_ARCHIVE_GEN,110,92,30,12,ES_RIGHT | ES_AUTOHSCROLL | ES_NUMBER
+    LTEXT           "(0-999)",IDC_STATIC,145,94,40,8
+    LTEXT           "The page is archived when a check finds it updated. 0 generations keeps all. If JavaScript is archived, its scripts run when you open the archive. Saving the page as shown in a browser runs Edge in the background and also saves the data loaded by scripts.",IDC_STATIC,15,110,195,52
+    PUSHBUTTON      "&Delete Archive",IDC_BUTTON_ARCHIVE_DELETE,10,172,100,14
+    LTEXT           "Archiving is disabled in the protocol settings.",IDC_STATIC_ARCHIVE_GLOBAL,10,190,205,10
+    LTEXT           "Items with authentication are not archived.",IDC_STATIC_ARCHIVE_AUTH,10,202,205,10
+    LTEXT           "No browser was found, so the page is saved as downloaded.",IDC_STATIC_ARCHIVE_NOBROWSER,10,214,205,10
 END
 
 IDD_DIALOG_PROTOCOLPROP_ARCHIVE DIALOG 0, 0, 234, 225
@@ -607,10 +681,39 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Archive"
 FONT 8, "MS Shell Dlg"
 BEGIN
-    GROUPBOX        "Archive",IDC_STATIC,5,5,223,95
+    GROUPBOX        "Archive",IDC_STATIC,5,5,223,150
     CONTROL         "Use ar&chives",IDC_CHECK_ARCHIVE_GLOBAL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,15,18,200,10
     LTEXT           "If this is off, no items are archived. What to archive is set on the ""Archive"" page of the item properties.",IDC_STATIC,15,34,205,32
     PUSHBUTTON      "Open the Archive &Folder",IDC_BUTTON_ARCHIVE_FOLDER,15,72,120,14
+    LTEXT           "&Browser used to save pages as shown in a browser:",IDC_STATIC,15,96,205,8
+    EDITTEXT        IDC_EDIT_ARCHIVE_BROWSER,15,107,160,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "B&rowse...",IDC_BUTTON_ARCHIVE_BROWSER,180,107,40,12
+    LTEXT           "If empty, Microsoft Edge or Google Chrome is used. (Any Chromium-based browser can be specified.)",IDC_STATIC,15,125,205,24
+END
+
+IDD_DIALOG_ARCHIVE_PROGRESS DIALOG 0, 0, 340, 250
+STYLE DS_SETFONT | WS_POPUP | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Archive Progress"
+FONT 8, "MS Shell Dlg"
+BEGIN
+    GROUPBOX        "Page being archived",IDC_STATIC_PROG_GROUP,5,5,330,64
+    PUSHBUTTON      "&Stop",IDC_BUTTON_PROG_CANCEL,270,15,58,14
+    PUSHBUTTON      "Stop &All",IDC_BUTTON_PROG_CANCELALL,270,33,58,14
+    LTEXT           "Name:",IDC_STATIC,12,18,42,8
+    LTEXT           "",IDC_STATIC_PROG_TITLE,56,18,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "URL:",IDC_STATIC,12,30,42,8
+    LTEXT           "",IDC_STATIC_PROG_URL,56,30,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "Status:",IDC_STATIC,12,42,42,8
+    LTEXT           "",IDC_STATIC_PROG_STATE,56,42,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "Files:",IDC_STATIC,12,54,42,8
+    LTEXT           "",IDC_STATIC_PROG_FILES,56,54,207,8,SS_NOPREFIX | SS_ENDELLIPSIS
+    LTEXT           "&Waiting:",IDC_STATIC_PROG_QUEUE,5,75,200,8
+    CONTROL         "",IDC_LIST_PROG_QUEUE,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,85,330,52
+    LTEXT           "&History:",IDC_STATIC_PROG_HISTORY,5,143,200,8
+    CONTROL         "",IDC_LIST_PROG_HISTORY,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,5,153,330,72
+    PUSHBUTTON      "&Open Archive",IDC_BUTTON_PROG_OPEN,5,231,75,14
+    PUSHBUTTON      "&Clear History",IDC_BUTTON_PROG_CLEAR,85,231,65,14
+    PUSHBUTTON      "Close",IDOK,285,231,50,14
 END
 
 IDD_DIALOG_URLLIST DIALOGEX 0, 0, 335, 229
@@ -689,6 +792,47 @@ BEGIN
     IDS_STR_Q_MSG_ARCHIVE_CHANGED "The settings of the data to archive have been changed.\nThe existing archive was saved with the previous settings.\n\nDo you want to delete the archive?\n(If you delete it, an archive with the new settings will be created at the next check.)"
     IDS_STR_ARCHIVE_INDEX_TITLE "Archive - "
     IDS_STR_ARCHIVE_INDEX_LATEST " (Latest)"
+    IDS_STR_ARCHIVE_INDEX_MONTHS "January February March April May June July August September October November December"
+    IDS_STR_ARCHIVE_INDEX_WEEK "Sun Mon Tue Wed Thu Fri Sat"
+    IDS_STR_PROG_IDLE               "No page is being archived."
+    IDS_STR_PROG_DISABLED           "Archiving is turned off."
+    IDS_STR_PROG_PHASE_PAGE         "Downloading the page"
+    IDS_STR_PROG_PHASE_BROWSER      "Showing the page in the browser"
+    IDS_STR_PROG_PHASE_RES          "Downloading images and other files"
+    IDS_STR_PROG_PHASE_SAVE         "Saving"
+    IDS_STR_PROG_STATE              "%s (%s s)"
+    IDS_STR_PROG_FILES              "%d (%s)"
+    IDS_STR_PROG_QUEUE              "&Waiting: %d"
+    IDS_STR_PROG_HISTORY            "&History: %d"
+    IDS_STR_PROG_COL_NAME           "Name"
+    IDS_STR_PROG_COL_URL            "URL"
+    IDS_STR_PROG_COL_TIME           "Date"
+    IDS_STR_PROG_COL_RESULT         "Result"
+    IDS_STR_PROG_COL_ELAPSED        "Time"
+    IDS_STR_PROG_COL_FILES          "Files"
+    IDS_STR_PROG_RESULT_SAVED       "Saved"
+    IDS_STR_PROG_RESULT_REPLACED    "Updated the latest generation"
+    IDS_STR_PROG_RESULT_SAME        "Not saved (same as the last one)"
+    IDS_STR_PROG_RESULT_FAILED      "Could not download the page"
+    IDS_STR_PROG_RESULT_FAILED_STATUS "Could not download the page (HTTP %lu)"
+    IDS_STR_PROG_RESULT_NOTHTML     "Not saved (not HTML)"
+    IDS_STR_PROG_RESULT_DISKFULL    "Not saved (low disk space)"
+    IDS_STR_PROG_RESULT_ERROR       "Could not save"
+    IDS_STR_PROG_RESULT_STOPPED     "Stopped"
+    IDS_STR_PROG_BROWSER_USED       " [browser]"
+    IDS_STR_PROG_BROWSER_FAILED     " [browser not available]"
+    IDS_STR_PROG_BROWSER_FAILED_REASON " [browser not available: %s]"
+    IDS_STR_PROG_SECONDS            "%s s"
+    IDS_STR_PROG_BERR_NOTFOUND      "browser not found"
+    IDS_STR_PROG_BERR_PROXY         "proxy authentication is not supported"
+    IDS_STR_PROG_BERR_ARG           "the URL cannot be passed to the browser"
+    IDS_STR_PROG_BERR_START         "could not start (error %lu)"
+    IDS_STR_PROG_BERR_TIMEOUT       "timed out"
+    IDS_STR_PROG_BERR_EXIT          "exit code %lu"
+    IDS_STR_PROG_BERR_NOOUTPUT      "no output"
+    IDS_STR_PROG_BERR_TOOLARGE      "output too large"
+    IDS_STR_PROG_BERR_BOTCHECK      "a bot check page was shown"
+    IDS_STR_PROG_PHASE_CANCEL       "Stopping"
     IDS_STR_GETINFO_HTTP_HEADER "View &Header"
     IDS_STR_GETINFO_HTTP_SOURCE "View &Source"
     IDS_STR_GETINFO_HTTP_GETTITLE "Get Tit&le"

@@ -65,6 +65,8 @@ int TimeZone;
 int HostNoCache;
 int PassProtect;
 int ArchiveGlobal;
+char ArchiveBrowser[BUFSIZE];					/* ブラウザで表示した内容を取得するときのブラウザ (空は自動) */
+int ArchiveBrowserWait;							/* ブラウザで読み込み後にスクリプトの実行を待つ時間 (ミリ秒) */
 
 char DateFormat[BUFSIZE];
 char TimeFormat[BUFSIZE];
@@ -130,6 +132,9 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	PassProtect = GetPrivateProfileInt("HTTP", "PassProtect", 1, app_path);
 	//ページのアーカイブ (0 ですべてのアイテムでアーカイブしない)
 	ArchiveGlobal = GetPrivateProfileInt("ARCHIVE", "Enable", 1, app_path);
+	//ブラウザで表示した内容を取得するときのブラウザ (Chromium 系、空の場合は Microsoft Edge か Google Chrome を探す)
+	GetPrivateProfileString("ARCHIVE", "Browser", "", ArchiveBrowser, BUFSIZE - 1, app_path);
+	ArchiveBrowserWait = GetPrivateProfileInt("ARCHIVE", "BrowserWait", ARCHIVE_BROWSER_WAIT, app_path);
 
 	WritePrivateProfileString("FORMAT", "DateFormat", DateFormat, app_path);
 	WritePrivateProfileString("FORMAT", "TimeFormat", TimeFormat, app_path);
@@ -141,6 +146,9 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	WritePrivateProfileString("HTTP", "PassProtect", buf, app_path);
 	wsprintf(buf, "%ld", ArchiveGlobal);
 	WritePrivateProfileString("ARCHIVE", "Enable", buf, app_path);
+	WritePrivateProfileString("ARCHIVE", "Browser", ArchiveBrowser, app_path);
+	wsprintf(buf, "%ld", ArchiveBrowserWait);
+	WritePrivateProfileString("ARCHIVE", "BrowserWait", buf, app_path);
 
 	CheckType = GetPrivateProfileInt("CHECK", "CheckType", 0, app_path);
 	TimeOut = GetPrivateProfileInt("CHECK", "TimeOut", 60, app_path);

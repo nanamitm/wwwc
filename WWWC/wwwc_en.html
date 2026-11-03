@@ -600,13 +600,29 @@ footer p { margin: 0 0 4px; }
 			Select "Open Archive" in the item menu to open the saved page.</p>
 			<p>On the "Archive" tab of the item properties, you can set whether to archive the page, whether to save images, style sheets (CSS) and JavaScript, and the number of generations to keep.
 			By default, the page is archived, images and CSS are saved, JavaScript is not saved, and one generation (the latest only) is kept.
+The number of generations is 1 to 999, and 0 keeps all generations without limit. Archives are not saved when the free space of the disk is less than 5% of its capacity.
 			Click "Delete Archive" on the same tab to delete the archive of the item.</p>
 			<figure><img src="manual/archive_en.png" alt="The Archive tab of the item properties" width="363"><figcaption>"Archive" tab of the item properties: choose what to save and how many generations to keep.</figcaption></figure>
 			<p>Pages that require authentication are not archived. If authentication (a user name and a password) is set for an item, or if the URL contains a user name, the item is not archived.</p>
 			<p>If you change the settings for images, style sheets or JavaScript, WWWC asks whether to delete the existing archive. If you delete it, an archive with the new settings is created at the next check.</p>
 			<p>If JavaScript is not saved, the scripts and event attributes in the page are removed when the page is saved, so that no scripts run when you open the archive. Scripts do not run in embedded pages (iframes) either.</p>
-			<p>Images are downloaded again only if they have changed since the last time. If you keep two or more generations, a list of the saved dates and times is shown when you open the archive.</p>
+			<p>Pages that load their data with JavaScript (fetch or Ajax) do not contain the data when the downloaded HTML is saved as is. If you turn on "Save the page as shown in a browser", WWWC runs Microsoft Edge (or Google Chrome) in the background without showing it, displays the page, and saves the content after the scripts have run.
+			This setting is off by default and is used only for the items you turn it on for. Because the scripts of the page run in the browser, turn it on only for pages you trust. For each page, the browser uses a new profile created in the WWWC.browser folder in the temporary folder, which is deleted afterwards, so the cookies and logins of your usual browser are not used.</p>
+			<p>If no browser is found, if the browser fails, or if the proxy requires authentication, the downloaded page is saved as is. The downloaded page is also saved if the browser is shown a bot check page (such as the Cloudflare "Just a moment..." page) while the downloaded page is not. WWWC does not try to get past bot check pages. The browser to use can be set on the "Archive" tab of the HTTP settings in "View" - "Options..." - "Protocols" (if empty, Microsoft Edge and then Google Chrome are searched for; any Chromium-based browser can be specified).
+			The time to advance the scripts after the page has loaded can be changed with BrowserWait (milliseconds, 10000 by default) in the [ARCHIVE] section of wwwc.ini. This is not an actual waiting time but a virtual time in which the browser advances timers and the like.</p>
+			<p>Pages embedded in the page (iframes and frames) are also saved with their images and style sheets. Nested iframes are followed up to three levels, and deeper ones or non-HTML content (such as PDF) are shown from the original URL.</p>
+			<p>Images are downloaded again only if they have changed since the last time. Images, style sheets and JavaScript with the same content are shared between generations, and no new generation is created if the content of the page is the same as the previous one even when the check reports an update.</p>
+			<p>If you keep two or more generations, a calendar of the saved dates and times is shown when you open the archive. The calendar has one page per year, and the year links switch from the year of the first archive to the year of the last archive.</p>
 			<p>To stop archiving for all items, select "View" - "Options..." - "Protocols", open the HTTP settings, and turn off "Use archives" on the "Archive" tab.</p>
+			<p>Select "View" - "Archive Progress..." to see the progress of archiving. While the window is open, it is updated automatically. You can also add the "Archive Progress" button to the toolbar with "View" - "Customize Toolbar..." and open it from there.</p>
+			<ul>
+				<li>"Page being archived": the name and URL of the page being archived, its status (downloading the page, showing it in the browser, downloading images and other files, or saving) with the elapsed time, and the number and size of the files downloaded.</li>
+				<li>"Waiting": the pages found updated by checks that are waiting to be archived, in the order they will be archived.</li>
+				<li>"History": the pages that have been processed, newest first. The result shows "Saved", "Not saved (same as the last one)", "Could not download the page (HTTP 404)" and so on, and also whether the page was saved as shown in the browser or the browser was not available. If the browser was not available, the reason such as "browser not found" or "exit code 21" is also shown.</li>
+			</ul>
+			<p>Drag the space between "Waiting" and "History" to change the height of each list.</p>
+			<p>Click "Stop" to stop archiving the current page and go on to the next waiting page. Click "Stop All" to stop the current page and cancel all the waiting pages. Stopped pages are archived the next time they are updated (or at the next check if they have no archive yet).</p>
+			<p>Double-click a history entry or click "Open Archive" to open the archive of that page. Click "Clear History" to clear the history. The history is kept until WWWC exits (the newest 200 entries), but it is cleared if the protocol settings are changed while no page is being archived.</p>
 		</article>
 
 		<article id="http_brows">
