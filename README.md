@@ -192,7 +192,7 @@ pull request, and runs the tests on the Release builds.
    `wwwc-<version>-x86.zip` and `wwwc-<version>-x64.zip`. Review the draft and
    publish it by hand.
 
-Each zip contains `WWWC.exe`, `wwwc.dll`, the user documents from `docs/`,
+Each zip contains `WWWC.exe`, `wwwc.dll`, the user documents from `WWWC/`,
 `CHANGELOG.md` and the third-party licenses (`licenses/`). To make a zip
 locally:
 

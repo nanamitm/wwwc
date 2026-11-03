@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
 	インストーラのビルドに必要なファイルを準備します。
@@ -24,7 +24,7 @@ param(
 	[string]$Configuration = "Release",
 	# インストールするファイルの収集元 (省略時は <リポジトリ>\<ビルド構成>)
 	[string]$SourceDir = "",
-	# バージョン (省略時は WWWC\WWWC.rc の FILEVERSION を使用)
+	# バージョン (省略時は version.h を使用)
 	[string]$Version = "",
 	# Publish: ビルドしたインストーラのパス
 	[string]$TargetPath = ""
@@ -77,6 +77,8 @@ function Get-TargetFiles([string]$binDir) {
 		(Join-Path $RootDir "WWWC\readme_en.txt")       = "readme_en.txt"
 		(Join-Path $RootDir "WWWC\ini_sample.txt")      = "ini_sample.txt"
 		(Join-Path $RootDir "WWWC\filter_sample.txt")   = "filter_sample.txt"
+		(Join-Path $RootDir "third_party\darkmodelib\LICENSE.md") = "licenses\darkmodelib-LICENSE.md"
+		(Join-Path $RootDir "third_party\darkmodelib\LICENSE-MIT.md") = "licenses\darkmodelib-LICENSE-MIT.md"
 		# 設定とアイテムを %LOCALAPPDATA%\WWWC に保存させる (インストール先には書き込まない)
 		(Join-Path $InstallerDir "wwwc_app.ini")        = "wwwc_app.ini"
 	}
@@ -160,6 +162,9 @@ if (-not (Test-Path $instInfoPath) -or
 # ------------------------------------------------------------------
 $targetFiles = Get-TargetFiles $SourceDir
 $targetFiles += Get-ManualFiles
+Get-ChildItem (Join-Path $RootDir "third_party\darkmodelib\docs") -Filter "LICENSE-*.md" | ForEach-Object {
+	$targetFiles[$_.FullName] = "licenses\darkmodelib-$($_.Name)"
+}
 foreach ($from in $targetFiles.Keys) {
 	if (-not (Test-Path $from)) {
 		throw "インストールするファイルが見つかりません: $from"

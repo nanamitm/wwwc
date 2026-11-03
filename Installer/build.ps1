@@ -29,7 +29,8 @@ param(
 	[string]$Configuration = "Release",
 	# ビルドするプラットフォーム
 	[string]$Platform = "x86",
-	# バージョン (省略時は WWWC\WWWC.rc の FILEVERSION を使用)
+	[ValidateSet("v143", "v145")][string]$PlatformToolset = "v145",
+	# バージョン (省略時は version.h を使用)
 	[string]$Version = "",
 	# インストールするファイルの収集元 (省略時は <リポジトリ>\<ビルド構成>)
 	[string]$SourceDir = "",
@@ -67,7 +68,11 @@ if ([string]::IsNullOrEmpty($msBuild)) {
 # prepare.ps1 に渡す設定
 # msbuild のコマンドラインの引用符を壊さないように末尾の \ を取り除く
 # ------------------------------------------------------------------
-$props = @()
+$props = @("/p:PlatformToolset=$PlatformToolset")
+if ([string]::IsNullOrEmpty($SourceDir)) {
+	$SourceDir = if ($Platform -eq "x64") { Join-Path $RootDir "x64\$Configuration" }
+		else { Join-Path $RootDir $Configuration }
+}
 if (-not [string]::IsNullOrEmpty($Version)) {
 	$props += "/p:WwwcVersion=$Version"
 }
@@ -89,6 +94,10 @@ if ($SkipBuild) {
 	Write-Step "WWWC 本体と wwwc.dll、インストーラをビルドします ($Configuration|$Platform)"
 	& $msBuild (Join-Path $RootDir "WWWC.sln") /nologo /v:minimal /m `
 		"/p:Configuration=$Configuration" "/p:Platform=$Platform" @props
+	if ($LASTEXITCODE -ne 0) { throw "WWWC のビルドに失敗しました。" }
+	# フォークのソリューションは本体と DLL のみ。インストーラは別途ビルドする。
+	& $msBuild (Join-Path $InstallerDir "Installer.vcxproj") /nologo /v:minimal `
+		"/p:Configuration=$Configuration" "/p:Platform=Win32" @props
 }
 if ($LASTEXITCODE -ne 0) {
 	throw "ビルドに失敗しました。"

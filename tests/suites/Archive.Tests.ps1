@@ -8,9 +8,9 @@ Test-Case 'upstream archive stores the checked page beside the user data folder'
   Send-Command $e $CMD_ALLCHECK
   $archive = $e.Data + '.archive'
   $saved = Wait-Until {
-    @(Get-ChildItem -LiteralPath $archive -Filter '*.html' -File -Recurse -ErrorAction SilentlyContinue).Count -ge 2
+    @(Get-ChildItem -LiteralPath $archive -Filter '*.html' -File -Recurse -ErrorAction SilentlyContinue).Count -ge 1
   } 15
-  Assert-True $saved 'archive page and index were written'
+  Assert-True $saved 'archive page was written (a one-generation archive has no index)'
   if ($saved) {
     $pages = @(Get-ChildItem -LiteralPath $archive -Filter '*.html' -File -Recurse | Where-Object Name -ne 'index.html')
     Assert-True (@($pages | Where-Object { (Get-Content -LiteralPath $_.FullName -Raw) -match 'target page' }).Count -gt 0) 'archived HTML contains the checked page'
