@@ -26,6 +26,8 @@ directory. Explicit `/d:` and configured `WorkDir` overrides remain supported.
 The pre-fork history is retained on `archive/pre-fork-main`; active development
 starts from the author's `main`. Legacy tags still identify the original builds.
 PR/Issue numbers from the former independent repository are historical references.
+The old fork's `v1.2.0` tag is retained as `legacy/v1.2.0`, since the author
+also uses `v1.2.0`. The unprefixed tag follows the author's release.
 
 ## Layout
 
