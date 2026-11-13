@@ -790,7 +790,10 @@ INT_PTR CALLBACK AutoCheckListProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM l
 int GetProtocolIndex(char *URL);
 void FreeProtocol(void);
 void SetProtocolInfo(void);
-void EndProtocolNotify(void);
+void EndProtocolNotify(BOOL Reload);
+void EndProtocolWait(void);
+BOOL HasProtocolArchiveProgress(void);
+void ShowProtocolArchiveProgress(HWND hWnd);
 void SetNewItemMenu(HWND hWnd);
 void DeleteProtocolMenuItem(HMENU pMenu);
 void SetProtocolItemMenuState(HWND hWnd, HMENU pMenu, BOOL UpWndFlag);

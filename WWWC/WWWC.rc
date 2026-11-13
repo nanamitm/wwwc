@@ -102,6 +102,7 @@ BEGIN
         MENUITEM "ツール バー(&T)",                  ID_MENUITEM_VIEW_TB
         MENUITEM "ステータス バー(&B)",                ID_MENUITEM_VIEW_SB
         MENUITEM "更新メッセージ(&U)...\tCtrl+U",      ID_MENUITEM_VIEWUPMSG
+        MENUITEM "アーカイブの進捗状況(&A)...",         ID_MENUITEM_VIEWARCHIVE
         MENUITEM SEPARATOR
         MENUITEM "大きいアイコン(&G)",                 ID_MENUITEM_VIEW_ICON
         MENUITEM "小さいアイコン(&M)",                 ID_MENUITEM_VIEW_SMALLICON
@@ -378,6 +379,7 @@ BEGIN
     BUTTON      ID_BUTTON40114
     BUTTON      ID_BUTTON40122
     BUTTON      ID_BUTTON40123
+    BUTTON      ID_MENUITEM_VIEWARCHIVE
 END
 
 
@@ -1026,6 +1028,7 @@ END
 STRINGTABLE
 BEGIN
     ID_MENUITEM_VIEWUPMSG   "更新メッセージ"
+    ID_MENUITEM_VIEWARCHIVE "アーカイブの進捗状況"
     ID_MENUITEM_FOLDERTREECHECK "階層チェック"
     ID_MENUITEM_SERACH      "検索"
 END
@@ -1271,6 +1274,7 @@ BEGIN
         MENUITEM "&Toolbar",                    ID_MENUITEM_VIEW_TB
         MENUITEM "Status &Bar",                 ID_MENUITEM_VIEW_SB
         MENUITEM "&Update Message...\tCtrl+U",  ID_MENUITEM_VIEWUPMSG
+        MENUITEM "&Archive Progress...",        ID_MENUITEM_VIEWARCHIVE
         MENUITEM SEPARATOR
         MENUITEM "Lar&ge Icons",                ID_MENUITEM_VIEW_ICON
         MENUITEM "S&mall Icons",                ID_MENUITEM_VIEW_SMALLICON
@@ -1855,6 +1859,7 @@ END
 STRINGTABLE
 BEGIN
     ID_MENUITEM_VIEWUPMSG   "Update Message"
+    ID_MENUITEM_VIEWARCHIVE "Archive Progress"
     ID_MENUITEM_FOLDERTREECHECK "Check with Subfolders"
     ID_MENUITEM_SERACH      "Find"
 END

@@ -65,6 +65,7 @@ extern int pPort;
 extern int pNoCache;
 extern int pUsePass;
 extern int ArchiveGlobal;
+extern char ArchiveBrowser[];
 extern char pUser[];
 extern char pPass[];
 
@@ -766,6 +767,7 @@ static void ArchiveEnable(HWND hDlg)
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_ARCHIVE_IMAGE), flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_ARCHIVE_CSS), flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_ARCHIVE_JS), flag);
+	EnableWindow(GetDlgItem(hDlg, IDC_CHECK_ARCHIVE_BROWSER), flag);
 	EnableWindow(GetDlgItem(hDlg, IDC_EDIT_ARCHIVE_GEN), flag);
 }
 
@@ -781,11 +783,12 @@ static void ArchiveEnable(HWND hDlg)
 static INT_PTR CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	struct TPITEM *tpItemInfo;
-	char val[5][16];
-	char *vals[5];
-	char *opt;
+	char val[6][16];
+	char *vals[6];
+	char *opt, *opt2;
+	char path[MAX_PATH];
 	int i, gen;
-	BOOL changed;
+	BOOL changed, translated;
 
 	switch (uMsg)
 	{
@@ -798,12 +801,13 @@ static INT_PTR CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 		CheckDlgButton(hDlg, IDC_CHECK_ARCHIVE_IMAGE, (GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_NOIMAGE) == 1) ? 0 : 1);
 		CheckDlgButton(hDlg, IDC_CHECK_ARCHIVE_CSS, (GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_NOCSS) == 1) ? 0 : 1);
 		CheckDlgButton(hDlg, IDC_CHECK_ARCHIVE_JS, (GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_JS) == 1) ? 1 : 0);
-		gen = GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_GEN);
-		gen = (gen < 1) ? 1 : ((gen > ARCHIVE_GEN_MAX) ? ARCHIVE_GEN_MAX : gen);
-		SendDlgItemMessage(hDlg, IDC_EDIT_ARCHIVE_GEN, EM_LIMITTEXT, 2, 0);
+		CheckDlgButton(hDlg, IDC_CHECK_ARCHIVE_BROWSER, (GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_BROWSER) == 1) ? 1 : 0);
+		gen = Archive_GetGeneration(tpItemInfo->Option2);
+		SendDlgItemMessage(hDlg, IDC_EDIT_ARCHIVE_GEN, EM_LIMITTEXT, 3, 0);
 		SetDlgItemInt(hDlg, IDC_EDIT_ARCHIVE_GEN, gen, FALSE);
 		ShowWindow(GetDlgItem(hDlg, IDC_STATIC_ARCHIVE_GLOBAL), (ArchiveGlobal == 0) ? SW_SHOW : SW_HIDE);
 		ShowWindow(GetDlgItem(hDlg, IDC_STATIC_ARCHIVE_AUTH), (Archive_IsAuthItem(tpItemInfo) == TRUE) ? SW_SHOW : SW_HIDE);
+		ShowWindow(GetDlgItem(hDlg, IDC_STATIC_ARCHIVE_NOBROWSER), (Archive_FindBrowser(path) == FALSE) ? SW_SHOW : SW_HIDE);
 		//アーカイブが無い場合は削除できない
 		EnableWindow(GetDlgItem(hDlg, IDC_BUTTON_ARCHIVE_DELETE), Archive_Exists(hDlg, tpItemInfo));
 		ArchiveEnable(hDlg);
@@ -847,23 +851,32 @@ static INT_PTR CALLBACK PropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 			if(tpItemInfo == NULL){
 				break;
 			}
-			gen = GetDlgItemInt(hDlg, IDC_EDIT_ARCHIVE_GEN, NULL, FALSE);
-			gen = (gen < 1) ? 1 : ((gen > ARCHIVE_GEN_MAX) ? ARCHIVE_GEN_MAX : gen);
+			//空の場合は 1、0 は上限なし
+			gen = GetDlgItemInt(hDlg, IDC_EDIT_ARCHIVE_GEN, &translated, FALSE);
+			gen = (translated == FALSE) ? 1 : ((gen > ARCHIVE_GEN_MAX) ? ARCHIVE_GEN_MAX : gen);
 			wsprintf(val[0], "%d", (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE) == 1) ? 0 : 1);
 			wsprintf(val[1], "%d", (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE_IMAGE) == 1) ? 0 : 1);
 			wsprintf(val[2], "%d", (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE_CSS) == 1) ? 0 : 1);
 			wsprintf(val[3], "%d", (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE_JS) == 1) ? 1 : 0);
 			wsprintf(val[4], "%d", gen);
-			for(i = 0; i < 5; i++){
+			wsprintf(val[5], "%d", (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE_BROWSER) == 1) ? 1 : 0);
+			for(i = 0; i < 6; i++){
 				vals[i] = val[i];
 			}
 			//アーカイブするデータの設定が変わったか
 			changed = (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE) == 1 && (
 				GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_NOIMAGE) != ((val[1][0] == '1') ? 1 : 0) ||
 				GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_NOCSS) != ((val[2][0] == '1') ? 1 : 0) ||
-				GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_JS) != ((val[3][0] == '1') ? 1 : 0))) ? TRUE : FALSE;
+				GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_JS) != ((val[3][0] == '1') ? 1 : 0) ||
+				GetOptionInt(tpItemInfo->Option2, OP2_ARCHIVE_BROWSER) != ((val[5][0] == '1') ? 1 : 0))) ? TRUE : FALSE;
+			//OP2_NOARCHIVE からの 5 項目と、離れた位置にある OP2_ARCHIVE_BROWSER を置き換える
 			opt = ReplaceOptionFields(tpItemInfo->Option2, OP2_NOARCHIVE, 5, vals);
 			if(opt != NULL){
+				opt2 = ReplaceOptionFields(opt, OP2_ARCHIVE_BROWSER, 1, &vals[5]);
+				if(opt2 != NULL){
+					GlobalFree(opt);
+					opt = opt2;
+				}
 				if(tpItemInfo->Option2 != NULL){
 					GlobalFree(tpItemInfo->Option2);
 				}
@@ -914,6 +927,8 @@ static INT_PTR CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM
 	{
 	case WM_INITDIALOG:
 		CheckDlgButton(hDlg, IDC_CHECK_ARCHIVE_GLOBAL, (ArchiveGlobal != 0) ? 1 : 0);
+		SendDlgItemMessage(hDlg, IDC_EDIT_ARCHIVE_BROWSER, EM_LIMITTEXT, BUFSIZE - 1, 0);
+		SetDlgItemText(hDlg, IDC_EDIT_ARCHIVE_BROWSER, ArchiveBrowser);
 		break;
 
 	case WM_NOTIFY:
@@ -922,6 +937,13 @@ static INT_PTR CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM
 	case WM_COMMAND:
 		switch(wParam)
 		{
+		case IDC_BUTTON_ARCHIVE_BROWSER:
+			if(FileSelect(hDlg, "*.exe", STR_FILTER_EXESELECT, STR_TITLE_FILESELECT, buf, NULL, 1) == -1){
+				break;
+			}
+			SetDlgItemText(hDlg, IDC_EDIT_ARCHIVE_BROWSER, buf);
+			break;
+
 		case IDC_BUTTON_ARCHIVE_FOLDER:
 			if(Archive_GetRoot(GetParent(hDlg), path) == FALSE ||
 				(attr = GetFileAttributes(path)) == INVALID_FILE_ATTRIBUTES || (attr & FILE_ATTRIBUTE_DIRECTORY) == 0){
@@ -935,6 +957,8 @@ static INT_PTR CALLBACK ProtocolPropertyArchiveProc(HWND hDlg, UINT uMsg, WPARAM
 			ArchiveGlobal = (IsDlgButtonChecked(hDlg, IDC_CHECK_ARCHIVE_GLOBAL) == 1) ? 1 : 0;
 			wsprintf(buf, "%d", ArchiveGlobal);
 			WritePrivateProfileString("ARCHIVE", "Enable", buf, app_path);
+			GetDlgItemText(hDlg, IDC_EDIT_ARCHIVE_BROWSER, ArchiveBrowser, BUFSIZE - 1);
+			WritePrivateProfileString("ARCHIVE", "Browser", ArchiveBrowser, app_path);
 			break;
 		}
 		break;

@@ -61,8 +61,9 @@
 #define OP2_ARCHIVE_NOIMAGE				10				/* 画像をアーカイブしない */
 #define OP2_ARCHIVE_NOCSS					11				/* CSSをアーカイブしない */
 #define OP2_ARCHIVE_JS					12				/* JavaScriptをアーカイブする */
-#define OP2_ARCHIVE_GEN					13				/* 保存する世代数 (0 は 1) */
+#define OP2_ARCHIVE_GEN					13				/* 保存する世代数 (0 は無制限、未設定は 1) */
 #define OP2_USERAGENT					14				/* User-Agent (空の場合は USER_AGENT) */
+#define OP2_ARCHIVE_BROWSER				15				/* ブラウザで表示した内容をアーカイブする */
 
 #define PASS_ENC_SIZE (BUFSIZE * 4)
 #define PATH_BUFSIZE BUFSIZE
@@ -72,7 +73,7 @@
 #define VIEW_DARK_BACK RGB(30,30,30)
 #define VIEW_DARK_TEXT RGB(212,212,212)
 
-#define USER_AGENT						L"WWWC/1.20"
+#define USER_AGENT						L"WWWC/1.21"
 
 #define LVM_FIRST						0x1000      // ListView messages
 #define LVM_SETEXTENDEDLISTVIEWSTYLE	(LVM_FIRST + 54)

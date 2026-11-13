@@ -3,6 +3,11 @@
 - Rebase development on nakkag/WWWC while retaining the old history on
   archive/pre-fork-main and preserving the existing tags.
 - Integrate upstream archiving, browser UI Automation, English resources and installer.
+- Merge upstream WWWC 1.2.1: archive the content shown in the browser with
+  a progress window, Opera support and the Firefox tab fix in browser information,
+  archive/update-check security fixes, and ReloadNotify for protocol DLLs.
+  The new per-item browser-archive flag is stored in `Option2` field 15.
+- The global proxy credentials are no longer sent to an item-specific proxy.
 - Preserve the fork's x86/x64, UTF-8, dark mode, DPI and password compatibility.
 - Search for existing data beside WWWC.exe before using LocalAppData, including
   installed portable=0 copies; manual copying is unnecessary when updating in place.

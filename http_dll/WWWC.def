@@ -25,6 +25,9 @@ EXPORTS
 	HTTP_ProtocolProperty
 	HTTP_GetInfo
 	HTTP_EndNotify
+	HTTP_EndWait
+	HTTP_ReloadNotify
+	HTTP_ArchiveProgress
 	HTTP_FreeItem
 	HTTP_GetMenuState
 

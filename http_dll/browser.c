@@ -38,6 +38,7 @@
 #define CLASS_FIREFOX			"MozillaWindowClass"
 #define CLASS_CHROMIUM_RENDER	"Chrome_RenderWidgetHostHWND"	/* ページを表示するウィンドウ */
 #define CLASS_OMNIBOX			L"OmniboxViewViews"				/* Chromium のアドレスバー */
+#define CLASS_OPERA_ADDRESS		L"AddressTextfieldView"			/* Opera のアドレスバー */
 #define AID_FIREFOX_URLBAR		L"urlbar-input"					/* Firefox のアドレスバー */
 
 #define BROWSER_MAX_WINDOWS		64
@@ -382,36 +383,103 @@ static void WakeAccessibility(HWND hWnd)
 }
 
 
+/* 画面に表示されていない要素か */
+static BOOL IsOffscreen(IUIAutomationElement *e)
+{
+	VARIANT v;
+	BOOL ret = FALSE;
+
+	VariantInit(&v);
+	if(SUCCEEDED(IUIAutomationElement_GetCurrentPropertyValue(e, UIA_IsOffscreenPropertyId, &v)) &&
+		v.vt == VT_BOOL && v.boolVal != VARIANT_FALSE){
+		ret = TRUE;
+	}
+	VariantClear(&v);
+	return ret;
+}
+
+/* URL のスキームと www. を除いた位置 */
+static const WCHAR *SkipUrlPrefix(const WCHAR *s)
+{
+	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 7, L"http://", 7) == CSTR_EQUAL){
+		s += 7;
+	}else if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 8, L"https://", 8) == CSTR_EQUAL){
+		s += 8;
+	}
+	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 4, L"www.", 4) == CSTR_EQUAL){
+		s += 4;
+	}
+	return s;
+}
+
+/* アドレスバーの表示と文書の URL が同じページか (アドレスバーはスキームや www. が省略される) */
+static BOOL IsSameUrl(const WCHAR *bar, const WCHAR *url)
+{
+	int bl, ul;
+
+	if(bar == NULL || url == NULL){
+		return FALSE;
+	}
+	bar = SkipUrlPrefix(bar);
+	url = SkipUrlPrefix(url);
+	bl = lstrlenW(bar);
+	ul = lstrlenW(url);
+	for(; bl > 0 && bar[bl - 1] == L'/'; bl--);
+	for(; ul > 0 && url[ul - 1] == L'/'; ul--);
+	if(bl == 0 || bl != ul){
+		return FALSE;
+	}
+	return (CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, bar, bl, url, ul) == CSTR_EQUAL) ? TRUE : FALSE;
+}
+
+
 /******************************************************************************
 
 	GetWebDocument
 
-	URL が http, https の最初の文書から URL とタイトルを取得する
+	URL が http, https の文書から URL とタイトルを取得する
+	(Firefox は選択していないタブの文書も含まれるため、画面に表示されている文書、
+	アドレスバーと URL が一致する文書、最初の文書の順に選ぶ)
 
 ******************************************************************************/
 
-static BOOL GetWebDocument(IUIAutomation *uia, IUIAutomationElement *root, IUIAutomationCondition *cdoc, BROWSER_PAGE *page)
+static BOOL GetWebDocument(IUIAutomation *uia, IUIAutomationElement *root, IUIAutomationCondition *cdoc, const WCHAR *bar, BROWSER_PAGE *page)
 {
 	IUIAutomationElementArray *arr = NULL;
 	IUIAutomationElement *doc;
 	BSTR url, name;
-	int cnt = 0, i;
+	char *u;
+	int cnt = 0, i, rank, best = 0;
 
 	if(FAILED(IUIAutomationElement_FindAll(root, TreeScope_Descendants, cdoc, &arr)) || arr == NULL){
 		return FALSE;
 	}
 	IUIAutomationElementArray_get_Length(arr, &cnt);
-	for(i = 0; i < cnt && page->Url == NULL; i++){
+	for(i = 0; i < cnt && best < 3; i++){
 		doc = NULL;
 		if(FAILED(IUIAutomationElementArray_GetElement(arr, i, &doc)) || doc == NULL){
 			continue;
 		}
 		url = GetStringProperty(doc, UIA_ValueValuePropertyId);
-		page->Url = ToUrl(url);
-		if(page->Url != NULL){
-			name = GetStringProperty(doc, UIA_NamePropertyId);
-			page->Title = ToTitle(name);
-			SysFreeString(name);
+		u = ToUrl(url);
+		if(u != NULL){
+			if(IsOffscreen(doc) == FALSE){
+				rank = 3;
+			}else if(IsSameUrl(bar, url) == TRUE){
+				rank = 2;
+			}else{
+				rank = 1;
+			}
+			if(rank > best){
+				best = rank;
+				Browser_FreePage(page);
+				page->Url = u;
+				name = GetStringProperty(doc, UIA_NamePropertyId);
+				page->Title = ToTitle(name);
+				SysFreeString(name);
+			}else{
+				HeapFree(GetProcessHeap(), 0, u);
+			}
 		}
 		SysFreeString(url);
 		IUIAutomationElement_Release(doc);
@@ -432,7 +500,7 @@ static BOOL GetWebDocument(IUIAutomation *uia, IUIAutomationElement *root, IUIAu
 static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 {
 	IUIAutomationElement *root = NULL, *bar = NULL;
-	IUIAutomationCondition *c1, *c2, *cbar = NULL, *cdoc;
+	IUIAutomationCondition *c1, *c2, *c3, *cor = NULL, *cbar = NULL, *cdoc;
 	BSTR value = NULL;
 	WCHAR *tmp = NULL, *wt;
 	DWORD start;
@@ -444,28 +512,35 @@ static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 	}
 	//アドレスバーがあるウィンドウのみ (ダイアログやブラウザ以外のアプリを除く)
 	c1 = StringCondition(uia, UIA_ClassNamePropertyId, CLASS_OMNIBOX);
-	c2 = StringCondition(uia, UIA_AutomationIdPropertyId, AID_FIREFOX_URLBAR);
+	c2 = StringCondition(uia, UIA_ClassNamePropertyId, CLASS_OPERA_ADDRESS);
+	c3 = StringCondition(uia, UIA_AutomationIdPropertyId, AID_FIREFOX_URLBAR);
 	if(c1 != NULL && c2 != NULL){
-		IUIAutomation_CreateOrCondition(uia, c1, c2, &cbar);
+		IUIAutomation_CreateOrCondition(uia, c1, c2, &cor);
+	}
+	if(cor != NULL && c3 != NULL){
+		IUIAutomation_CreateOrCondition(uia, cor, c3, &cbar);
 	}
 	ReleaseCondition(c1);
 	ReleaseCondition(c2);
+	ReleaseCondition(c3);
+	ReleaseCondition(cor);
 	bar = FindFirst(uia, root, cbar);
 	ReleaseCondition(cbar);
 	if(bar == NULL){
 		IUIAutomationElement_Release(root);
 		return FALSE;
 	}
+	value = GetStringProperty(bar, UIA_ValueValuePropertyId);
 
 	//ページの文書から URL とタイトルを取得する
 	//(ブラウザ内部の画面 (同期の案内など) も文書になるため URL が http, https のものを使用する)
 	cdoc = TypeCondition(uia, UIA_DocumentControlTypeId);
 	if(cdoc != NULL){
-		if(GetWebDocument(uia, root, cdoc, page) == FALSE){
+		if(GetWebDocument(uia, root, cdoc, value, page) == FALSE){
 			WakeAccessibility(hWnd);
 			for(start = GetTickCount(); GetTickCount() - start < BROWSER_DOC_WAIT;){
 				Sleep(BROWSER_DOC_INTERVAL);
-				if(GetWebDocument(uia, root, cdoc, page) == TRUE){
+				if(GetWebDocument(uia, root, cdoc, value, page) == TRUE){
 					break;
 				}
 			}
@@ -474,7 +549,7 @@ static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 	}
 
 	//取得できない場合はアドレスバーとウィンドウのタイトルを使用する
-	if(page->Url == NULL && (value = GetStringProperty(bar, UIA_ValueValuePropertyId)) != NULL){
+	if(page->Url == NULL && value != NULL){
 		page->Url = ToUrl(value);
 		if(page->Url == NULL){
 			//スキームを省略して表示されている場合 (http から https へは移動されるため http とする)
