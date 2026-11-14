@@ -209,14 +209,14 @@ void EndProtocolWait(void)
 	int i;
 	char buf[BUFSIZE];
 	int ret;
-	FARPROC Func_EndWait;
+	PROTOCOL_ENDNOTIFY_FUNC Func_EndWait;
 
 	for(i = 0;i < ProtocolCnt;i++){
 		if(tpProtocol[i].lib == NULL){
 			continue;
 		}
 		wsprintf(buf, "%sEndWait", tpProtocol[i].FuncHeader);
-		Func_EndWait = GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
+		Func_EndWait = (PROTOCOL_ENDNOTIFY_FUNC)GetProcAddress((HMODULE)tpProtocol[i].lib, buf);
 		if(Func_EndWait != NULL){
 			ret = Func_EndWait();
 		}

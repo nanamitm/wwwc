@@ -319,7 +319,7 @@ static BOOL RepeatFilter(char *buf, char *sStr, char *eStr, BOOL icase)
 	char *w = buf, *a = buf;
 	char *s1, *e1, *s2, *e2, *lag;
 	BOOL ret = FALSE;
-	int n;
+	size_t n;
 
 	FilterWork = 0;
 	while(FilterWork < FILTER_WORK_MAX){
