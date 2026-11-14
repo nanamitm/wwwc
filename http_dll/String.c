@@ -2131,6 +2131,10 @@ static char *convUtf8(char *buf) {
 		return NULL;
 	}
 	cbuf = (char *)GlobalAlloc(GMEM_FIXED, (clen + 1) * sizeof(char));
+	if (cbuf == NULL) {
+		GlobalFree(wbuf);
+		return NULL;
+	}
 	WideCharToMultiByte(CP_ACP, 0, wbuf, -1, cbuf, clen, NULL, NULL);
 	GlobalFree(wbuf);
 	return cbuf;
@@ -2140,7 +2144,7 @@ static char *convUtf8(char *buf) {
 
 	SrcConv
 
-	ソースをSJISに変換する
+	ソースをSJISに変換する (メモリを確保できない場合は NULL)
 
 ******************************************************************************/
 
@@ -2159,7 +2163,7 @@ char *SrcConv(char *buf, long Size)
 	}
 	tmp = (char *)GlobalAlloc(GMEM_FIXED, lstrlen(buf) + 1);
 	if(tmp == NULL){
-		abort();
+		return NULL;
 	}
 	ConvStrCode(buf, tmp);
 	if(GetACP() != 932){

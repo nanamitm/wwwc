@@ -51,11 +51,22 @@ extern HINSTANCE ghinst;
 	Local Function Prototypes
 **************************************************************************/
 
-static char *FindStr(char *buf, char *Str, int len, BOOL first, BOOL icase);
+static char *FindStr(char *buf, char *Str, int len, BOOL first, BOOL icase, char **lag);
 static char *ConvStr(char *buf);
-static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL icase);
+static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL icase, char **lag);
 static BOOL StrFilter(char *buf, char *sStr, char *eStr, int f, BOOL icase);
+static BOOL RepeatFilter(char *buf, char *sStr, char *eStr, BOOL icase);
 static char *AllocItemStr(char *buf, char **ret);
+
+
+/* フィルタの検索の処理量 (繰り返しのフィルタで処理が終わらなくなるのを防ぐ) */
+#define FILTER_WORK_MAX				0x200000000ui64
+#define FILTER_WORK_COMPARE			32
+static unsigned __int64 FilterWork;
+
+/* 並べ替えの規則で無視されたり他の文字と同じ扱いになったりしない ASCII の文字か */
+#define IS_PLAIN_CHAR(c)			((c) > 0x20 && (c) < 0x7F && (c) != '-' && (c) != '\'')
+#define TO_LOWER_CHAR(c)			(((c) >= 'A' && (c) <= 'Z') ? ((c) - 'A' + 'a') : (c))
 
 
 /******************************************************************************
@@ -63,17 +74,34 @@ static char *AllocItemStr(char *buf, char **ret);
 	FindStr
 
 	タグ単位で文字列の検索
+	lag が NULL 以外の場合は、検索を終えた位置から検索する文字列の長さ以上手前の
+	文字の境界を返す (その位置より前には一致する文字列が無い)
 
 ******************************************************************************/
 
-static char *FindStr(char *buf, char *Str, int len, BOOL first, BOOL icase)
+static char *FindStr(char *buf, char *Str, int len, BOOL first, BOOL icase, char **lag)
 {
-	char *p;
+	char *p, *q, *n;
 	BOOL TagFlag = FALSE;
+	BOOL plain = (len > 0 && IS_PLAIN_CHAR(*Str)) ? TRUE : FALSE;
+	char c = (icase == FALSE) ? *Str : TO_LOWER_CHAR(*Str);
 
-	for(p = buf; *p != '\0'; p++){
-		if(((icase == FALSE) ? lstrcmpn : lstrcmpni)(Str, p, len) == 0){
-			return p;
+	if(lag != NULL){
+		*lag = buf;
+	}
+	for(p = q = buf; *p != '\0'; p++){
+		FilterWork++;
+		if(lag != NULL){
+			//p と同じ進み方で、len + 2 バイト以上手前の位置まで進める
+			for(; (n = q + (IS_LEAD_BYTE(q) ? 2 : 1)) + len + 2 <= p; q = n);
+			*lag = q;
+		}
+		//先頭の文字が明らかに違う場合は比較を省く
+		if(!(plain == TRUE && IS_PLAIN_CHAR(*p) && ((icase == FALSE) ? *p : TO_LOWER_CHAR(*p)) != c)){
+			FilterWork += FILTER_WORK_COMPARE;
+			if(((icase == FALSE) ? lstrcmpn : lstrcmpni)(Str, p, len) == 0){
+				return p;
+			}
 		}
 		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
 			p++;
@@ -178,12 +206,15 @@ static void CRLFConv(char *buf)
 
 ******************************************************************************/
 
-static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL icase)
+static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL icase, char **lag)
 {
 	char *p, *r, *t;
 	char *cStr;
 	int len;
 
+	if(lag != NULL){
+		*lag = NULL;
+	}
 	if(sStr == NULL || *sStr == '\0'){
 		return FALSE;
 	}
@@ -194,11 +225,20 @@ static BOOL FindFIlterString(char *buf, char *sStr, char **ts, char **te, BOOL i
 	if(cStr == NULL) return FALSE;
 	for(p = cStr; *p == '*'; p++);
 
+	//途中に * を含む場合は、手前の位置から一致することがあるため lag を使用しない
+	if(lag != NULL){
+		for(r = p; *r != '\0' && *r != '*'; r++);
+		for(; *r == '*'; r++);
+		if(*r != '\0'){
+			lag = NULL;
+		}
+	}
+
 	while(*p != '\0'){
 		for(r = p; *r != '\0' && *r != '*'; r++);
 		len = (int)(r - p);
 
-		t = FindStr(t, p, len, ((*ts == NULL) ? TRUE : FALSE), icase);
+		t = FindStr(t, p, len, ((*ts == NULL) ? TRUE : FALSE), icase, lag);
 		if(t == NULL){
 			if(*ts == NULL){
 				LocalFree(cStr);
@@ -237,13 +277,13 @@ static BOOL StrFilter(char *buf, char *sStr, char *eStr, int f, BOOL icase)
 	char *s2 = NULL, *e2 = NULL;
 
 	//開始位置の検索
-	if(FindFIlterString(buf, sStr, &s1, &e1, icase) == FALSE){
+	if(FindFIlterString(buf, sStr, &s1, &e1, icase, NULL) == FALSE){
 		return FALSE;
 	}
 
 	//終了位置の検索
 	if(eStr != NULL && *eStr != '\0'){
-		if(FindFIlterString(e1, eStr, &s2, &e2, icase) == FALSE){
+		if(FindFIlterString(e1, eStr, &s2, &e2, icase, NULL) == FALSE){
 			return FALSE;
 		}
 		e1 = e2;
@@ -251,12 +291,69 @@ static BOOL StrFilter(char *buf, char *sStr, char *eStr, int f, BOOL icase)
 
 	if(f == 0){
 		//文字列の削除
-		lstrcpy(s1, e1);
+		MoveMemory(s1, e1, lstrlen(e1) + 1);
 	}else{
 		//文字列の抽出
 		lstrcpyn(buf, s1, (int)(e1 - s1 + 1));
 	}
 	return TRUE;
+}
+
+
+/******************************************************************************
+
+	RepeatFilter
+
+	一致しなくなるまで繰り返して文字列を削除する (一度も削除しなかった場合は FALSE)
+
+	削除のたびに先頭から検索し直して後ろを詰めると、一致が多いページで処理が
+	終わらなくなる。開始文字列の途中に * が無い場合は、削除した位置より手前に
+	一致する文字列が無いため、確定した部分 (buf から w) と検索する部分 (a 以降) に
+	分け、削除した位置の少し手前 (lag) から検索を続ける。結果は先頭から検索し直す
+	場合と同じになる。
+
+******************************************************************************/
+
+static BOOL RepeatFilter(char *buf, char *sStr, char *eStr, BOOL icase)
+{
+	char *w = buf, *a = buf;
+	char *s1, *e1, *s2, *e2, *lag;
+	BOOL ret = FALSE;
+	size_t n;
+
+	FilterWork = 0;
+	while(FilterWork < FILTER_WORK_MAX){
+		//開始位置の検索
+		s1 = e1 = lag = NULL;
+		if(FindFIlterString(a, sStr, &s1, &e1, icase, &lag) == FALSE){
+			break;
+		}
+		//終了位置の検索
+		if(eStr != NULL && *eStr != '\0'){
+			s2 = e2 = NULL;
+			if(FindFIlterString(e1, eStr, &s2, &e2, icase, NULL) == FALSE){
+				break;
+			}
+			e1 = e2;
+		}
+		ret = TRUE;
+		if(lag == NULL){
+			//手前から一致することがある場合は先頭から検索し直す
+			MoveMemory(s1, e1, lstrlen(e1) + 1);
+			continue;
+		}
+		//lag より前は確定し、lag から削除した位置までを残りの直前に移して検索を続ける
+		n = lag - a;
+		MoveMemory(w, a, n);
+		w += n;
+		n = s1 - lag;
+		MoveMemory(e1 - n, lag, n);
+		a = e1 - n;
+	}
+	if(a != w){
+		MoveMemory(w, a, lstrlen(a) + 1);
+	}
+	return ret;
 }
 
 
@@ -318,9 +415,11 @@ BOOL FilterCheck(char *url, char **pbuf, int HeadSize)
 				}
 				CRLFConv(tmp);
 			}
-			//フィルタの適用
-			if(StrFilter(tmp, (FilterInfo + i)->string1, (FilterInfo + i)->string2, 
-				(FilterInfo + i)->flag, (FilterInfo + i)->IgnoreCase) == FALSE){
+			//フィルタの適用 (削除で繰り返す設定の場合は一致しなくなるまで適用する)
+			if((((FilterInfo + i)->flag == 0 && (FilterInfo + i)->Repeat == TRUE) ?
+				RepeatFilter(tmp, (FilterInfo + i)->string1, (FilterInfo + i)->string2, (FilterInfo + i)->IgnoreCase) :
+				StrFilter(tmp, (FilterInfo + i)->string1, (FilterInfo + i)->string2,
+				(FilterInfo + i)->flag, (FilterInfo + i)->IgnoreCase)) == FALSE){
 				//抽出エラーは空にする設定
 				if((FilterInfo + i)->flag == 1 && (FilterInfo + i)->ErrorEmptyBody == TRUE){
 					*tmp = '\0';
@@ -329,10 +428,6 @@ BOOL FilterCheck(char *url, char **pbuf, int HeadSize)
 				if((FilterInfo + i)->IgnoreError == FALSE){
 					rc = FALSE;
 				}
-			}else if((FilterInfo + i)->flag == 0 && (FilterInfo + i)->Repeat == TRUE){
-				//繰り返してフィルタの適用
-				while(StrFilter(tmp, (FilterInfo + i)->string1, (FilterInfo + i)->string2, 
-					(FilterInfo + i)->flag, (FilterInfo + i)->IgnoreCase) == TRUE);
 			}
 		}
 	}

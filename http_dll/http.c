@@ -86,10 +86,12 @@ static BOOL ListCsInit;
 static struct TPHTTP *ActiveList;				/* 実行中のリスト */
 static LONG ThreadCnt;							/* 実行中のスレッド数 */
 static struct TPITEM *ToolItemInfo;				/* ツールの処理として開始するアイテム */
+static BOOL ReloadPending;						/* 再読み込みの通知の後で設定を読み直す */
 
 
 //外部参照
 extern HINSTANCE ghinst;
+int CALLBACK DllInitialize(void);
 
 extern int CheckType;
 extern int TimeOut;
@@ -139,6 +141,8 @@ static BOOL GetServerPort(HWND hWnd, struct TPITEM *tpItemInfo, struct TPHTTP *t
 static BOOL CheckServer(HWND hWnd, char *RealServer);
 static void ReleaseHTTP(struct TPHTTP *tpHTTP);
 static void CloseRequestHandles(struct TPHTTP *tpHTTP);
+static BOOL IsDowngrade(char *From, char *To);
+static BOOL IsSameSite(char *URL1, char *URL2);
 static void CancelHTTP(struct TPHTTP *tpHTTP);
 static BOOL IsSameOrigin(char *URL1, char *URL2);
 static WCHAR *AllocWideString(char *buf);
@@ -447,6 +451,9 @@ static char *GetTitle(char *buf)
 
 	//JIS を SJIS に変換
 	SjisBuf = SrcConv(buf, lstrlen(buf) + 1);
+	if(SjisBuf == NULL){
+		return NULL;
+	}
 
 	//タイトルタグのサイズを取得
 	len = GetTagContentSize(SjisBuf, TITLE_TAG);
@@ -647,6 +654,10 @@ static int GetMetaString(struct TPITEM *tpItemInfo)
 
 	//SJISに変換
 	p = SrcConv(tpHTTP->buf + HeaderSize(tpHTTP->buf), tpHTTP->Size);
+	if(p == NULL){
+		SetErrorString(tpItemInfo, STR_ERROR_MEMORY, FALSE);
+		return ST_ERROR;
+	}
 
 	if((MetaContent = GetMETATag(p, type, name, content)) != NULL){
 		//特殊文字の変換
@@ -864,6 +875,10 @@ static int Get_GetSize(struct TPITEM *tpItemInfo, int CmpOption, int SetDate)
 	if(GetOptionInt(tpItemInfo->Option1, OP1_NOTAGSIZE) == 1){
 		/* 受信したものからヘッダとタグを除去したサイズを計算する */
 		p = SrcConv(tpHTTP->buf + head_size, tpHTTP->Size);
+		if(p == NULL){
+			SetErrorString(tpItemInfo, STR_ERROR_MEMORY, FALSE);
+			return ST_ERROR;
+		}
 		tpHTTP->Size = DelTagSize(p);
 		wsprintf(tmp, "%ld", tpHTTP->Size);
 		GlobalFree(p);
@@ -1160,6 +1175,11 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			//現在のURLを基準に移動先のURLを作成 (http, https 以外のスキームは NULL)
 			p = CreateMoveURL((tpItemInfo->Param2 != 0) ? (char *)tpItemInfo->Param2 : tpItemInfo->CheckURL, headcontent);
 			GlobalFree(headcontent);
+			//https から http への移動には従わない (WinHTTPが自動で移動する場合と同じ)
+			if(p != NULL && IsDowngrade((tpItemInfo->Param2 != 0) ? (char *)tpItemInfo->Param2 : tpItemInfo->CheckURL, p) == TRUE){
+				GlobalFree(p);
+				p = NULL;
+			}
 			if(p == NULL){
 				SetErrorString(tpItemInfo, tpHTTP->buf, TRUE);
 				SendMessage(hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
@@ -1170,7 +1190,9 @@ static int HeaderFunc(HWND hWnd, struct TPITEM *tpItemInfo)
 			//恒久的な移動の場合はチェックするURLを変更する
 			//認証情報を使用するアイテムは、認証情報の送信先が変わらないよう変更しない
 			//ツールの処理 (表示するURLを使用する場合がある) では変更しない
-			if((Status == 301 || Status == 308) && tpItemInfo->Param3 == 0 && HasItemAuth(tpItemInfo) == FALSE){
+			//別のサーバへの移動は、今回のチェックでのみ従い保存しない
+			if((Status == 301 || Status == 308) && tpItemInfo->Param3 == 0 && HasItemAuth(tpItemInfo) == FALSE &&
+				IsSameSite(tpItemInfo->CheckURL, p) == TRUE && IsDowngrade(tpItemInfo->CheckURL, p) == FALSE){
 				r = (char *)GlobalAlloc(GPTR, lstrlen(p) + 1);
 				if(r != NULL){
 					lstrcpy(r, p);
@@ -1856,6 +1878,59 @@ static BOOL IsSameOrigin(char *URL1, char *URL2)
 
 /******************************************************************************
 
+	IsDowngrade
+
+	https から http への移動かどうかチェックする
+
+******************************************************************************/
+
+static BOOL IsDowngrade(char *From, char *To)
+{
+	WCHAR Host1[256], Host2[256];
+	INTERNET_PORT Port1, Port2;
+	int Scheme1, Scheme2;
+
+	if(From == NULL || To == NULL ||
+		CrackOrigin(From, &Scheme1, Host1, sizeof(Host1) / sizeof(WCHAR), &Port1) == FALSE ||
+		CrackOrigin(To, &Scheme2, Host2, sizeof(Host2) / sizeof(WCHAR), &Port2) == FALSE){
+		return TRUE;
+	}
+	return (Scheme1 == INTERNET_SCHEME_HTTPS && Scheme2 != INTERNET_SCHEME_HTTPS) ? TRUE : FALSE;
+}
+
+
+/******************************************************************************
+
+	IsSameSite
+
+	サーバ名が同じURLかどうかチェックする (www. の有無は同じサーバとして扱う)
+
+******************************************************************************/
+
+static BOOL IsSameSite(char *URL1, char *URL2)
+{
+	WCHAR Host1[256], Host2[256];
+	WCHAR *h1 = Host1, *h2 = Host2;
+	INTERNET_PORT Port1, Port2;
+	int Scheme1, Scheme2;
+
+	if(URL1 == NULL || URL2 == NULL ||
+		CrackOrigin(URL1, &Scheme1, Host1, sizeof(Host1) / sizeof(WCHAR), &Port1) == FALSE ||
+		CrackOrigin(URL2, &Scheme2, Host2, sizeof(Host2) / sizeof(WCHAR), &Port2) == FALSE){
+		return FALSE;
+	}
+	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, h1, 4, L"www.", 4) == CSTR_EQUAL){
+		h1 += 4;
+	}
+	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, h2, 4, L"www.", 4) == CSTR_EQUAL){
+		h2 += 4;
+	}
+	return (*h1 != L'\0' && lstrcmpiW(h1, h2) == 0) ? TRUE : FALSE;
+}
+
+
+/******************************************************************************
+
 	HasItemAuth
 
 	アイテムに認証情報が設定されているかチェックする
@@ -1954,6 +2029,7 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	WCHAR *s;
 	DWORD dwSize;
 	BOOL AuthFlag;
+	BOOL ItemProxy;
 	int ProxyFlag;
 
 	MigrateItemPassword(tpItemInfo);
@@ -1965,10 +2041,12 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	}
 
 	//プロキシ
+	//(アイテムに設定されたプロキシは、全体の設定でプロキシを使用しない場合も使用する)
 	ProxyFlag = GetOptionInt(tpItemInfo->Option2, OP2_NOPROXY);
+	ItemProxy = (ProxyFlag == 0 && GetOptionInt(tpItemInfo->Option2, OP2_SETPROXY) == 1) ? TRUE : FALSE;
 	tpHTTP->ProxyMode = PROXY_NONE;
 	if(ProxyFlag == 0){
-		tpHTTP->ProxyMode = GetOptionInt(tpItemInfo->Option2, OP2_SETPROXY) == 1 ? PROXY_NAMED : Proxy;
+		tpHTTP->ProxyMode = (ItemProxy == TRUE) ? PROXY_NAMED : Proxy;
 	}
 	if(tpHTTP->ProxyMode == PROXY_NAMED){
 		wsprintf(proxy, "http://%s:%d", tpHTTP->SvName, tpHTTP->Port);
@@ -1991,7 +2069,8 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	//プロキシ認証
 	//ヘッダで送るとプロキシを経由しない接続 (ループバック等) やHTTPSのトンネル内で接続先サーバに
 	//送られるため、WinHTTPの資格情報として設定してプロキシから要求された場合にのみ送る
-	if(tpHTTP->ProxyMode != PROXY_NONE && pUsePass == 1){
+	//(全体の設定の認証情報は、アイテムに設定された別のプロキシには送らない)
+	if(tpHTTP->ProxyMode != PROXY_NONE && pUsePass == 1 && ItemProxy == FALSE){
 		tpHTTP->ProxyUser = AllocWideString(pUser);
 		tpHTTP->ProxyPass = AllocWideString(pPass);
 		if(tpHTTP->ProxyUser == NULL || tpHTTP->ProxyPass == NULL){
@@ -3064,8 +3143,15 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 	CreateEvent(NULL, TRUE, TRUE, "GHBN_EVENT");
 #endif
 
+	//再読み込みの通知の後に DLL が解放されなかった場合は設定を読み直す
+	if(ReloadPending == TRUE){
+		ReloadPending = FALSE;
+		DllInitialize();
+	}
 	//終了通知の後に読み込み直された場合はアーカイブの取得を再開する
 	Archive_Restart();
+	//再読み込みの前に開いていたアーカイブの進捗状況を開き直す
+	ArchiveProgress_Reopen();
 
 	lstrcpy(tpInfo->Scheme, "http://\thttps://");
 	lstrcpy(tpInfo->NewMenu, STR_GETINFO_HTTP_NEWMENU);
@@ -3120,13 +3206,13 @@ __declspec(dllexport) int CALLBACK HTTP_GetInfo(struct TPPROTOCOLINFO *tpInfo)
 
 /******************************************************************************
 
-	HTTP_EndNotify
+	EndNotify
 
-	WWWCの終了の通知
+	終了またはプロトコルの再読み込みの通知の処理
 
 ******************************************************************************/
 
-__declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
+static int EndNotify(BOOL Reload)
 {
 #ifdef THGHN
 	HANDLE hEvent;
@@ -3140,8 +3226,15 @@ __declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
 		}
 	}
 
-	//アーカイブの取得を中止する
-	Archive_End();
+	//アーカイブの進捗状況を閉じる (再読み込みの場合は読み込み後に開き直す)
+	ArchiveProgress_Close(Reload);
+
+	//アーカイブの取得を中止する (再読み込みの場合は取得中のものを続行する)
+	if(Reload == TRUE){
+		Archive_Reload();
+	}else{
+		Archive_End();
+	}
 
 	//実行中の受信を中止してスレッドの終了を待つ
 	if(ListCsInit == TRUE){
@@ -3181,6 +3274,68 @@ __declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
 	}
 
 	FreeFilter();
+	return 0;
+}
+
+
+/******************************************************************************
+
+	HTTP_EndNotify
+
+	WWWCの終了の通知
+
+******************************************************************************/
+
+__declspec(dllexport) int CALLBACK HTTP_EndNotify(void)
+{
+	return EndNotify(FALSE);
+}
+
+
+/******************************************************************************
+
+	HTTP_EndWait
+
+	終了前の処理の完了待ち (WWWC がウィンドウを閉じた後に呼ぶ)
+	取得中のアーカイブを一定時間まで完了させる
+
+******************************************************************************/
+
+__declspec(dllexport) int CALLBACK HTTP_EndWait(void)
+{
+	Archive_EndWait();
+	return 0;
+}
+
+
+/******************************************************************************
+
+	HTTP_ReloadNotify
+
+	プロトコルの再読み込み (設定の変更) の通知
+	この後に DLL が解放されて読み込み直されるが、アーカイブの取得中は DLL が
+	解放されないため、次の HTTP_GetInfo で設定を読み直す
+
+******************************************************************************/
+
+__declspec(dllexport) int CALLBACK HTTP_ReloadNotify(void)
+{
+	ReloadPending = TRUE;
+	return EndNotify(TRUE);
+}
+
+
+/******************************************************************************
+
+	HTTP_ArchiveProgress
+
+	アーカイブの進捗状況を表示する (WWWC の「表示」メニューから呼ばれる)
+
+******************************************************************************/
+
+__declspec(dllexport) int CALLBACK HTTP_ArchiveProgress(HWND hWnd)
+{
+	ArchiveProgress_Show(hWnd);
 	return 0;
 }
 /* End of source */

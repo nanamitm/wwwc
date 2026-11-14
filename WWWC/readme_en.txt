@@ -61,6 +61,23 @@ menu.
 
 * History
 
+- Ver 1.2.0 -> Ver 1.2.1
+	- Archive improvements
+	  - The number of archive generations is now 1 to 999, and 0 keeps all.
+	    (Archives are not saved when the free disk space is less than 5%.)
+	  - The list of archive generations is now shown as a calendar by year.
+	  - Archives can now save the page as shown in a browser (Microsoft Edge
+	    etc. run in the background), including the data loaded by JavaScript.
+	- Added "Archive Progress" to the "View" menu and the toolbar. It shows
+	  the page being archived, the pages waiting to be archived and the
+	  history of results, and archiving can be stopped from it.
+	- Getting browser information now supports Opera.
+	- Fixed getting browser information from Firefox sometimes returning the
+	  page of a tab that was not selected.
+	- Fixed the proxy set for an item not being used when the proxy was
+	  disabled in the global settings.
+	- Fixed security-related issues.
+
 - Ver 1.1.3 -> Ver 1.2.0
 	- Checked pages can be archived and viewed later.
 	- Getting browser information now supports Edge, Chrome and Firefox.

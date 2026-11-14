@@ -296,6 +296,10 @@ void SetEnableMenu(HWND hWnd)
 	SendMessage(TbWnd, TB_ENABLEBUTTON, ID_MENUITEM_NEXT_HISTORY,
 		(LPARAM)MAKELONG(HNext, 0));
 
+	//アーカイブの進捗状況 (アーカイブを行うプロトコルがある場合のみ)
+	SendMessage(TbWnd, TB_ENABLEBUTTON, ID_MENUITEM_VIEWARCHIVE,
+		(LPARAM)MAKELONG(HasProtocolArchiveProgress(), 0));
+
 	//チェック
 	EnableMenuItem(GetSubMenu(GetMenu(hWnd), MENU_HWND_CHECK), ID_MENUITEM_CHECKEND, !CheckMenuFlag);
 	SendMessage(TbWnd, TB_ENABLEBUTTON, ID_MENUITEM_CHECKEND, (LPARAM) MAKELONG(CheckMenuFlag, 0));

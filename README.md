@@ -289,8 +289,10 @@ dark mode is on (an older WWWC returns 0).
 ## Upstream option extensions
 
 This fork retains the existing `Option2` field 8 for the per-item certificate
-exception. The upstream archive fields occupy 9-13 and User-Agent occupies 14.
-Do not interchange newly extended item files with upstream 1.2.0 without
+exception. The upstream archive fields occupy 9-13, User-Agent occupies 14 and the
+upstream 1.2.1 "archive the content shown in the browser" flag occupies 15
+(upstream uses 8-14). Do not interchange newly extended item files with
+upstream 1.2.0/1.2.1 without
 converting those fields. Existing 1.1.3 data and this fork's previous data keep
 their meanings. Password readers accept legacy, DP1/DP2, and upstream `dp:`
 formats; the default writer retains this fork's DP2 format.
