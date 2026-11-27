@@ -2,7 +2,10 @@
 
 Listens only on loopback addresses (127.0.0.1 - 127.0.0.5; WWWC checks one item
 per host name at a time, so several addresses let the tests run checks in
-parallel). It also works as an HTTP proxy (absolute request URIs).
+parallel). It also works as an HTTP proxy (absolute request URIs). Proxy requests and
+CONNECT requests for a host name containing "proxy-test" need proxy
+credentials (407 with a Basic challenge without them); CONNECT is answered
+with 502 after it is logged (there is no HTTPS server).
 
 Every request is appended to the log file as one line:
     <METHOD> <path> auth=<user:pass or None> proxy_auth=<user:pass or None>
@@ -10,6 +13,11 @@ Every request is appended to the log file as one line:
 Routes:
     /r302...   302 to /target (relative)
     /r301...   301 to http://127.0.0.1:<port>/target (absolute)
+    /r301bad   301 to file:///C:/Windows/win.ini (not HTTP)
+    /r303, /r308
+               303 / 308 to /target
+    /rproto    302 to //127.0.0.1:<port>/target (scheme-relative)
+    /rcross    302 to http://127.0.0.4:<port>/target (another server)
     /slow...   waits 30 seconds, then answers like /target
     /drip...   200, sends the body slowly (100 bytes every 0.5 seconds for 30 seconds)
     /title-utf8, /title-sjis, /title-euc, /title-jis
@@ -61,12 +69,35 @@ def basic(value):
 class Handler(http.server.BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.0"
 
-    def handle_request(self, send_body):
+    def log_request_line(self):
         with lock, open(LOG, "a", encoding="utf-8") as f:
             f.write("%s %s auth=%r proxy_auth=%r\n" % (
                 self.command, self.path,
                 basic(self.headers.get("Authorization")),
                 basic(self.headers.get("Proxy-Authorization"))))
+
+    def reply(self, status, headers=()):
+        self.send_response(status)
+        for name, value in headers:
+            self.send_header(name, value)
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
+    def need_proxy_auth(self, host):
+        if "proxy-test" in host and not self.headers.get("Proxy-Authorization"):
+            self.reply(407, [("Proxy-Authenticate", 'Basic realm="wwwc-test"')])
+            return True
+        return False
+
+    def do_CONNECT(self):
+        self.log_request_line()
+        if not self.need_proxy_auth(self.path):
+            self.reply(502)
+
+    def handle_request(self, send_body):
+        self.log_request_line()
+        if "://" in self.path and self.need_proxy_auth(self.path.split("://", 1)[1].split("/", 1)[0]):
+            return
         path = self.path
         if "://" in path:
             path = "/" + path.split("://", 1)[1].split("/", 1)[-1]
@@ -81,6 +112,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                     self.wfile.write(b"%x\r\n" % len(chunk) + chunk + b"\r\n")
                 self.wfile.write(b"0\r\n\r\n")
                 self.wfile.flush()
+            return
+        redirects = {
+            "/r301bad": (301, "file:///C:/Windows/win.ini"),
+            "/r303": (303, "/target"),
+            "/r308": (308, "/target"),
+            "/rproto": (302, "//127.0.0.1:%d/target" % PORT),
+            "/rcross": (302, "http://127.0.0.4:%d/target" % PORT),
+        }
+        if path in redirects:
+            status, location = redirects[path]
+            self.reply(status, [("Location", location)])
             return
         if path.startswith("/r302"):
             self.send_response(302)
