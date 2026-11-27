@@ -41,6 +41,7 @@ int ProtocolCnt = 0;
 //外部参照
 extern HINSTANCE g_hinst;				//アプリケーションのインスタンスハンドル
 extern HWND WWWCWnd;					//本体
+extern HTREEITEM RootItem;
 extern int gCheckFlag;
 
 extern int LvLIconSize;
@@ -70,7 +71,8 @@ int GetProtocolIndex(char *URL)
 			if(*p == '\t' || *p == '\0'){
 				*r = '\0';
 
-				if(lstrcmpni(URL, buf, lstrlen(buf)) == 0){
+				//空のスキーム (DLLを読み込めなかったプロトコルなど) はすべてのURLに一致するため使わない
+				if(*buf != '\0' && lstrcmpni(URL, buf, lstrlen(buf)) == 0){
 					return i;
 				}
 
@@ -806,6 +808,48 @@ static INT_PTR CALLBACK SetProtocolEditProc(HWND hDlg, UINT uMsg, WPARAM wParam,
 
 /******************************************************************************
 
+	IsProtocolListChanged
+
+	プロトコル設定画面のリストが現在のプロトコル情報から変更されているか
+
+******************************************************************************/
+
+static BOOL IsProtocolListChanged(HWND hListView)
+{
+	char buf[BUFSIZE];
+	int i, col;
+
+	if(ListView_GetItemCount(hListView) != ProtocolCnt){
+		return TRUE;
+	}
+	for(i = 0; i < ProtocolCnt; i++){
+		for(col = 0; col <= 6; col++){
+			char num[32];
+			char *cur;
+
+			*buf = '\0';
+			ListView_GetItemText(hListView, i, col, buf, BUFSIZE - 1);
+			switch(col)
+			{
+			case 0: cur = tpProtocol[i].title; break;
+			case 1: cur = tpProtocol[i].DLL; break;
+			case 2: cur = tpProtocol[i].FuncHeader; break;
+			case 3: cur = tpProtocol[i].IconFile; break;
+			case 4: wsprintf(num, "%ld", tpProtocol[i].IconIndex); cur = num; break;
+			case 5: cur = tpProtocol[i].UpIconFile; break;
+			default: wsprintf(num, "%ld", tpProtocol[i].UpIconIndex); cur = num; break;
+			}
+			if(lstrcmp(buf, cur) != 0){
+				return TRUE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+
+/******************************************************************************
+
 	SetProtocolProc
 
 	プロトコル情報画面のプロシージャ
@@ -821,6 +865,8 @@ INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 	char buf[BUFSIZE];
 	char tmp1[BUFSIZE];
 	char tmp2[BUFSIZE];
+	HMODULE *KeepLib;
+	int KeepCnt;
 	int SelectItem;
 	int i;
 #ifdef OP_XP_STYLE
@@ -1012,10 +1058,34 @@ INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			break;
 
 		case IDOK:
-			if(tpProtocol != NULL){
-				if(gCheckFlag == 0){
-					EndProtocolNotify(TRUE);
+			if(gCheckFlag != 0){
+				//チェック中は、チェック中のアイテムがDLLの状態 (Param1 など) を使っているため、
+				//プロトコルが変更されていない場合はDLLを読み込み直さない
+				if(IsProtocolListChanged(GetDlgItem(hDlg, IDC_LIST_PROTOCOL)) == FALSE){
+					ImageList_Destroy((void *)ListView_GetImageList(GetDlgItem(hDlg, IDC_LIST_PROTOCOL), LVSIL_SMALL));
+					ProtocolWnd = NULL;
+					break;
 				}
+				//変更された場合は、チェックを中止してからDLLを入れ替える
+				//(削除・並べ替えられたプロトコルのアイテムがチェック中のまま残り、
+				// DLLが終了通知なしに解放されないように)
+				CallTreeItem(WWWCWnd, RootItem, TreeCancelItem, 0);
+				CheckEndProc(WWWCWnd);
+			}
+			//入れ替えの間はDLLを解放しない (キャンセルした通信スレッドの終了と重なって
+			//DLLが一度解放されると、DLLのウィンドウなどが残ったまま読み込み直されるため)
+			KeepCnt = 0;
+			KeepLib = (ProtocolCnt > 0) ? (HMODULE *)GlobalAlloc(GPTR, sizeof(HMODULE) * ProtocolCnt) : NULL;
+			if(KeepLib != NULL){
+				for(i = 0;i < ProtocolCnt;i++){
+					if(tpProtocol[i].lib != NULL &&
+						GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, (LPCSTR)tpProtocol[i].lib, &KeepLib[KeepCnt]) == TRUE){
+						KeepCnt++;
+					}
+				}
+			}
+			if(tpProtocol != NULL){
+				EndProtocolNotify(TRUE);
 				FreeProtocol();
 			}
 
@@ -1046,6 +1116,15 @@ INT_PTR CALLBACK SetProtocolProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			SetProtocolImage(WWWCWnd);
 
 			SetProtocolInfo();
+
+			//新しいプロトコル情報で読み込んだ後に一時的な参照を解放する
+			if(KeepLib != NULL){
+				for(i = 0;i < KeepCnt;i++){
+					FreeLibrary(KeepLib[i]);
+				}
+				GlobalFree(KeepLib);
+				KeepLib = NULL;
+			}
 
 		case IDPCANCEL:
 			ImageList_Destroy((void *)ListView_GetImageList(GetDlgItem(hDlg, IDC_LIST_PROTOCOL), LVSIL_SMALL));

@@ -12,6 +12,16 @@
 - Search for existing data beside WWWC.exe before using LocalAppData, including
   installed portable=0 copies; manual copying is unnecessary when updating in place.
 - Add default-startup integration tests and native directory-selection regression tests.
+- A protocol whose DLL cannot be loaded no longer takes over every URL: its
+  empty scheme matched all items, so checks and item actions failed.
+- Pressing OK in the protocol settings during a check no longer swaps the
+  protocol DLLs under the running check. If the protocols are unchanged they
+  are kept; if they changed, the check is stopped first and the DLLs are
+  notified and kept loaded until the new set is loaded.
+- Scheduled checks at a set time (daily, weekly, monthly) check every minute
+  since the previous timer tick, so a minute is neither skipped nor checked
+  twice when the once-a-minute timer fires near a minute boundary or is
+  delayed (up to 5 minutes; longer gaps such as sleep are still not caught up).
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

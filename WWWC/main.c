@@ -1437,6 +1437,8 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		//自動チェック
 		case TIMER_AUTOCHECK:
 			if(AutoCheck == 0){
+				//時刻指定の自動チェックの判定範囲 (前回のタイマーから今回まで)
+				AutoCheckTimeUpdate();
 				if(CheckAutoTime(hWnd) == TRUE){
 					ErrCheckFlag = FALSE;
 

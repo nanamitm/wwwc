@@ -72,6 +72,57 @@ Test-Case "connection error is stored on the item" {
   Assert-True ($i.ErrStatus -match "WinHttpSendRequest") "error text names the failed call ('$($i.ErrStatus)')"
 }
 
+Test-Case "a protocol whose DLL cannot be loaded does not take over other URLs" {
+  $e = New-TestEnv "http-missingdll" $BinDir
+  # the first protocol's DLL does not exist: its scheme stays empty, which matched every URL
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"),
+    "[PROTOCOL]`r`nProtocolCnt=2`r`ntitle-0=MISSING`r`nDLL-0=wwwc-missing-protocol.dll`r`nFuncHeader-0=MISSING_`r`nUpIconIndex-0=-1`r`ntitle-1=HTTP`r`nDLL-1=wwwc.dll`r`nFuncHeader-1=HTTP_`r`nUpIconIndex-1=-1`r`n[UPMSG]`r`nUPSnd=0`r`nUPMsg=0`r`n", $script:Enc)
+  Set-Items $e @(ItemLine "page" (Url "/missingdll"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /missingdll " } 15) "the HTTP item is checked ($(Get-ServerLog $m))"
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $i = Get-SavedItem $e "page"
+  Assert-Equal "67" $i.Size "size"
+  Assert-Equal "" $i.ErrStatus "no error"
+}
+
+Test-Case "changing the protocols while checking stops the check first" {
+  $e = New-TestEnv "http-protochange" $BinDir
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"),
+    "[PROTOCOL]`r`nProtocolCnt=2`r`ntitle-0=HTTP`r`nDLL-0=wwwc.dll`r`nFuncHeader-0=HTTP_`r`nUpIconIndex-0=-1`r`ntitle-1=FILE`r`nDLL-1=wwwc.dll`r`nFuncHeader-1=FILE_`r`nUpIconIndex-1=-1`r`n[UPMSG]`r`nUPSnd=0`r`nUPMsg=0`r`n", $script:Enc)
+  Set-Items $e @(ItemLine "slow" (Url "/slow-protochange"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /slow-protochange " } 15) "check started"
+  # Options > Protocols: delete FILE (not in use) and press OK while the HTTP item is being checked
+  Send-Command $e 40090                                         # ID_MENUITEM_OPTION
+  [void](Wait-Until { $script:opt = Get-Dialogs $e | Select-Object -First 1; $null -ne $script:opt } 10)
+  $opt = $script:opt
+  Assert-True ($null -ne $opt) "options opened"
+  if ($opt) {
+    [void][WwwcWin]::SendMessage($opt.Handle, 0x0400 + 101, [IntPtr]2, [IntPtr]::Zero)          # PSM_SETCURSEL: protocol page
+    Start-Sleep -Milliseconds 500
+    $page = [WwwcWin]::SendMessage($opt.Handle, 0x0400 + 118, [IntPtr]::Zero, [IntPtr]::Zero)
+    [WwwcList]::Select([WwwcWin]::GetDlgItem($page, 1007), 1)                                    # IDC_LIST_PROTOCOL: FILE
+    [void][WwwcWin]::PostMessage($page, 0x0111, [IntPtr]1009, [IntPtr]::Zero)                   # IDC_BUTTON_DELETE
+    # confirmation: Yes
+    [void](Wait-Until { $script:q = Get-Dialogs $e | Where-Object { $_.Handle -ne $opt.Handle -and [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } | Select-Object -First 1; $null -ne $script:q } 5)
+    if ($script:q) { [void][WwwcWin]::PostMessage($script:q.Handle, 0x0111, [IntPtr]6, [IntPtr]::Zero) }
+    Start-Sleep -Milliseconds 500
+    [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($opt.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)   # OK
+    Assert-True (Wait-Until { -not [WwwcWin]::IsWindow($opt.Handle) } 10) "options closed"
+  }
+  # the slow response arrives after 30 seconds: a check that was not stopped would store its size
+  Start-Sleep 33
+  Assert-True (-not $e.Process.HasExited) "WWWC is running"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $i = Get-SavedItem $e "slow"
+  Assert-Equal "" $i.Size "the check was stopped before the response arrived"
+  Assert-True (($script:Enc.GetString([IO.File]::ReadAllBytes((Join-Path $e.Data "user.ini")))) -match 'ProtocolCnt="?1"?') "the protocol change was applied"
+}
+
 Test-Case "timeout" {
   $e = New-TestEnv "http-timeout" $BinDir
   [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[CHECK]`r`nTimeOut=3`r`n", $script:Enc)

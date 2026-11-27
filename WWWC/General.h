@@ -779,6 +779,7 @@ int SelectIcon(HWND hWnd, char *path, int index);
 //--------------------------
 //	AutoChaeck
 //--------------------------
+void AutoCheckTimeUpdate(void);
 BOOL CheckAutoTime(HWND hWnd);
 void CALLBACK TreeCheckAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param);
 void CALLBACK CopyAutoTime(HWND hWnd, HTREEITEM hItem, LPARAM Param);

@@ -153,6 +153,23 @@ Test-Case "scheduled check (every minute)" {
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
 
+Test-Case "scheduled check at a set time runs once" {
+  $e = New-TestEnv "feat-autotime" $BinDir
+  Set-Items $e @(ItemLine "attime" (Url "/attime"))
+  # AUTOTIME_DAY (3) at a minute that the once-a-minute timer reaches after its first or second tick
+  $at = (Get-Date).AddSeconds(90)
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"), "[AUTOCHECK]`r`nCnt=1`r`ntype-0=3`r`nflag-0=0`r`nh-0=$($at.Hour)`r`nm-0=$($at.Minute)`r`n[UPMSG]`r`nUPSnd=0`r`nUPMsg=0`r`n", $script:Enc)
+  # archiving (on by default) fetches an updated page once more: count only the check's request
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[ARCHIVE]`r`nEnable=0`r`n", $script:Enc)
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e)
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /attime " } 200) "the item is checked at $($at.ToString('HH:mm'))"
+  # the next timer tick is within the same or the next minute: it must not start the check again
+  Start-Sleep 65
+  Assert-Equal 1 @((Get-ServerLog $m) -match "^GET /attime ").Count "checked once ($(Get-ServerLog $m))"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
 Test-Case "DPI change (simulated with WM_DPICHANGED)" {
   $e = New-TestEnv "feat-dpi" $BinDir
   Set-Items $e @((ItemLine "page" (Url "/target")), (ItemLine "other" (Url "/other")))
