@@ -29,6 +29,8 @@
 
 #define CREATEFILE_MAX			10
 #define COPYMAX					100
+//保存中の一時ファイルの名前の先頭 (Charset.c の TEMP_PREFIX と同じ)
+#define SAVE_TEMP_PREFIX		"wcu"
 
 typedef DWORD (WINAPI *FUNC_GETDISKFREESPACEEX) (LPCTSTR, PULARGE_INTEGER, PULARGE_INTEGER, PULARGE_INTEGER);
 
@@ -55,6 +57,7 @@ extern int SaveDriveCheck;
 **************************************************************************/
 
 static char *AllocItemStr(char *t, char **ret);
+static char *FieldStrCpy(char *ret, char *buf);
 static int SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct TPITEM *tpItemInfo);
 
 
@@ -307,11 +310,14 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 	HANDLE hFindFile;
 	char sPath[BUFSIZE];
 	char buf[BUFSIZE];
+	char SaveTemp[BUFSIZE];
 
 	if(Path == NULL || *Path == '\0'){
 		return FALSE;
 	}
 	wsprintf(sPath, "%s\\*", Path);
+	//中断した保存の一時ファイル (Item.da~)
+	GetSaveTempPath(DATAFILENAME, SaveTemp);
 
 	if((hFindFile = FindFirstFile(sPath, &FindData)) == INVALID_HANDLE_VALUE){
 		return FALSE;
@@ -327,6 +333,7 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 		}else{
 			if(AllFlag == TRUE ||
 				_stricmp(FindData.cFileName, DATAFILENAME) == 0 ||
+				_stricmp(FindData.cFileName, SaveTemp) == 0 ||
 				_stricmp(FindData.cFileName, FOLDERFILENAME) == 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteFile(buf);
@@ -771,6 +778,77 @@ BOOL ReadTreeMem(HWND hWnd, HTREEITEM hItem)
 
 /******************************************************************************
 
+	CreateTempBeside / ReplaceWithTemp
+
+	ファイルと同じフォルダに一時ファイルを作り、書き終えた一時ファイルで
+	元のファイルを置き換える (途中で失敗しても元のファイルは残る)
+
+******************************************************************************/
+
+BOOL CreateTempBeside(const char *Path, char *TempPath)
+{
+	char dir[BUFSIZE], *p;
+
+	if(lstrlen(Path) >= BUFSIZE){
+		SetLastError(ERROR_FILENAME_EXCED_RANGE);
+		return FALSE;
+	}
+	lstrcpy(dir, Path);
+	p = strrchr(dir, '\\');
+	if(p == NULL){
+		lstrcpy(dir, ".");
+	}else{
+		*(p + 1) = '\0';
+	}
+	return GetTempFileName(dir, SAVE_TEMP_PREFIX, 0, TempPath) != 0;
+}
+
+//保存中の一時ファイルのパス (最後の文字を '~' にする。Item.dat → Item.da~)
+void GetSaveTempPath(const char *Path, char *TempPath)
+{
+	int len;
+
+	lstrcpyn(TempPath, Path, BUFSIZE);
+	len = lstrlen(TempPath);
+	if(len > 0){
+		TempPath[len - 1] = '~';
+	}
+}
+
+//既存のファイルは ReplaceFile で属性・アクセス権・作成日時を引き継ぐ
+BOOL ReplaceWithTemp(const char *TempPath, const char *Path)
+{
+	if(GetFileAttributes(Path) == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND){
+		return MoveFileEx(TempPath, Path, MOVEFILE_WRITE_THROUGH);
+	}
+	return ReplaceFile(Path, TempPath, NULL, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, NULL, NULL);
+}
+
+
+/******************************************************************************
+
+	FieldStrCpy
+
+	アイテムの項目をコピーする
+	タブと改行は項目と行の区切りなので空白にする
+
+******************************************************************************/
+
+static char *FieldStrCpy(char *ret, char *buf)
+{
+	if(buf == NULL){
+		return ret;
+	}
+	for(; *buf != '\0'; buf++){
+		*(ret++) = (*buf == '\t' || *buf == '\r' || *buf == '\n') ? ' ' : *buf;
+	}
+	*ret = '\0';
+	return ret;
+}
+
+
+/******************************************************************************
+
 	ItemSize
 
 	アイテム情報からアイテムを文字列にしたときのサイズを取得する
@@ -832,55 +910,56 @@ char *SetItemString(struct TPITEM *tpItemInfo, char *p)
 	if(tpItemInfo == NULL){
 		return p;
 	}
+	//ItemSize は状態を1桁と見積もるので、0〜9 以外 (負の値を含む) は 0 にする
 
-	p = iStrCpy(p, tpItemInfo->Title);
+	p = FieldStrCpy(p, tpItemInfo->Title);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->CheckURL);
+	p = FieldStrCpy(p, tpItemInfo->CheckURL);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->Size);
+	p = FieldStrCpy(p, tpItemInfo->Size);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->Date);
+	p = FieldStrCpy(p, tpItemInfo->Date);
 	*(p++) = '\t';
 
-	wsprintf(Tmpbuf, "%ld", (tpItemInfo->Status < 10) ? tpItemInfo->Status : 0);
-	p = iStrCpy(p, Tmpbuf);
+	wsprintf(Tmpbuf, "%ld", ((unsigned int)tpItemInfo->Status < 10) ? tpItemInfo->Status : 0);
+	p = FieldStrCpy(p, Tmpbuf);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->CheckDate);
+	p = FieldStrCpy(p, tpItemInfo->CheckDate);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->OldSize);
+	p = FieldStrCpy(p, tpItemInfo->OldSize);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->OldDate);
+	p = FieldStrCpy(p, tpItemInfo->OldDate);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->ViewURL);
+	p = FieldStrCpy(p, tpItemInfo->ViewURL);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->Option1);
+	p = FieldStrCpy(p, tpItemInfo->Option1);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->Option2);
+	p = FieldStrCpy(p, tpItemInfo->Option2);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->Comment);
+	p = FieldStrCpy(p, tpItemInfo->Comment);
 	*(p++) = '\t';
 
-	wsprintf(Tmpbuf, "%ld", (tpItemInfo->CheckSt < 10) ? tpItemInfo->CheckSt : 0);
-	p = iStrCpy(p, Tmpbuf);
+	wsprintf(Tmpbuf, "%ld", ((unsigned int)tpItemInfo->CheckSt < 10) ? tpItemInfo->CheckSt : 0);
+	p = FieldStrCpy(p, Tmpbuf);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->ErrStatus);
+	p = FieldStrCpy(p, tpItemInfo->ErrStatus);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->DLLData1);
+	p = FieldStrCpy(p, tpItemInfo->DLLData1);
 	*(p++) = '\t';
 
-	p = iStrCpy(p, tpItemInfo->DLLData2);
+	p = FieldStrCpy(p, tpItemInfo->DLLData2);
 
 	*(p++) = '\r';
 	*(p++) = '\n';
@@ -899,11 +978,13 @@ char *SetItemString(struct TPITEM *tpItemInfo, char *p)
 int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int ItemCnt)
 {
 	HANDLE hFile;
+	char TempPath[BUFSIZE];
 	char *buf;
 	char *p;
 	int i, sLen;
-	int ErrorCode;
+	DWORD ErrorCode = 0;
 	DWORD ret;
+	BOOL ok = FALSE;
 
 	if(*FileName == '\0'){
 		return -1;
@@ -914,17 +995,10 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 	for(i = 0;i < ItemCnt;i++){
 		sLen += ItemSize(*(tpItemList + i));
 	}
-	if(sLen == 0){
-		hFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-		if(hFile != NULL && hFile != (HANDLE)-1){
-			CloseHandle(hFile);
-		}
-		return 1;
-	}
 
 	//ディスク容量をチェックする
 	SetCurrentDirectory(CuDir);
-	if(SaveDriveCheck == 1){
+	if(sLen > 0 && SaveDriveCheck == 1){
 		if(_GetDiskFreeSpaceEx != NULL){
 			ULARGE_INTEGER FreeBytesAvailableToCaller;
 			ULARGE_INTEGER TotalNumberOfBytes;
@@ -956,7 +1030,7 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 		}
 	}
 
-	buf = (char *)GlobalAlloc(GMEM_FIXED, sLen);
+	buf = (char *)GlobalAlloc(GMEM_FIXED, sLen + 1);
 	if(buf == NULL){
 		ErrMsg(hWnd, GetLastError(), EMSG_SAVE_TITLE);
 		return 0;
@@ -969,21 +1043,31 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 		p = SetItemString(*(tpItemList + i), p);
 	}
 
-	//保存するファイルを開く
-	hFile = CreateFile(FileName, GENERIC_READ | GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if(hFile == NULL || hFile == (HANDLE)-1){
-		ErrMsg(hWnd, GetLastError(), EMSG_SAVE_TITLE);
-		return 0;
-	}
-
-	if(WriteFile(hFile, buf, sLen, &ret, NULL) == FALSE){
-		ErrorCode = GetLastError();
+	//一時ファイルに書いてから置き換える
+	//(書き込みに失敗しても、元のファイルは空や途中までにならない)
+	//一時ファイルの名前は最後の文字を '~' にした同じ長さの名前 (Item.da~) にする。
+	//GetTempFileName の名前は長く、MAX_PATH に近い深いフォルダでは作れないため
+	GetSaveTempPath(FileName, TempPath);
+	hFile = CreateFile(TempPath, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	if(hFile != INVALID_HANDLE_VALUE){
+		ok = (sLen == 0 || (WriteFile(hFile, buf, sLen, &ret, NULL) == TRUE && ret == (DWORD)sLen)) &&
+			FlushFileBuffers(hFile) == TRUE;
+		if(ok == FALSE){
+			ErrorCode = GetLastError();
+		}
 		CloseHandle(hFile);
-		ErrMsg(hWnd, ErrorCode, EMSG_SAVE_TITLE);
-		return 0;
+		if(ok == TRUE && (ok = ReplaceWithTemp(TempPath, FileName)) == FALSE){
+			ErrorCode = GetLastError();
+		}
+	}else{
+		ErrorCode = GetLastError();
 	}
 	GlobalFree(buf);
-	CloseHandle(hFile);
+	if(ok == FALSE){
+		DeleteFile(TempPath);
+		ErrMsg(hWnd, (ErrorCode != 0) ? ErrorCode : ERROR_WRITE_FAULT, EMSG_SAVE_TITLE);
+		return 0;
+	}
 	return 1;
 }
 

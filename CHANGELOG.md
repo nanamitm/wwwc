@@ -30,6 +30,14 @@
 - The update message waits until its item properties, tools, open and drag
   and drop have finished before it refreshes or clears its list; a check
   that ended meanwhile freed the items they were using.
+- Item.dat is written to a temporary file and then replaces the old file, so
+  a failed or interrupted save no longer leaves an empty or partial Item.dat
+  (the data of the folder was lost on the next start).
+- An item whose state field is negative (for example `-1` in Item.dat or in
+  pasted item text) no longer writes past the save buffer; it is saved as 0.
+- Tabs and line breaks in item fields (for example a tab pasted into the
+  title in the item properties) are saved as spaces instead of shifting the
+  fields of the record.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

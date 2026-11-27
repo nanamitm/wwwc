@@ -78,34 +78,6 @@ static BOOL IsUtf8Text(const unsigned char *s, DWORD len)
 	return MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, (const char *)s, (int)len, NULL, 0) > 0;
 }
 
-//元ファイルと同じディレクトリに一時ファイルを作る (最後に置き換える)
-static BOOL CreateConversionTemp(const char *Path, char *TempPath)
-{
-	char dir[BUFSIZE], *p;
-
-	if(lstrlen(Path) >= BUFSIZE){
-		return FALSE;
-	}
-	lstrcpy(dir, Path);
-	p = strrchr(dir, '\\');
-	if(p == NULL){
-		lstrcpy(dir, ".");
-	}else{
-		*(p + 1) = '\0';
-	}
-	return GetTempFileName(dir, TEMP_PREFIX, 0, TempPath) != 0;
-}
-
-//一時ファイルで元ファイルを置き換える
-//既存のファイルは ReplaceFile で属性・アクセス権・作成日時を引き継ぐ
-static BOOL ReplaceWithTemp(const char *TempPath, const char *Path)
-{
-	if(GetFileAttributes(Path) == INVALID_FILE_ATTRIBUTES && GetLastError() == ERROR_FILE_NOT_FOUND){
-		return MoveFileEx(TempPath, Path, MOVEFILE_WRITE_THROUGH);
-	}
-	return ReplaceFile(Path, TempPath, NULL, REPLACEFILE_IGNORE_MERGE_ERRORS | REPLACEFILE_IGNORE_ACL_ERRORS, NULL, NULL);
-}
-
 //GetTempFileName が作る名前 (TEMP_PREFIX + 16進数4桁まで + ".tmp") か
 static BOOL IsConversionTempName(const char *Name)
 {
@@ -230,7 +202,7 @@ static BOOL ConvertFile(const char *Path, const char *BackupPath)
 		mkDirStr(dir);
 	}
 	if(CopyFile(Path, BackupPath, TRUE) == TRUE || GetLastError() == ERROR_FILE_EXISTS){
-		if(CreateConversionTemp(Path, temp) == TRUE){
+		if(CreateTempBeside(Path, temp) == TRUE){
 			hFile = CreateFile(temp, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
 			if(hFile != INVALID_HANDLE_VALUE){
 				ok = WriteFile(hFile, cbuf, clen, &ret, NULL) && ret == (DWORD)clen && FlushFileBuffers(hFile);
@@ -331,7 +303,7 @@ static BOOL SetConverted(const char *IniFile)
 		return FALSE;
 	}
 	ok = profile_write_int("GENERAL", CHARSET_KEY, 1, IniFile);
-	if(ok == TRUE && CreateConversionTemp(IniFile, temp) == TRUE){
+	if(ok == TRUE && CreateTempBeside(IniFile, temp) == TRUE){
 		ok = profile_flush(temp);
 		if(ok == TRUE) ok = ReplaceWithTemp(temp, IniFile);
 		if(ok == FALSE) DeleteFile(temp);
