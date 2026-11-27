@@ -32,6 +32,35 @@ Test-Case "redirects (302 relative, 301 absolute)" {
   }
 }
 
+Test-Case "redirects (303, 308, scheme-relative)" {
+  $e = New-TestEnv "http-redirect2" $BinDir
+  Set-Items $e @((ItemLine "r303" (Url "/r303")), (ItemLine "r308" (Url "/r308" "127.0.0.2")), (ItemLine "rproto" (Url "/rproto" "127.0.0.3")))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { @((Get-ServerLog $m) -match "^GET /target ").Count -ge 3 } 20) "all redirects followed to /target ($(Get-ServerLog $m))"
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  foreach ($t in "r303", "r308", "rproto") {
+    $i = Get-SavedItem $e $t
+    Assert-Equal "67" $i.Size "$t size"
+    Assert-Equal "" $i.ErrStatus "$t no error"
+  }
+}
+
+Test-Case "redirect to a non-HTTP URL is refused" {
+  $e = New-TestEnv "http-301bad" $BinDir
+  Set-Items $e @(ItemLine "bad" (Url "/r301bad"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /r301bad " } 15) "page was checked"
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $i = Get-SavedItem $e "bad"
+  Assert-Equal (Url "/r301bad") $i.Url "check URL is not changed"
+  Assert-True (($i.Status -band 2) -ne 0) "status has ST_ERROR (status $($i.Status))"
+  Assert-True ($i.ErrStatus -ne "") "error text is set"
+}
+
 Test-Case "connection error is stored on the item" {
   $e = New-TestEnv "http-error" $BinDir
   Set-Items $e @(ItemLine "refused" "http://127.0.0.1:1/x")

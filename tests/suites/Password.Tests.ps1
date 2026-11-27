@@ -37,6 +37,31 @@ Test-Case "proxy password in the old format is migrated" {
   Assert-True ($log -match "proxy_auth='pu:pp@ss'") "second check decrypts the proxy password ($log)"
 }
 
+Test-Case "item password is not sent to the server a redirect leads to" {
+  $e = New-TestEnv "pass-redirect" $BinDir
+  $opt = "1;;0;;;;;;1;;tester;;$(Get-LegacyPassword 's3cret!');;;;0"
+  Set-Items $e @((ItemLine "cross" (Url "/rcross" "127.0.0.3") $opt), (ItemLine "same" (Url "/r302-auth" "127.0.0.2") $opt))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  [void](Wait-Until { @((Get-ServerLog $m) -match "^GET /target ").Count -ge 2 } 20)
+  Start-Sleep 1
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $log = Get-ServerLog $m
+  Assert-True ($log -match "^GET /rcross auth='tester:s3cret!'") "first server gets the password ($log)"
+  Assert-True ($log -match "^GET /r302-auth auth='tester:s3cret!'") "same-server item gets the password"
+  Assert-Equal 1 @($log -match "^GET /target auth=None").Count "the other server does not get the password ($log)"
+  Assert-Equal 1 @($log -match "^GET /target auth='tester:s3cret!'").Count "a redirect on the same server keeps the password"
+  Assert-Equal (Url "/rcross" "127.0.0.3") (Get-SavedItem $e "cross").Url "check URL is kept"
+}
+
+Test-Case "proxy password for HTTPS goes to the proxy (CONNECT), not to the site" {
+  $e = New-TestEnv "pass-proxy-https" $BinDir
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[PROXY]`r`nProxy=1`r`npServer=127.0.0.1`r`npPort=$($script:ServerPort)`r`npNoCache=0`r`npUsePass=1`r`npUser=pu`r`npPass=$(Get-LegacyPassword 'pp@ss')`r`n", $script:Enc)
+  Set-Items $e @(ItemLine "tls" "https://wwwc-proxy-test.invalid/x")
+  $log = Invoke-Check $e "^CONNECT .*proxy_auth='pu:pp@ss'"
+  Assert-True ($log -match "^CONNECT wwwc-proxy-test.invalid:443 auth=None proxy_auth='pu:pp@ss'") "CONNECT carries the proxy password ($log)"
+}
+
 Test-Case "password entered in the item properties" {
   $e = New-TestEnv "pass-dialog" $BinDir
   Set-Items $e @(ItemLine "auth" (Url "/auth") "1;;0;;;;;;1;;tester;;$(Get-LegacyPassword 's3cret!');;;;0")

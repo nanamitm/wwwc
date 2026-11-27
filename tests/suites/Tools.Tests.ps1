@@ -108,3 +108,20 @@ Test-Case "open URL tool passes the URL to the configured browser at once" {
 
 # Browser information is available again through the upstream UI Automation
 # implementation. Its real-browser interaction requires a manual desktop check.
+
+Test-Case "open URL tool: a URL with a quote is not passed to the browser" {
+  $e = New-TestEnv "tool-openurl-quote" $BinDir
+  $record = Join-Path $e.Dir "opened.txt"
+  Set-Content -Path (Join-Path $e.Dir "browser.cmd") -Value "@echo %*>> `"$record`"" -Encoding ascii
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[HTTP]`r`nBrowserPath=$(Join-Path $e.Dir 'browser.cmd')`r`n", $script:Enc)
+  Set-Tools $e @([pscustomobject]@{ Title = "open"; Action = 1; Protocol = "HTTP"; Func = "DDE_OpenURL" })
+  # a quote would close the quoted argument and pass "--evil" as a browser option
+  Set-Items $e @(ItemLine "page" 'http://example.invalid/a" --evil "b')
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "page"
+  Send-Command $e $CMD_TOOL
+  Assert-True (Wait-Until { (Get-Dialogs $e).Count -gt 0 } 10) "a message is shown"
+  Start-Sleep 2
+  Assert-True (-not (Test-Path $record)) "the browser was not started"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
