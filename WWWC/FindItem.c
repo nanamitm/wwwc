@@ -276,6 +276,10 @@ static void FindStart(HWND hDlg)
 	SendMessage((HWND)TabCtrl_GetlParam(GetDlgItem(hDlg, IDC_TAB), 0), WM_SETFINDINFO, 0, (LPARAM)&tpFindInfo);
 	SendMessage((HWND)TabCtrl_GetlParam(GetDlgItem(hDlg, IDC_TAB), 1), WM_SETFINDINFO, 0, (LPARAM)&tpFindInfo);
 
+	//検索するフォルダが削除されている場合はルートから検索する
+	if(tpFindInfo.hItem == NULL || IsTreeItem(WWWCWnd, tpFindInfo.hItem) == FALSE){
+		tpFindInfo.hItem = RootItem;
+	}
 	if(tpFindInfo.FindSub == TRUE){
 		//再帰して検索
 		CallTreeItem(WWWCWnd, tpFindInfo.hItem, FindItem, (LPARAM)&tpFindInfo);

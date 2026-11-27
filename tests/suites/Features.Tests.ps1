@@ -258,6 +258,152 @@ Test-Case "copy and paste an item whose drop file path exceeds MAX_PATH" {
   }
 }
 
+## Item management: cut while checking, undo after a folder is deleted, duplicate items
+
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class WwwcKeys {
+  [DllImport("user32.dll")] static extern void keybd_event(byte vk, byte scan, uint flags, UIntPtr extra);
+  // DeleteItem reads the Shift key with GetAsyncKeyState (Shift+Delete deletes without the recycle bin)
+  public static void Shift(bool down) { keybd_event(0x10, 0, down ? 0u : 2u, UIntPtr.Zero); }
+}
+"@
+
+$CMD_CHECK = 40003          # ID_MENUITEM_CHECK
+$CMD_CUT = 40055            # ID_MENUITEM_CUT
+$CMD_PASTE = 40060          # ID_MENUITEM_PASTE
+$ID_TREE = 1114             # WWWC_TREE
+
+function Get-TreeHandle($Env) { [WwwcWin]::GetDlgItem($Env.Window, $ID_TREE) }
+
+# Select the root folder in the tree (TVM_GETNEXTITEM TVGN_ROOT, TVM_SELECTITEM TVGN_CARET)
+function Select-TreeRoot($Env, [string]$Marker) {
+  $tv = Get-TreeHandle $Env
+  $root = [WwwcWin]::SendMessage($tv, 0x110A, [IntPtr]0, [IntPtr]::Zero)
+  [void][WwwcWin]::SendMessage($tv, 0x110B, [IntPtr]9, $root)
+  if (-not (Wait-Until { (Get-ListTitles $Env) -contains $Marker } 5)) { throw "the root folder does not list '$Marker'" }
+}
+
+# Select the child folder of the root whose list contains $Marker
+function Select-TreeFolder($Env, [string]$Marker) {
+  $tv = Get-TreeHandle $Env
+  $root = [WwwcWin]::SendMessage($tv, 0x110A, [IntPtr]0, [IntPtr]::Zero)
+  $c = [WwwcWin]::SendMessage($tv, 0x110A, [IntPtr]4, $root)             # TVGN_CHILD
+  while ($c -ne [IntPtr]::Zero) {
+    [void][WwwcWin]::SendMessage($tv, 0x110B, [IntPtr]9, $c)
+    if (Wait-Until { (Get-ListTitles $Env) -contains $Marker } 2) { return }
+    $c = [WwwcWin]::SendMessage($tv, 0x110A, [IntPtr]1, $c)              # TVGN_NEXT
+  }
+  throw "no folder lists '$Marker'"
+}
+
+# Answer Yes in the confirmation message box
+function Confirm-Yes($Env) {
+  Assert-True (Wait-Until { Get-Dialogs $Env | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } } 5) "confirmation shown"
+  Get-Dialogs $Env | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } | ForEach-Object {
+    [void][WwwcWin]::PostMessage($_.Handle, 0x0111, [IntPtr]6, [IntPtr]::Zero)
+  }
+}
+
+function Write-ItemFile([string]$Dir, [string[]]$Lines) {
+  New-Item -ItemType Directory -Force $Dir | Out-Null
+  [IO.File]::WriteAllBytes((Join-Path $Dir "Item.dat"), $script:Enc.GetBytes(($Lines -join "`r`n") + "`r`n"))
+}
+
+# Item.dat lines of every folder below the data folder except the root
+function Get-OtherItemLines($Env) {
+  @(Get-ChildItem $Env.Data -Recurse -Filter "Item.dat" | Where-Object { $_.Directory.FullName -ne $Env.Data } |
+    ForEach-Object { (Read-Utf8Text $_.FullName) -split "`r`n" | Where-Object { $_ } })
+}
+
+Test-Case "cutting an item while it is checked and pasting it into another folder cancels its check" {
+  $e = New-TestEnv "feat-cutcheck" $BinDir
+  Set-Items $e @(ItemLine "checking" (Url "/slow-cutcheck"))
+  $sub = Join-Path $e.Data "sub"
+  Write-ItemFile $sub @(ItemLine "marker" (Url "/marker"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "checking"
+  Send-Command $e $CMD_CHECK
+  Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /slow-cutcheck " } 10) "the check started"
+  Select-ListItem $e "checking"
+  Send-Command $e $CMD_CUT
+  Start-Sleep -Milliseconds 500
+  Select-TreeFolder $e "marker"
+  Select-ListItem $e "marker"
+  Send-Command $e $CMD_PASTE
+  Assert-True (Wait-Until { (Get-ListTitles $e) -contains "checking" } 5) "the item is pasted into the other folder"
+  # the check timer (TimeoutItem) runs every second and used to read the freed item
+  Start-Sleep 3
+  Assert-True (-not $e.Process.HasExited) "WWWC is running (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (-not $e.Process.HasExited) { Assert-Equal 0 (Stop-Wwwc $e) "exit code" }
+  Assert-True ((Read-Utf8Text (Join-Path $sub "Item.dat")) -match "(?m)^checking`t") "the item is saved in the other folder"
+  Assert-True (-not ((Read-Utf8Text $e.ItemFile) -match "(?m)^checking`t")) "the item is removed from the first folder"
+}
+
+Test-Case "undo after the folder it refers to was deleted does nothing" {
+  $e = New-TestEnv "feat-undostale" $BinDir
+  Set-Items $e @(ItemLine "top" (Url "/top"))
+  $sub = Join-Path $e.Data "sub"
+  Write-ItemFile $sub @(ItemLine "inner" (Url "/inner"))
+  [void](Start-Wwwc $e)
+  # delete the item of the folder (to the recycle bin): undo moves it back to the folder
+  Select-TreeFolder $e "inner"
+  Select-ListItem $e "inner"
+  Send-Command $e $CMD_DELETE
+  Confirm-Yes $e
+  Assert-True (Wait-Until { -not ((Get-ListTitles $e) -contains "inner") } 5) "the item is moved to the recycle bin"
+  # delete the folder itself with Shift+Delete (no undo information is recorded)
+  Select-TreeRoot $e "top"
+  Select-ListItem $e "sub"
+  [WwwcKeys]::Shift($true)
+  try {
+    Send-Command $e $CMD_DELETE
+    [void](Wait-Until { Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, 6) -ne [IntPtr]::Zero } } 5)
+  } finally { [WwwcKeys]::Shift($false) }
+  Confirm-Yes $e
+  Assert-True (Wait-Until { -not (Test-Path -LiteralPath $sub) } 5) "the folder is deleted"
+  Assert-Equal 0 @(Get-ChildItem $e.Data -Recurse -Directory -Filter "sub").Count "Shift+Delete deletes the folder without the recycle bin"
+  Send-Command $e $CMD_UNDO
+  Start-Sleep 2
+  Assert-True (-not $e.Process.HasExited) "WWWC is running (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (-not $e.Process.HasExited) { Assert-Equal 0 (Stop-Wwwc $e) "exit code" }
+  Assert-True (-not (Test-Path -LiteralPath $sub)) "the deleted folder is not created again"
+  Assert-Equal @("top") @(Get-SavedTitles $e) "the root folder is unchanged"
+  Assert-True (@(Get-OtherItemLines $e | Where-Object { $_ -like "inner`t*" }).Count -eq 1) "the item stays in the recycle bin"
+}
+
+foreach ($deleted in @("111", "222")) {
+  Test-Case "deleting one of two items with the same title and URL keeps the other ($deleted deleted)" {
+    $e = New-TestEnv "feat-dup$deleted" $BinDir
+    $lines = foreach ($size in "111", "222") { $f = (ItemLine "dup" (Url "/dup")).Split("`t"); $f[2] = $size; $f -join "`t" }
+    Set-Items $e $lines
+    [void](Start-Wwwc $e)
+    Select-ListItem $e "dup"
+    $lv = Get-ListHandle $e
+    $row = -1
+    for ($i = 0; $i -lt [WwwcList]::Count($lv); $i++) {
+      for ($c = 0; $c -lt 5; $c++) { if ([WwwcList]::GetText($lv, $i, $c) -eq $deleted) { $row = $i } }
+    }
+    Assert-True ($row -ge 0) "the item with size $deleted is listed"
+    if ($row -ge 0) {
+      [WwwcList]::Select($lv, $row)
+      Start-Sleep -Milliseconds 200
+      Send-Command $e $CMD_DELETE
+      Confirm-Yes $e
+      Assert-True (Wait-Until { @(Get-ListTitles $e | Where-Object { $_ -eq "dup" }).Count -eq 1 } 5) "one item is left"
+    }
+    Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+    $kept = if ($deleted -eq "111") { "222" } else { "111" }
+    $root = @((Read-Utf8Text $e.ItemFile) -split "`r`n" | Where-Object { $_ })
+    Assert-Equal 1 $root.Count "one item is saved in the folder"
+    Assert-Equal $kept ($root[0].Split("`t")[2]) "the item that was not deleted is kept"
+    $bin = @(Get-OtherItemLines $e | Where-Object { $_ -like "dup`t*" })
+    Assert-True ($bin.Count -eq 1 -and $bin[0].Split("`t")[2] -eq $deleted) "the deleted item is in the recycle bin ($($bin -join ' | '))"
+  }
+}
+
 Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
   $e = New-TestEnv "feat-file64" $BinDir
   $file = Join-Path $e.Dir "large.bin"
