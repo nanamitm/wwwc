@@ -1384,6 +1384,10 @@ static LRESULT CALLBACK MainProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPa
 		break;
 
 	case WM_ENDSESSION:
+		//wParam が FALSE の場合は終了が取り消された (他のアプリケーションが取り消した) ので終了しない
+		if (wParam == FALSE) {
+			return 0;
+		}
 		if (EndWindow(hWnd, 0, 1) == TRUE) {
 			save_flag = TRUE;
 		}

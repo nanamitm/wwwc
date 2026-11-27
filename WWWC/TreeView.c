@@ -1487,11 +1487,10 @@ void TreeView_StartDragItem(HWND hWnd, HTREEITEM hItem)
 	//フォルダ情報の保存
 	SaveTreeMem(hWnd, GetDlgItem(hWnd, WWWC_TREE), DgdpItem);
 
+	//チェック中またはプロパティ表示中のフォルダは移動できない (コピーのみ)
+	//(移動してもツリーに残り、保存すると元の場所に作り直されるため)
 	Effect = DROPEFFECT_COPY;
-	if(FindCheckItem(hWnd, DgdpItem) != 1){
-		Effect |= DROPEFFECT_MOVE;
-	}
-	if(FindPropItem(hWnd, DgdpItem) != 1){
+	if(FindCheckItem(hWnd, DgdpItem) != 1 && FindPropItem(hWnd, DgdpItem) != 1){
 		Effect |= DROPEFFECT_MOVE;
 	}
 
