@@ -220,6 +220,27 @@ Test-Case "delete and undo an item with a clipboard record larger than 32 KiB" {
 }
 
 
+Test-Case "copy and paste an item whose drop file path exceeds MAX_PATH" {
+  $e = New-TestEnv "feat-longtitle" $BinDir
+  # 300 Japanese characters = 900 bytes of UTF-8: the HTTP DLL builds TempDir\~WWWC_Clip_Files\<title>.url
+  # (about 950 bytes) in the caller's buffer, which was 536 bytes before
+  $title = "`u{3042}" * 300
+  Set-Items $e @(ItemLine $title (Url "/longtitle"))
+  [void](Start-Wwwc $e)
+  # the list text read back is shorter than the title: select it by the text shown
+  [void](Wait-Until { @(Get-ListTitles $e | Where-Object { $_ -like "`u{3042}*" }).Count -gt 0 } 5)
+  Select-ListItem $e (Get-ListTitles $e | Where-Object { $_ -like "`u{3042}*" } | Select-Object -First 1)
+  Send-Command $e 40056                                         # ID_MENUITEM_COPY
+  Start-Sleep 1
+  Assert-True (-not $e.Process.HasExited) "WWWC is running after copy (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (-not $e.Process.HasExited) {
+    Assert-Equal (Url "/longtitle") ((Get-Clipboard -Raw) -replace "`r?`n$", "") "clipboard text is the URL"
+    Send-Command $e 40060                                       # ID_MENUITEM_PASTE
+    Assert-True (Wait-Until { @(Get-ListTitles $e).Count -ge 2 } 5) "pasted copy appears ($(@(Get-ListTitles $e).Count) items)"
+    Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  }
+}
+
 Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
   $e = New-TestEnv "feat-file64" $BinDir
   $file = Join-Path $e.Dir "large.bin"

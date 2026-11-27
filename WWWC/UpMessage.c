@@ -374,13 +374,13 @@ BOOL SetSubItemClipboardData(HWND hWnd)
 	}
 
 	//ドロップファイル
-	if(DragDrop_CreateDropFiles(hWnd, DnD_DirName) == FALSE){
-		return FALSE;
+	//(作成できない場合も続けてクリップボードを閉じる。WWWC形式は設定済みなので貼り付けはできる)
+	if(DragDrop_CreateDropFiles(hWnd, DnD_DirName) == TRUE){
+		if((hMemDrop = DragDrop_SetDropFileMem(hWnd)) != NULL){
+			SetClipboardData(CF_HDROP, hMemDrop);
+		}
+		FreeDropFiles();
 	}
-	if((hMemDrop = DragDrop_SetDropFileMem(hWnd)) != NULL){
-		SetClipboardData(CF_HDROP, hMemDrop);
-	}
-	FreeDropFiles();
 
 	//フォルダのパス
 	hMemText = Clipboard_Set_TEXT(hWnd, NULL);

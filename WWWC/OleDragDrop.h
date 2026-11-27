@@ -34,6 +34,7 @@ typedef struct _IDROPTARGET_NOTIFY{
 	UINT cfFormat;					//ドロップされるデータのクリップボードフォーマット
 	HANDLE hMem;					//ドロップされるデータ
 	LPVOID pdo;						//IDataObject
+	DWORD dwAllowed;				//ドラッグ元が許可している効果 (DRAGENTER, DRAGOVER, DROP)
 }IDROPTARGET_NOTIFY , *LPIDROPTARGET_NOTIFY;
 
 
