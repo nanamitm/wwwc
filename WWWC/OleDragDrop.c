@@ -197,6 +197,7 @@ static HRESULT APIPRIVATE OLE_IDropTarget_Internal_SendMessage(LPDROPTARGET pThi
 		pdtn->hMem = (cfFormat != 0) ? sm.hGlobal : NULL;			/* 実データ */
 	}
 	pdtn->pdo = pdo;					/* IDataObject */
+	pdtn->dwAllowed = (pdwEffect != NULL) ? *pdwEffect : DROPEFFECT_NONE;	/* ドラッグ元が許可している効果 */
 
 	/* ウィンドウにイベントを通知する */
 	SendMessage(pdti->hWnd, pdti->uCallbackMessage, (WPARAM)uNotify, (LPARAM)pdtn);

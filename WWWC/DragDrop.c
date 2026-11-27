@@ -66,7 +66,7 @@ static BOOL CreateDropFile(struct TPITEM *tpItemInfo, char *fPath, char *iPath, 
 static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *iPath);
 static BOOL DragDrop_MouseMove(HWND hWnd);
 static HTREEITEM DragDrop_GetHitestFolder(HWND hWnd);
-static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag);
+static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag, DWORD Allowed);
 
 
 /******************************************************************************
@@ -129,7 +129,7 @@ static BOOL CreateDropFile(struct TPITEM *tpItemInfo, char *fPath, char *iPath, 
 static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *iPath)
 {
 	struct TPTREE *tpTreeInfo;
-	char ItemPath[PATH_BUFSIZE];
+	char ItemPath[BUFSIZE];			//プロトコルDLLの CreateDropItem は BUFSIZE まで書き込む
 	char buf[BUFSIZE];
 	char tmp[PATH_BUFSIZE];
 	HTREEITEM cItem;
@@ -182,7 +182,7 @@ static void CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *fPath, char *i
 BOOL DragDrop_CreateTreeDropFiles(HWND hWnd, HTREEITEM hItem, char *TempDirName)
 {
 	char DndPath[PATH_BUFSIZE];
-	char ItemPath[PATH_BUFSIZE];
+	char ItemPath[BUFSIZE];			//プロトコルDLLの CreateDropItem は BUFSIZE まで書き込む
 	char buf[BUFSIZE];
 
 	WaitCursor(TRUE);
@@ -247,7 +247,7 @@ BOOL DragDrop_CreateDropFiles(HWND hWnd, char *TempDirName)
 	struct TPITEM *tpItemInfo;
 	HTREEITEM hItem;
 	char DndPath[PATH_BUFSIZE];
-	char ItemPath[PATH_BUFSIZE];
+	char ItemPath[BUFSIZE];			//プロトコルDLLの CreateDropItem は BUFSIZE まで書き込む
 	char buf[BUFSIZE];
 	int SelectItem;
 
@@ -528,19 +528,27 @@ static HTREEITEM DragDrop_GetHitestFolder(HWND hWnd)
 
 ******************************************************************************/
 
-static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag)
+static UINT DragDrop_ShowMenu(HWND hWnd, BOOL defFlag, DWORD Allowed)
 {
+	HMENU hMenu = GetSubMenu(hPOPUP, MENU_POP_DGDP);
 	UINT ret;
 	UINT MenuEffect;
 
 	//デフォルトのメニュー項目を設定
 	if(defFlag == TRUE){
-		SetMenuDefaultItem(GetSubMenu(hPOPUP, MENU_POP_DGDP), ID_MENU_DGDP_COPY, 0);
+		SetMenuDefaultItem(hMenu, ID_MENU_DGDP_COPY, 0);
 	}else{
-		SetMenuDefaultItem(GetSubMenu(hPOPUP, MENU_POP_DGDP), ID_MENU_DGDP_CUT, 0);
+		SetMenuDefaultItem(hMenu, ID_MENU_DGDP_CUT, 0);
 	}
+	//ドラッグ元が許可していない操作は選択できないようにする
+	//(チェック中のアイテムなどはドラッグ元が移動を許可しない)
+	EnableMenuItem(hMenu, ID_MENU_DGDP_COPY, (Allowed & DROPEFFECT_COPY) ? MF_ENABLED : MF_GRAYED);
+	EnableMenuItem(hMenu, ID_MENU_DGDP_CUT, (Allowed & DROPEFFECT_MOVE) ? MF_ENABLED : MF_GRAYED);
 
 	ret = ShowMenuCommand(hWnd, hPOPUP, MENU_POP_DGDP);
+
+	EnableMenuItem(hMenu, ID_MENU_DGDP_COPY, MF_ENABLED);
+	EnableMenuItem(hMenu, ID_MENU_DGDP_CUT, MF_ENABLED);
 	switch(ret)
 	{
 	case ID_MENU_DGDP_CUT:
@@ -992,8 +1000,11 @@ LRESULT DragDrop_NotifyProc(HWND hWnd, WPARAM wParam, LPARAM lParam)
 		UpdateItemFlag = UF_COPY;
 
 		if(pdtn->cfFormat == WWWC_ClipFormat){
+			//ドラッグ元が許可していない効果 (移動など) は行わない
+			pdtn->dwEffect &= pdtn->dwAllowed;
 			if(DnDKeySt & MK_RBUTTON){
-				pdtn->dwEffect = DragDrop_ShowMenu(hWnd, pdtn->dwEffect == DROPEFFECT_COPY);
+				pdtn->dwEffect = DragDrop_ShowMenu(hWnd, (pdtn->dwEffect & DROPEFFECT_MOVE) == 0, pdtn->dwAllowed);
+				pdtn->dwEffect &= pdtn->dwAllowed;
 			}
 			if(pdtn->dwEffect == DROPEFFECT_NONE){
 				TreeView_Select(GetDlgItem(hWnd, WWWC_TREE), NULL, TVGN_DROPHILITE);

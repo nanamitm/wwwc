@@ -18,6 +18,15 @@
   redirect leads to, non-HTTP redirect targets are refused, 303/308 and
   scheme-relative redirects are followed, and a URL containing a quote is not
   passed to the configured browser.
+- Copying or dragging an item whose drop file path is longer than 536 bytes
+  (for example a long title) no longer overflows a stack buffer: the path
+  buffers passed to the protocol DLL's CreateDropItem now have the BUFSIZE
+  the DLLs write up to.
+- Copy and cut close the clipboard even when the drop files cannot be created;
+  the WWWC data and text are still put on the clipboard.
+- The right-button drop menu only offers the operations the drag source
+  allows, so an item being checked can no longer be moved (and duplicated)
+  with "Move Here".
 
 # Changelog
 
