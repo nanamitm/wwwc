@@ -22,6 +22,14 @@
   since the previous timer tick, so a minute is neither skipped nor checked
   twice when the once-a-minute timer fires near a minute boundary or is
   delayed (up to 5 minutes; longer gaps such as sleep are still not caught up).
+- Cutting an item while it is being checked and pasting it into another
+  folder (or undoing a move) no longer leaves the freed item in the check
+  list, where the check timer read freed memory; its check is cancelled.
+- Undo no longer uses a folder that was deleted after the undo information
+  was recorded (Shift+Delete, emptying the recycle bin); the find window
+  searches from the root when its folder was deleted.
+- Moving or deleting one of several items with the same title and URL
+  removes that item and keeps the others, instead of the first one.
 - A tool command line is no longer built in a 1024-byte buffer: item values
   such as a long comment (`%m`) or title (`%t`) overflowed the stack.
 - Quotes in item values put into a tool command line (`%t`, `%m`, `%u` and
