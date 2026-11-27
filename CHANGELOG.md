@@ -46,6 +46,13 @@
 - Tabs and line breaks in item fields (for example a tab pasted into the
   title in the item properties) are saved as spaces instead of shifting the
   fields of the record.
+- A folder that is being checked or shown in the properties can no longer
+  be moved by dragging it in the tree (only copied); it stayed in the tree
+  and was created again at the old place when it was saved.
+- WWWC no longer closes when a Windows shutdown is cancelled by another
+  application (WM_ENDSESSION with wParam FALSE).
+- The folder path column (11) in the main list shows the folder of the item
+  instead of crashing.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

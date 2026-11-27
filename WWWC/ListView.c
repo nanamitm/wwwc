@@ -1097,7 +1097,18 @@ BOOL ListView_GetDispItem(HWND hWnd, LV_ITEM *hLVItem)
 	//アイテム
 	//テキスト
 	if(hLVItem->mask & LVIF_TEXT){
-		if(*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)) != NULL){
+		if((ColumnInfo + hLVItem->iSubItem)->p == 0){
+			//アイテムが格納されているフォルダのパス (項目の文字列は無い)
+			char path[BUFSIZE];
+
+			*(hLVItem->pszText) = '\0';
+			if(IsTreeItem(WWWCWnd, tpItemInfo->hItem) == TRUE){
+				TreeView_GetItemInfo(GetDlgItem(WWWCWnd, WWWC_TREE), RootItem, path);
+				wsprintf(buf, "\\\\%s", path);
+				TreeView_GetPath(GetDlgItem(WWWCWnd, WWWC_TREE), tpItemInfo->hItem, path, buf);
+				CopyDisplayText(hLVItem->pszText, path, hLVItem->cchTextMax);
+			}
+		}else if(*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)) != NULL){
 			//バッファの大きさは cchTextMax (リストビューが用意する)
 			CopyDisplayText(hLVItem->pszText,
 				*((char **)((char *)tpItemInfo + (ColumnInfo + hLVItem->iSubItem)->p)), hLVItem->cchTextMax);
