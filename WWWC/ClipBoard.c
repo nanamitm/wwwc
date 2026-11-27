@@ -797,11 +797,10 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 	struct TPTREE *tpTreeInfo;
 	char TmpBuf[BUFSIZE];
 	char ToPath[BUFSIZE];
-	char *p, *r;
 	char *TmpTitle;
 	int cnt;
 	int ret;
-	int i;
+	int i, j;
 
 	//移動先と移動元が同じ場合
 	TreeView_GetPath(GetDlgItem(hWnd, WWWC_TREE), hItem, TmpBuf, CuDir);
@@ -875,28 +874,24 @@ static BOOL CopyItemInfo(HWND hWnd, HTREEITEM hItem, struct TPITEM *NewItemInfo,
 	if(tpDeleteItemList == NULL){
 		return TRUE;
 	}
-	for(i = 0;i < tpDeleteItemListCnt;i++){
-		if(*(tpDeleteItemList + i) == NULL){
-			continue;
-		}
-		//タイトルの比較
-		p = ((*(tpDeleteItemList + i))->Title == NULL) ? "" : (*(tpDeleteItemList + i))->Title;
-		r = (NewItemInfo->Title == NULL) ? "" : NewItemInfo->Title;
-		if(strcmp(p, r) != 0){
-			continue;
-		}
-		//URLの比較
-		p = ((*(tpDeleteItemList + i))->CheckURL == NULL) ? "" : (*(tpDeleteItemList + i))->CheckURL;
-		r = (NewItemInfo->CheckURL == NULL) ? "" : NewItemInfo->CheckURL;
-		if(strcmp(p, r) != 0){
-			continue;
-		}
+	//まずすべての項目が同じものを、無ければタイトルと URL が同じものを削除する
+	//(タイトルと URL が同じアイテムが複数ある場合に、移動していないほうを消さないため)
+	for(j = 0; j < 2; j++){
+		for(i = 0;i < tpDeleteItemListCnt;i++){
+			if(*(tpDeleteItemList + i) == NULL){
+				continue;
+			}
+			if((j == 0) ? Item_IsSameRecord(*(tpDeleteItemList + i), NewItemInfo) == FALSE :
+				Item_IsSameKey(*(tpDeleteItemList + i), NewItemInfo) == FALSE){
+				continue;
+			}
 
-		//アイテムの削除
-		FreeItemInfo(*(tpDeleteItemList + i), TRUE);
-		GlobalFree(*(tpDeleteItemList + i));
-		*(tpDeleteItemList + i) = NULL;
-		break;
+			//アイテムの削除
+			FreeItemInfo(*(tpDeleteItemList + i), TRUE);
+			GlobalFree(*(tpDeleteItemList + i));
+			*(tpDeleteItemList + i) = NULL;
+			return TRUE;
+		}
 	}
 	return TRUE;
 }

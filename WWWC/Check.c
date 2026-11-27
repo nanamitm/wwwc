@@ -1240,6 +1240,25 @@ static void CancelItem(HWND hWnd, struct TPITEM *tpItemInfo)
 
 /******************************************************************************
 
+	CancelCheckItem
+
+	アイテムを解放する前にチェックを中止する
+	(チェック中のアイテムリストから外し、プロトコル DLL の処理も中止する)
+
+******************************************************************************/
+
+void CancelCheckItem(HWND hWnd, struct TPITEM *tpItemInfo)
+{
+	if(tpItemInfo == NULL || tpItemInfo->IconStatus == ST_DEFAULT){
+		return;
+	}
+	CancelItem(hWnd, tpItemInfo);
+	tpItemInfo->IconStatus = ST_DEFAULT;
+}
+
+
+/******************************************************************************
+
 	ListCancelItem
 
 	リストアイテムのキャンセル

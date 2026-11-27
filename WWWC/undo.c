@@ -351,6 +351,14 @@ BOOL ExecUndo(HWND hWnd)
 	if(CurUndo.FromItem == NULL){
 		return FALSE;
 	}
+	//記録したフォルダが削除されている場合 (Shift+Delete、ごみ箱を空にするなど) は元に戻さない
+	//(削除されたツリーアイテムのハンドルを使わないため)
+	if(!(CurUndo.UndoType == UNDO_ITEM && CurUndo.UndoCnt == 0) &&
+		(IsTreeItem(hWnd, CurUndo.FromItem) == FALSE ||
+		(CurUndo.UndoType == UNDO_ITEM && (CurUndo.ToItem == NULL || IsTreeItem(hWnd, CurUndo.ToItem) == FALSE)))){
+		FreeUndoinfo(&CurUndo);
+		return FALSE;
+	}
 
 	switch(CurUndo.UndoType)
 	{

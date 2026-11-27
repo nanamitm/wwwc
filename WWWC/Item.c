@@ -553,6 +553,46 @@ void Item_CopyMainRefreshContent(HWND hWnd, struct TPITEM **tpItemList, int cnt)
 
 /******************************************************************************
 
+	Item_IsSameKey / Item_IsSameRecord
+
+	アイテムの比較 (NULL は空文字列とみなす)
+	Item_IsSameKey はタイトルと URL、Item_IsSameRecord は保存されるすべての項目を比べる
+	(タイトルと URL が同じアイテムが複数ある場合に、移動・削除したものを取り違えないため)
+
+******************************************************************************/
+
+static int StrCmpNull(const char *a, const char *b)
+{
+	return strcmp((a == NULL) ? "" : a, (b == NULL) ? "" : b);
+}
+
+BOOL Item_IsSameKey(struct TPITEM *a, struct TPITEM *b)
+{
+	return StrCmpNull(a->Title, b->Title) == 0 && StrCmpNull(a->CheckURL, b->CheckURL) == 0;
+}
+
+BOOL Item_IsSameRecord(struct TPITEM *a, struct TPITEM *b)
+{
+	return Item_IsSameKey(a, b) &&
+		StrCmpNull(a->Size, b->Size) == 0 &&
+		StrCmpNull(a->Date, b->Date) == 0 &&
+		a->Status == b->Status &&
+		StrCmpNull(a->CheckDate, b->CheckDate) == 0 &&
+		StrCmpNull(a->OldSize, b->OldSize) == 0 &&
+		StrCmpNull(a->OldDate, b->OldDate) == 0 &&
+		StrCmpNull(a->ViewURL, b->ViewURL) == 0 &&
+		StrCmpNull(a->Option1, b->Option1) == 0 &&
+		StrCmpNull(a->Option2, b->Option2) == 0 &&
+		StrCmpNull(a->Comment, b->Comment) == 0 &&
+		a->CheckSt == b->CheckSt &&
+		StrCmpNull(a->ErrStatus, b->ErrStatus) == 0 &&
+		StrCmpNull(a->DLLData1, b->DLLData1) == 0 &&
+		StrCmpNull(a->DLLData2, b->DLLData2) == 0;
+}
+
+
+/******************************************************************************
+
 	Item_Select
 
 	アイテム情報からファイルに存在しないアイテムを削除する
@@ -563,14 +603,13 @@ BOOL Item_Select(HWND hWnd, HTREEITEM hItem)
 {
 	struct TPTREE *tpTreeInfo;
 	struct TPITEM **tpItemList;
-	struct TPITEM **tpTmpItemList;
 	struct TPITEM **tpFileItemList;
 	struct TPITEM *tpItemInfo;
 	char TmpBuf[BUFSIZE];
 	char SourcePath[BUFSIZE];
-	char *p, *r;
+	BOOL *KeepFlag;
 	int ItemCnt, NewItemCnt, FileItemCnt;
-	int i, j, n;
+	int i, j, n, pass;
 	int ListItemCnt;
 
 	//ツリービューからアイテムリスト取得
@@ -592,73 +631,83 @@ BOOL Item_Select(HWND hWnd, HTREEITEM hItem)
 		return FALSE;
 	}
 
-	//アイテムリストの確保
-	tpItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * ItemCnt);
-	if(tpItemList == NULL){
+	//残すアイテムの印
+	KeepFlag = (BOOL *)GlobalAlloc(GPTR, sizeof(BOOL) * (ItemCnt + 1));
+	if(KeepFlag == NULL){
+		FreeItemList(tpFileItemList, FileItemCnt, FALSE);
+		GlobalFree(tpFileItemList);
 		return FALSE;
 	}
 
-	//作業用アイテムリスト
-	tpTmpItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * FileItemCnt);
-	if(tpTmpItemList == NULL){
-		GlobalFree(tpItemList);
+	//ファイルの各アイテムに対応するアイテムを残す
+	//まずすべての項目が同じものを、無ければタイトルと URL が同じものを対応させる
+	//(タイトルと URL が同じアイテムが複数ある場合に、移動・削除したほうを残さないため)
+	for(pass = 0; pass < 2; pass++){
+		for(j = 0; j < FileItemCnt; j++){
+			if(*(tpFileItemList + j) == NULL){
+				continue;
+			}
+			for(i = 0; i < ItemCnt; i++){
+				if(KeepFlag[i] == TRUE || *(tpTreeInfo->ItemList + i) == NULL){
+					continue;
+				}
+				if((pass == 0) ? Item_IsSameRecord(*(tpTreeInfo->ItemList + i), *(tpFileItemList + j)) :
+					Item_IsSameKey(*(tpTreeInfo->ItemList + i), *(tpFileItemList + j))){
+					KeepFlag[i] = TRUE;
+					//対応したファイルのアイテムは次から比較しない
+					FreeItemInfo(*(tpFileItemList + j), FALSE);
+					GlobalFree(*(tpFileItemList + j));
+					*(tpFileItemList + j) = NULL;
+					break;
+				}
+			}
+		}
+	}
+
+	//アイテムリストの確保
+	tpItemList = (struct TPITEM **)GlobalAlloc(GPTR, sizeof(struct TPITEM *) * (ItemCnt + 1));
+	if(tpItemList == NULL){
+		GlobalFree(KeepFlag);
+		FreeItemList(tpFileItemList, FileItemCnt, FALSE);
+		GlobalFree(tpFileItemList);
 		return FALSE;
 	}
-	CopyMemory(tpTmpItemList, tpFileItemList, sizeof(struct TPITEM *) * FileItemCnt);
 
 	ListView_SetRedraw(GetDlgItem(hWnd, WWWC_LIST), LDF_NODRAW);
 
 	NewItemCnt = 0;
 	//ファイルに存在するアイテム以外は削除を行う
 	for(i = 0;i < ItemCnt;i++){
-		if(*(tpTreeInfo->ItemList + i) == NULL){
+		tpItemInfo = *(tpTreeInfo->ItemList + i);
+		if(tpItemInfo == NULL){
 			continue;
 		}
-		for(j = 0;j < FileItemCnt;j++){
-			if(*(tpTmpItemList + j) == NULL){
-				continue;
-			}
-			//タイトルの比較
-			p = ((*(tpTreeInfo->ItemList + i))->Title == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->Title;
-			r = ((*(tpTmpItemList + j))->Title == NULL) ? "" : (*(tpTmpItemList + j))->Title;
-			if(strcmp(p, r) != 0){
-				continue;
-			}
-			//URLの比較
-			p = ((*(tpTreeInfo->ItemList + i))->CheckURL == NULL) ? "" : (*(tpTreeInfo->ItemList + i))->CheckURL;
-			r = ((*(tpTmpItemList + j))->CheckURL == NULL) ? "" : (*(tpTmpItemList + j))->CheckURL;
-			if(strcmp(p, r) != 0){
-				continue;
-			}
-
+		if(KeepFlag[i] == TRUE){
 			//待避
-			*(tpItemList + NewItemCnt) = *(tpTreeInfo->ItemList + i);
+			*(tpItemList + NewItemCnt) = tpItemInfo;
 			NewItemCnt++;
 			*(tpTreeInfo->ItemList + i) = NULL;
-
-			//作業用アイテムリストのアイテムへのポインタをクリア
-			//（次回比較しないようにするため）
-			*(tpTmpItemList + j) = NULL;
-			break;
+			continue;
 		}
 
-		//アイテムの解放
-		if(*(tpTreeInfo->ItemList + i) != NULL){
-			if(hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
-				//現在表示されているフォルダの場合アイテムを削除する
-				ListItemCnt = ListView_GetItemCount(GetDlgItem(hWnd, WWWC_LIST));
-				for(n = 0;n < ListItemCnt;n++){
-					tpItemInfo = (struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), n);
-					if(tpItemInfo == *(tpTreeInfo->ItemList + i)){
-						ListView_DeleteItem(GetDlgItem(hWnd, WWWC_LIST), n);
-					}
+		//チェック中の場合は中止してチェック中のアイテムリストから外す
+		//(解放した後にチェックの処理がアイテムを参照しないため)
+		CancelCheckItem(hWnd, tpItemInfo);
+
+		if(hItem == TreeView_GetSelection(GetDlgItem(hWnd, WWWC_TREE))){
+			//現在表示されているフォルダの場合アイテムを削除する
+			ListItemCnt = ListView_GetItemCount(GetDlgItem(hWnd, WWWC_LIST));
+			for(n = 0;n < ListItemCnt;n++){
+				if((struct TPITEM *)ListView_GetlParam(GetDlgItem(hWnd, WWWC_LIST), n) == tpItemInfo){
+					ListView_DeleteItem(GetDlgItem(hWnd, WWWC_LIST), n);
+					break;
 				}
 			}
-
-			FreeItemInfo(*(tpTreeInfo->ItemList + i), TRUE);
-			GlobalFree(*(tpTreeInfo->ItemList + i));
-			*(tpTreeInfo->ItemList + i) = NULL;
 		}
+
+		FreeItemInfo(tpItemInfo, TRUE);
+		GlobalFree(tpItemInfo);
+		*(tpTreeInfo->ItemList + i) = NULL;
 	}
 
 	ListView_SetRedraw(GetDlgItem(hWnd, WWWC_LIST), LDF_REDRAW);
@@ -677,7 +726,7 @@ BOOL Item_Select(HWND hWnd, HTREEITEM hItem)
 	}
 
 	GlobalFree(tpItemList);
-	GlobalFree(tpTmpItemList);
+	GlobalFree(KeepFlag);
 
 	//ファイルのアイテムリストを解放する
 	FreeItemList(tpFileItemList, FileItemCnt, FALSE);
