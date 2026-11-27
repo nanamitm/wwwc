@@ -36,6 +36,9 @@
 
 #define LISTCOL_SIZE				300
 
+#define AUTOTIME_CATCHUP			5		//タイマーが遅れた場合にさかのぼって判定する分数
+#define MINUTE_FILETIME				(10000000ULL * 60)
+
 
 /**************************************************************************
 	Global Variables
@@ -43,6 +46,10 @@
 
 struct TPCHECKTIME *tpCheckTime;
 int tpCheckTimeCnt = 0;
+
+//時刻指定の判定範囲 (ローカル時刻の分単位。TickFrom より後 TickTo まで)
+static ULONGLONG TickFrom, TickTo;
+static ULONGLONG PrevTickMinute;
 
 //外部参照
 extern HINSTANCE g_hinst;				//アプリケーションのインスタンスハンドル
@@ -78,16 +85,98 @@ static void TreeCopyAutoCheckInfo(HWND hDlg);
 
 ******************************************************************************/
 
-static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
+static ULONGLONG LocalTimeToMinute(const SYSTEMTIME *st)
+{
+	SYSTEMTIME t = *st;
+	FILETIME ft;
+	ULARGE_INTEGER u;
+
+	t.wSecond = 0;
+	t.wMilliseconds = 0;
+	if(SystemTimeToFileTime(&t, &ft) == FALSE){
+		return 0;
+	}
+	u.LowPart = ft.dwLowDateTime;
+	u.HighPart = ft.dwHighDateTime;
+	return u.QuadPart / MINUTE_FILETIME;
+}
+
+static BOOL MinuteToLocalTime(ULONGLONG Minute, SYSTEMTIME *st)
+{
+	FILETIME ft;
+	ULARGE_INTEGER u;
+
+	u.QuadPart = Minute * MINUTE_FILETIME;
+	ft.dwLowDateTime = u.LowPart;
+	ft.dwHighDateTime = u.HighPart;
+	return FileTimeToSystemTime(&ft, st);
+}
+
+
+/******************************************************************************
+
+	AutoCheckTimeUpdate
+
+	時刻指定の自動チェックの判定範囲を更新する (自動チェックのタイマーごとに呼ぶ)
+	タイマーの間隔は 60 秒だが、分の境目の前後で通知が遅れたり早まったりすると
+	同じ分に2回通知されたり、ある分が飛ばされたりする。前回の通知の分より後から
+	今回の分までを判定することで、各分を1回だけ判定する。
+
+******************************************************************************/
+
+void AutoCheckTimeUpdate(void)
+{
+	SYSTEMTIME st;
+	ULONGLONG now;
+
+	GetLocalTime(&st);
+	now = LocalTimeToMinute(&st);
+	if(PrevTickMinute == 0 || now < PrevTickMinute || now - PrevTickMinute > AUTOTIME_CATCHUP){
+		//初回、時刻が戻された場合、長時間通知が無かった場合 (スリープなど) は今回の分だけ判定する
+		TickFrom = (now > 0) ? now - 1 : 0;
+	}else{
+		TickFrom = PrevTickMinute;
+	}
+	TickTo = now;
+	PrevTickMinute = now;
+}
+
+
+/******************************************************************************
+
+	MatchFixedTime
+
+	判定範囲内に時刻指定の自動チェックの時刻があるか
+
+******************************************************************************/
+
+static BOOL MatchFixedTime(struct TPCHECKTIME *tpTimeInfo)
 {
 	SYSTEMTIME SysTime;
+	ULONGLONG m;
 
+	for(m = TickFrom + 1; m <= TickTo; m++){
+		if(MinuteToLocalTime(m, &SysTime) == FALSE){
+			continue;
+		}
+		if(tpTimeInfo->h != SysTime.wHour || tpTimeInfo->m != SysTime.wMinute){
+			continue;
+		}
+		if((tpTimeInfo->type == AUTOTIME_WEEK && tpTimeInfo->week != SysTime.wDayOfWeek) ||
+			(tpTimeInfo->type == AUTOTIME_MON && tpTimeInfo->day != SysTime.wDay)){
+			continue;
+		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
+
+static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
+{
 	if(tpTimeInfo->flag == 1){
 		return 0;
 	}
-
-	//ローカルタイム取得
-	GetLocalTime(&SysTime);
 
 	switch(tpTimeInfo->type)
 	{
@@ -116,27 +205,11 @@ static int CheckTime(struct TPCHECKTIME *tpTimeInfo)
 		}
 		break;
 
-	//時間指定
+	//時間指定、曜日指定、日付指定
 	case AUTOTIME_DAY:
-		if((tpTimeInfo->h == SysTime.wHour) && (tpTimeInfo->m == SysTime.wMinute)){
-			return 1;
-		}
-		break;
-
-	//曜日指定
 	case AUTOTIME_WEEK:
-		if((tpTimeInfo->week == SysTime.wDayOfWeek) &&
-			(tpTimeInfo->h == SysTime.wHour) &&
-			(tpTimeInfo->m == SysTime.wMinute)){
-			return 1;
-		}
-		break;
-
-	//日付指定
 	case AUTOTIME_MON:
-		if((tpTimeInfo->day == SysTime.wDay) &&
-			(tpTimeInfo->h == SysTime.wHour) &&
-			(tpTimeInfo->m == SysTime.wMinute)){
+		if(MatchFixedTime(tpTimeInfo) == TRUE){
 			return 1;
 		}
 		break;
