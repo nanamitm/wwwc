@@ -125,6 +125,13 @@ static void ViewUpInfo(HWND hDlg);
 static void SetBannerSubClass(HWND hWnd);
 static void DelBannerSubClass(HWND hWnd);
 static LRESULT CALLBACK SubClassBannerProc(HWND hWnd, UINT msg, WPARAM wParam,LPARAM lParam);
+static INT_PTR UpMessageMain(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+//コマンド (プロパティ、ツール、開く、ドラッグなど) の実行中は一覧を更新しない
+//(ダイアログやツールの実行中にチェックが終わると、使っている一覧のアイテムが解放されるため)
+static int UpBusy = 0;
+static BOOL UpPendingInit = FALSE;
+static BOOL UpPendingFree = FALSE;
 
 
 /******************************************************************************
@@ -1327,6 +1334,52 @@ static LRESULT CALLBACK SubClassBannerProc(HWND hWnd, UINT msg, WPARAM wParam,LP
 ******************************************************************************/
 
 INT_PTR CALLBACK UpMessageProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	INT_PTR ret;
+
+	switch(uMsg)
+	{
+	//一覧の更新と解放はコマンドの実行が終わるまで待つ
+	case WM_UP_INIT:
+		if(UpBusy > 0){
+			UpPendingInit = TRUE;
+			return TRUE;
+		}
+		break;
+
+	case WM_UP_FREE:
+		if(UpBusy > 0){
+			UpPendingFree = TRUE;
+			return TRUE;
+		}
+		break;
+
+	//一覧のアイテムを使うコマンドやイベント
+	case WM_COMMAND:
+	case WM_LV_EVENT:
+	case WM_LV_INITICON:
+	case WM_ITEMEXEC:
+	case WM_ITEMINIT:
+	case WM_DATAOBJECT_GETDATA:
+		UpBusy++;
+		ret = UpMessageMain(hDlg, uMsg, wParam, lParam);
+		UpBusy--;
+		if(UpBusy == 0 && IsWindow(hDlg) != 0){
+			if(UpPendingFree == TRUE){
+				UpPendingFree = FALSE;
+				SendMessage(hDlg, WM_UP_FREE, 0, 0);
+			}
+			if(UpPendingInit == TRUE){
+				UpPendingInit = FALSE;
+				PostMessage(hDlg, WM_UP_INIT, 0, 0);
+			}
+		}
+		return ret;
+	}
+	return UpMessageMain(hDlg, uMsg, wParam, lParam);
+}
+
+static INT_PTR UpMessageMain(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	RECT WindowRect, lvRect;
 	char buf[BUFSIZE];

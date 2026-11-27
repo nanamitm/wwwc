@@ -30,6 +30,14 @@
   searches from the root when its folder was deleted.
 - Moving or deleting one of several items with the same title and URL
   removes that item and keeps the others, instead of the first one.
+- A tool command line is no longer built in a 1024-byte buffer: item values
+  such as a long comment (`%m`) or title (`%t`) overflowed the stack.
+- Quotes in item values put into a tool command line (`%t`, `%m`, `%u` and
+  the others) are replaced (`'`, or `%22` in URLs), so a title or URL can no
+  longer close a quoted argument and add arguments or commands.
+- The update message waits until its item properties, tools, open and drag
+  and drop have finished before it refreshes or clears its list; a check
+  that ended meanwhile freed the items they were using.
 - Item.dat is written to a temporary file and then replaces the old file, so
   a failed or interrupted save no longer leaves an empty or partial Item.dat
   (the data of the folder was lost on the next start).
