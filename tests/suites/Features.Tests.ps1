@@ -273,7 +273,7 @@ Test-Case "negative status values are saved as 0 within the item record" {
   Assert-Equal "0" $saved[4] "Status is saved as 0"
   Assert-Equal "0" $saved[12] "CheckSt is saved as 0"
   Assert-True ($lines[1] -like "after`t*") "the next item is saved intact"
-  Assert-Equal 0 @(Get-ChildItem $e.Data -Filter "wcu*.tmp").Count "no temporary file is left"
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $e.Data "Item.da~"))) "no temporary file is left"
 }
 
 Test-Case "a tab entered in the item title does not shift the saved fields" {

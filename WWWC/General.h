@@ -585,6 +585,7 @@ int ItemSize(struct TPITEM *tpItemInfo);
 char *SetItemString(struct TPITEM *tpItemInfo, char *p);
 int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int ItemCnt);
 BOOL CreateTempBeside(const char *Path, char *TempPath);
+void GetSaveTempPath(const char *Path, char *TempPath);
 BOOL ReplaceWithTemp(const char *TempPath, const char *Path);
 BOOL SaveTreeMem(HWND hWnd, HWND hTreeView, HTREEITEM hItem);
 void InitGetDiskFreeSpaceEx();

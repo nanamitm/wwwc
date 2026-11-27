@@ -310,11 +310,14 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 	HANDLE hFindFile;
 	char sPath[BUFSIZE];
 	char buf[BUFSIZE];
+	char SaveTemp[BUFSIZE];
 
 	if(Path == NULL || *Path == '\0'){
 		return FALSE;
 	}
 	wsprintf(sPath, "%s\\*", Path);
+	//中断した保存の一時ファイル (Item.da~)
+	GetSaveTempPath(DATAFILENAME, SaveTemp);
 
 	if((hFindFile = FindFirstFile(sPath, &FindData)) == INVALID_HANDLE_VALUE){
 		return FALSE;
@@ -330,6 +333,7 @@ BOOL DeleteDirTree(char *Path, BOOL AllFlag)
 		}else{
 			if(AllFlag == TRUE ||
 				_stricmp(FindData.cFileName, DATAFILENAME) == 0 ||
+				_stricmp(FindData.cFileName, SaveTemp) == 0 ||
 				_stricmp(FindData.cFileName, FOLDERFILENAME) == 0){
 				wsprintf(buf, "%s\\%s", Path, FindData.cFileName);
 				DeleteFile(buf);
@@ -799,6 +803,18 @@ BOOL CreateTempBeside(const char *Path, char *TempPath)
 	return GetTempFileName(dir, SAVE_TEMP_PREFIX, 0, TempPath) != 0;
 }
 
+//保存中の一時ファイルのパス (最後の文字を '~' にする。Item.dat → Item.da~)
+void GetSaveTempPath(const char *Path, char *TempPath)
+{
+	int len;
+
+	lstrcpyn(TempPath, Path, BUFSIZE);
+	len = lstrlen(TempPath);
+	if(len > 0){
+		TempPath[len - 1] = '~';
+	}
+}
+
 //既存のファイルは ReplaceFile で属性・アクセス権・作成日時を引き継ぐ
 BOOL ReplaceWithTemp(const char *TempPath, const char *Path)
 {
@@ -1029,13 +1045,10 @@ int SaveItemList(HWND hWnd, char *FileName, struct TPITEM **tpItemList, int Item
 
 	//一時ファイルに書いてから置き換える
 	//(書き込みに失敗しても、元のファイルは空や途中までにならない)
-	if(CreateTempBeside(FileName, TempPath) == FALSE){
-		ErrorCode = GetLastError();
-		GlobalFree(buf);
-		ErrMsg(hWnd, ErrorCode, EMSG_SAVE_TITLE);
-		return 0;
-	}
-	hFile = CreateFile(TempPath, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	//一時ファイルの名前は最後の文字を '~' にした同じ長さの名前 (Item.da~) にする。
+	//GetTempFileName の名前は長く、MAX_PATH に近い深いフォルダでは作れないため
+	GetSaveTempPath(FileName, TempPath);
+	hFile = CreateFile(TempPath, GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 	if(hFile != INVALID_HANDLE_VALUE){
 		ok = (sLen == 0 || (WriteFile(hFile, buf, sLen, &ret, NULL) == TRUE && ret == (DWORD)sLen)) &&
 			FlushFileBuffers(hFile) == TRUE;
