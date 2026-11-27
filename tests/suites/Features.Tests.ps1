@@ -258,6 +258,47 @@ Test-Case "copy and paste an item whose drop file path exceeds MAX_PATH" {
   }
 }
 
+Test-Case "negative status values are saved as 0 within the item record" {
+  $e = New-TestEnv "feat-negstatus" $BinDir
+  # ItemSize counts one digit for Status and CheckSt; "-1" used to write past the save buffer
+  $fields = (ItemLine "negative" (Url "/negative") -Status "-1").Split("`t")
+  $fields[12] = "-1"
+  Set-Items $e @(($fields -join "`t"), (ItemLine "after" (Url "/after")))
+  [void](Start-Wwwc $e)
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $lines = @((Read-Utf8Text $e.ItemFile) -split "`r`n")
+  Assert-Equal "" $lines[-1] "Item.dat ends with a line break"
+  $saved = $lines[0].Split("`t")
+  Assert-Equal 16 $saved.Count "the record keeps all 16 fields"
+  Assert-Equal "0" $saved[4] "Status is saved as 0"
+  Assert-Equal "0" $saved[12] "CheckSt is saved as 0"
+  Assert-True ($lines[1] -like "after`t*") "the next item is saved intact"
+  Assert-True (-not (Test-Path -LiteralPath (Join-Path $e.Data "Item.da~"))) "no temporary file is left"
+}
+
+Test-Case "a tab entered in the item title does not shift the saved fields" {
+  $e = New-TestEnv "feat-tabtitle" $BinDir
+  Set-Items $e @(ItemLine "tabbed" (Url "/tabbed"))
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "tabbed"
+  Send-Command $e $CMD_PROP
+  [void](Wait-Until { $script:sheetWin = Get-Dialogs $e | Select-Object -First 1; $null -ne $script:sheetWin } 10)
+  $sheet = $script:sheetWin
+  Assert-True ($sheet -and $sheet.Title -like "tabbed*") "item property sheet opened ('$($sheet.Title)')"
+  if ($sheet -and $sheet.Title -like "tabbed*") {
+    $page = [WwwcWin]::SendMessage($sheet.Handle, 0x0400 + 118, [IntPtr]::Zero, [IntPtr]::Zero)   # PSM_GETCURRENTPAGEHWND
+    # a single-line edit keeps a pasted tab
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1000), 0x000C, [IntPtr]::Zero, "tab`tbed")   # IDC_EDIT_TITLE of wwwc.dll
+    [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($sheet.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)   # OK
+    Assert-True (Wait-Until { -not [WwwcWin]::IsWindow($sheet.Handle) } 5) "property sheet closed"
+  }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $saved = (Read-Utf8Text $e.ItemFile).TrimEnd("`r", "`n").Split("`t")
+  Assert-Equal 16 $saved.Count "the record keeps all 16 fields"
+  Assert-Equal "tab bed" $saved[0] "the tab is saved as a space"
+  Assert-Equal (Url "/tabbed") $saved[1] "the URL stays in its field"
+}
+
 Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
   $e = New-TestEnv "feat-file64" $BinDir
   $file = Join-Path $e.Dir "large.bin"
