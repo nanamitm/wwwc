@@ -12,6 +12,12 @@
 - Search for existing data beside WWWC.exe before using LocalAppData, including
   installed portable=0 copies; manual copying is unnecessary when updating in place.
 - Add default-startup integration tests and native directory-selection regression tests.
+- Add regression tests for HTTP credentials and redirects: the proxy password
+  goes on CONNECT for HTTPS (the test server can require proxy credentials and
+  answers CONNECT), the item password is not sent to another server a
+  redirect leads to, non-HTTP redirect targets are refused, 303/308 and
+  scheme-relative redirects are followed, and a URL containing a quote is not
+  passed to the configured browser.
 - Copying or dragging an item whose drop file path is longer than 536 bytes
   (for example a long title) no longer overflows a stack buffer: the path
   buffers passed to the protocol DLL's CreateDropItem now have the BUFSIZE
