@@ -22,6 +22,14 @@
   since the previous timer tick, so a minute is neither skipped nor checked
   twice when the once-a-minute timer fires near a minute boundary or is
   delayed (up to 5 minutes; longer gaps such as sleep are still not caught up).
+- A tool command line is no longer built in a 1024-byte buffer: item values
+  such as a long comment (`%m`) or title (`%t`) overflowed the stack.
+- Quotes in item values put into a tool command line (`%t`, `%m`, `%u` and
+  the others) are replaced (`'`, or `%22` in URLs), so a title or URL can no
+  longer close a quoted argument and add arguments or commands.
+- The update message waits until its item properties, tools, open and drag
+  and drop have finished before it refreshes or clears its list; a check
+  that ended meanwhile freed the items they were using.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

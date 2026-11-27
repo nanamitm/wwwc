@@ -24,6 +24,7 @@ Routes:
                a Japanese page in that character set
     /filter-sjis
                a long Shift_JIS page for the filter test
+    /grow...   a page that is one byte longer on every request (every check finds an update)
     anything else: a small HTML page titled "target page" (67 bytes)
 
 usage: test_server.py <port> <logfile>
@@ -38,6 +39,8 @@ PORT = int(sys.argv[1])
 LOG = sys.argv[2]
 ADDRESSES = ["127.0.0.1", "127.0.0.2", "127.0.0.3", "127.0.0.4", "127.0.0.5"]
 BODY = b"<html><head><title>target page</title></head><body>ok</body></html>"
+GROW = [0]
+GROW_LOCK = threading.Lock()
 lock = threading.Lock()
 
 # /title-<charset>: a page titled TITLE_JA (TITLE_UTF8 for utf8) in that character set
@@ -146,6 +149,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
             return
         if path.startswith("/filter-sjis"):
             body = FILTER_PAGE
+            self.send_response(200)
+            self.send_header("Content-Type", "text/html")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if send_body:
+                self.wfile.write(body)
+            return
+        if path.startswith("/grow"):
+            with GROW_LOCK:
+                GROW[0] += 1
+                body = b"<html><body>" + b"x" * GROW[0] + b"</body></html>"
             self.send_response(200)
             self.send_header("Content-Type", "text/html")
             self.send_header("Content-Length", str(len(body)))
