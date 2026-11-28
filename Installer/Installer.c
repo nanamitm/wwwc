@@ -54,6 +54,8 @@ static TCHAR ver_str[BUF_SIZE];
 static TCHAR title_str[BUF_SIZE];
 // インストール先
 static TCHAR install_path[MAX_PATH];
+// 登録されているインストール先 (更新の場合)
+static TCHAR registered_path[MAX_PATH];
 // 上書きインストール
 static BOOL update_mode;
 // アプリの一覧の登録場所
@@ -300,6 +302,40 @@ static BOOL create_dir(const TCHAR *path, const BOOL log, SECURITY_ATTRIBUTES *s
 		log_add(TEXT('D'), path);
 	}
 	return (GetFileAttributes(path) != INVALID_FILE_ATTRIBUTES) ? TRUE : FALSE;
+}
+
+/*
+ * parent_path - 親フォルダのパスにする (ドライブ直下は "X:\\" を残す、親が無い場合は FALSE)
+ */
+static BOOL parent_path(TCHAR *path)
+{
+	TCHAR *p;
+
+	if (lstrlen(path) <= 3 || (p = StrRChr(path, NULL, TEXT('\\'))) == NULL || p == path) {
+		return FALSE;
+	}
+	if (p == path + 2 && *(path + 1) == TEXT(':')) {
+		*(p + 1) = TEXT('\0');
+	} else {
+		*p = TEXT('\0');
+	}
+	return TRUE;
+}
+
+/*
+ * remove_new_dirs - create_dir で作成したフォルダを削除 (exist は作成前からあったフォルダ、空の場合のみ削除される)
+ */
+static void remove_new_dirs(const TCHAR *path, const TCHAR *exist)
+{
+	TCHAR buf[MAX_PATH];
+	int len = lstrlen(exist);
+
+	lstrcpyn(buf, path, MAX_PATH);
+	while (lstrlen(buf) > len) {
+		if (RemoveDirectory(buf) == FALSE || parent_path(buf) == FALSE) {
+			break;
+		}
+	}
 }
 
 /*
@@ -658,7 +694,7 @@ static BOOL write_file(const HWND hWnd, const TCHAR *path, const BYTE *buf, cons
 			return FALSE;
 		}
 	}
-	if (size > 0 && WriteFile(hFile, buf, size, &ret_size, NULL) == FALSE) {
+	if (size > 0 && (WriteFile(hFile, buf, size, &ret_size, NULL) == FALSE || ret_size != size)) {
 		CloseHandle(hFile);
 		return FALSE;
 	}
@@ -1364,7 +1400,7 @@ static BOOL do_install(const HWND hDlg)
 	{
 		SECURITY_ATTRIBUTES sa;
 		PSECURITY_DESCRIPTOR psd = NULL;
-		BOOL created;
+		TCHAR exist[MAX_PATH];
 		BOOL in_pf = install_path_in_program_files();
 
 		if (in_pf == FALSE &&
@@ -1375,12 +1411,16 @@ static BOOL do_install(const HWND hDlg)
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 		sa.lpSecurityDescriptor = psd;
 		sa.bInheritHandle = FALSE;
-		created = (GetFileAttributes(install_path) == INVALID_FILE_ATTRIBUTES) ? TRUE : FALSE;
+		// 作成前からあるフォルダ (失敗した場合はその下に作成したフォルダを削除する)
+		lstrcpyn(exist, install_path, MAX_PATH);
+		while (GetFileAttributes(exist) == INVALID_FILE_ATTRIBUTES && parent_path(exist) == TRUE)
+			;
 		ret = create_dir(install_path, FALSE, (psd != NULL) ? &sa : NULL);
 		if (psd != NULL) {
 			LocalFree(psd);
 		}
 		if (ret == FALSE) {
+			remove_new_dirs(install_path, exist);
 			msg_box(hDlg, IDS_ERR_CREATE_DIR, MB_OK | MB_ICONEXCLAMATION, install_path);
 			return FALSE;
 		}
@@ -1391,9 +1431,7 @@ static BOOL do_install(const HWND hDlg)
 			}
 		} else if (install_path_is_protected() == FALSE) {
 			// Program Files 配下でも確認する (環境変数などで判定が変わっても保護を省略しない)
-			if (created == TRUE) {
-				RemoveDirectory(install_path);
-			}
+			remove_new_dirs(install_path, exist);
 			msg_box(hDlg, IDS_ERR_PATH_UNSAFE, MB_OK | MB_ICONEXCLAMATION, install_path);
 			return FALSE;
 		}
@@ -1748,6 +1786,17 @@ static INT_PTR CALLBACK dlg_proc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lPar
 				msg_box(hDlg, err_id, MB_OK | MB_ICONEXCLAMATION, NULL);
 				break;
 			}
+			// 更新で別のフォルダを指定した場合、以前のフォルダは削除されない
+			if (update_mode == TRUE && *registered_path != TEXT('\0')) {
+				TCHAR old_norm[MAX_PATH], new_norm[MAX_PATH];
+
+				if ((path_normalize(registered_path, old_norm) == FALSE || path_normalize(install_path, new_norm) == FALSE ||
+					lstrcmpi(old_norm, new_norm) != 0) &&
+					GetFileAttributes(registered_path) != INVALID_FILE_ATTRIBUTES &&
+					msg_box(hDlg, IDS_CONFIRM_OLD_FOLDER, MB_YESNO | MB_ICONWARNING, registered_path) != IDYES) {
+					break;
+				}
+			}
 			SetDlgItemText(hDlg, IDC_EDIT_PATH, install_path);
 
 			enable_ctrl(hDlg, FALSE);
@@ -1874,6 +1923,7 @@ static void do_uninstall(const TCHAR *dir_path, const DWORD pid, const BOOL dele
 	TCHAR path[MAX_PATH];
 	int cnt;
 	int i;
+	BOOL remove_reg = TRUE;
 
 	// 呼び出し元の終了を待つ
 	if (pid != 0 && (hProcess = OpenProcess(SYNCHRONIZE, FALSE, pid)) != NULL) {
@@ -1915,8 +1965,20 @@ static void do_uninstall(const TCHAR *dir_path, const DWORD pid, const BOOL dele
 			DeleteFile(path);
 		}
 		RemoveDirectory(dir);
+	} else {
+		// ファイルを削除しなかったことを伝え、登録を削除するかを確認する
+		// (登録を残せばアプリの一覧から再度アンインストールできる)
+		if (msg_box(NULL, IDS_CONFIRM_UNINSTALL_KEEP, MB_YESNO | MB_ICONWARNING, dir_path) != IDYES) {
+			remove_reg = FALSE;
+		}
 	}
 
+	if (remove_reg == FALSE) {
+		// 一時フォルダにコピーした自分自身を削除
+		GetModuleFileName(NULL, path, MAX_PATH);
+		MoveFileEx(path, NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+		return;
+	}
 	// アプリの一覧から削除
 	reg_target_cnt = reg_find_install(reg_target, REG_TARGET_MAX, NULL);
 	for (i = 0; i < reg_target_cnt; i++) {
@@ -1931,7 +1993,14 @@ static void do_uninstall(const TCHAR *dir_path, const DWORD pid, const BOOL dele
 				lstrlen(path) + lstrlen(APP_DATA_FOLDER) + 2 <= MAX_PATH) {
 				lstrcat(path, TEXT("\\"));
 				lstrcat(path, APP_DATA_FOLDER);
-				delete_dir_tree(path);
+				// ユーザーが変更できるフォルダのため、管理者の権限ではなくユーザーの権限で削除する
+				// (削除中にリンクに差し替えられても、ユーザーが削除できないファイルは削除されない)
+				if (ImpersonateLoggedOnUser(hToken) != FALSE) {
+					delete_dir_tree(path);
+					if (RevertToSelf() == FALSE) {
+						ExitProcess(1);
+					}
+				}
 			}
 			CloseHandle(hToken);
 		}
@@ -2091,7 +2160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				}
 			} else if (lstrcmpi(*(argv + i), CMD_DELETE_DATA) == 0) {
 				delete_data = TRUE;
-			} else if (CompareString(LOCALE_INVARIANT, NORM_IGNORECASE,
+			} else if (lstrlen(*(argv + i)) >= lstrlen(CMD_PID) && CompareString(LOCALE_INVARIANT, NORM_IGNORECASE,
 				*(argv + i), lstrlen(CMD_PID), CMD_PID, lstrlen(CMD_PID)) == CSTR_EQUAL) {
 				pid = str_to_dword(*(argv + i) + lstrlen(CMD_PID));
 			}
@@ -2129,6 +2198,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		}
 		if (*buf != TEXT('\0')) {
 			lstrcpyn(install_path, buf, MAX_PATH);
+			lstrcpyn(registered_path, buf, MAX_PATH);
 		} else {
 			if (FAILED(SHGetFolderPath(NULL, CSIDL_PROGRAM_FILES, NULL,
 				SHGFP_TYPE_CURRENT, install_path))) {

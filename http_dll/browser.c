@@ -52,17 +52,79 @@ typedef struct _WINLIST {
 	int cnt;
 } WINLIST;
 
+/* 対応するブラウザ (Chromium のウィンドウクラスは VS Code などの Electron のアプリも使用するため、
+   Chromium は実行ファイル名で判定する。Firefox のウィンドウクラスはそのまま対象にする) */
+static const struct { const WCHAR *exe; const char *name; BOOL chromium; } BrowserNames[] = {
+	{L"chrome.exe", "Google Chrome", TRUE}, {L"msedge.exe", "Microsoft Edge", TRUE}, {L"firefox.exe", "Firefox", FALSE},
+	{L"brave.exe", "Brave", TRUE}, {L"vivaldi.exe", "Vivaldi", TRUE}, {L"opera.exe", "Opera", TRUE}, {L"chromium.exe", "Chromium", TRUE},
+	{L"thorium.exe", "Thorium", TRUE}, {L"browser.exe", "Yandex Browser", TRUE}, {L"arc.exe", "Arc", TRUE},
+};
+#define BROWSER_NAME_CNT		((int)(sizeof(BrowserNames) / sizeof(BrowserNames[0])))
+
 
 
 /**************************************************************************
 	Helpers
 **************************************************************************/
 
+/* 大文字小文字を区別せずに prefix で始まるか (s が短い場合に終端の先を読まない) */
+static BOOL StartsWithIW(const WCHAR *s, const WCHAR *prefix)
+{
+	int n = lstrlenW(prefix);
+
+	if(s == NULL || lstrlenW(s) < n){
+		return FALSE;
+	}
+	return (CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, n, prefix, n) == CSTR_EQUAL) ? TRUE : FALSE;
+}
+
+/* ウィンドウのプロセスの実行ファイル名 (取得できない場合は FALSE) */
+static BOOL GetExeName(HWND hWnd, WCHAR *ret, int size)
+{
+	WCHAR path[MAX_PATH], *p, *f;
+	HANDLE hProcess;
+	DWORD pid = 0, len = MAX_PATH;
+	BOOL ok = FALSE;
+
+	*ret = L'\0';
+	GetWindowThreadProcessId(hWnd, &pid);
+	hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if(hProcess == NULL){
+		return FALSE;
+	}
+	if(QueryFullProcessImageNameW(hProcess, 0, path, &len) == TRUE){
+		for(f = p = path; *p != L'\0'; p++){
+			if(*p == L'\\'){
+				f = p + 1;
+			}
+		}
+		lstrcpynW(ret, f, size);
+		ok = TRUE;
+	}
+	CloseHandle(hProcess);
+	return ok;
+}
+
+/* 対応するブラウザの番号 (無い場合は -1) */
+static int FindBrowser(const WCHAR *exe)
+{
+	int i;
+
+	for(i = 0; i < BROWSER_NAME_CNT; i++){
+		if(lstrcmpiW(exe, BrowserNames[i].exe) == 0){
+			return i;
+		}
+	}
+	return -1;
+}
+
 /* ブラウザのウィンドウを重なり順に列挙する */
 static BOOL CALLBACK EnumBrowserProc(HWND hWnd, LPARAM lParam)
 {
 	WINLIST *wl = (WINLIST *)lParam;
+	WCHAR exe[MAX_PATH];
 	char cls[64];
+	int i;
 
 	if(wl->cnt >= BROWSER_MAX_WINDOWS){
 		return FALSE;
@@ -71,7 +133,13 @@ static BOOL CALLBACK EnumBrowserProc(HWND hWnd, LPARAM lParam)
 		GetClassName(hWnd, cls, sizeof(cls)) == 0){
 		return TRUE;
 	}
-	if(lstrcmp(cls, CLASS_CHROMIUM) == 0 || lstrcmp(cls, CLASS_FIREFOX) == 0){
+	if(lstrcmp(cls, CLASS_CHROMIUM) == 0){
+		//Electron のアプリは調べない (UI Automation で問い合わせると、そのアプリのアクセシビリティが有効になり遅くなる)
+		if(GetExeName(hWnd, exe, MAX_PATH) == FALSE || (i = FindBrowser(exe)) < 0 || BrowserNames[i].chromium == FALSE){
+			return TRUE;
+		}
+		wl->hWnd[wl->cnt++] = hWnd;
+	}else if(lstrcmp(cls, CLASS_FIREFOX) == 0){
 		wl->hWnd[wl->cnt++] = hWnd;
 	}
 	return TRUE;
@@ -155,8 +223,7 @@ static char *ToUrl(const WCHAR *w)
 	if(w == NULL || lstrlenW(w) == 0 || lstrlenW(w) > BROWSER_URL_MAX){
 		return NULL;
 	}
-	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, w, 7, L"http://", 7) != CSTR_EQUAL &&
-		CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, w, 8, L"https://", 8) != CSTR_EQUAL){
+	if(StartsWithIW(w, L"http://") == FALSE && StartsWithIW(w, L"https://") == FALSE){
 		return NULL;
 	}
 	len = WideCharToMultiByte(CP_UTF8, 0, w, -1, NULL, 0, NULL, NULL);
@@ -332,39 +399,18 @@ static WCHAR *SelectedTabTitle(IUIAutomation *uia, IUIAutomationElement *root)
 /* 実行ファイル名からブラウザ名を取得 */
 static void GetBrowserName(HWND hWnd, char *ret, int size)
 {
-	static const struct { const WCHAR *exe; const char *name; } names[] = {
-		{L"chrome.exe", "Google Chrome"}, {L"msedge.exe", "Microsoft Edge"}, {L"firefox.exe", "Firefox"},
-		{L"brave.exe", "Brave"}, {L"vivaldi.exe", "Vivaldi"}, {L"opera.exe", "Opera"}, {L"chromium.exe", "Chromium"},
-	};
-	WCHAR path[MAX_PATH], *p, *f;
-	HANDLE hProcess;
-	DWORD pid = 0, len = MAX_PATH;
+	WCHAR exe[MAX_PATH];
 	int i;
 
 	lstrcpyn(ret, "", size);
-	GetWindowThreadProcessId(hWnd, &pid);
-	hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-	if(hProcess == NULL){
+	if(GetExeName(hWnd, exe, MAX_PATH) == FALSE){
 		return;
 	}
-	if(QueryFullProcessImageNameW(hProcess, 0, path, &len) == TRUE){
-		for(f = p = path; *p != L'\0'; p++){
-			if(*p == L'\\'){
-				f = p + 1;
-			}
-		}
-		for(i = 0; i < sizeof(names) / sizeof(names[0]); i++){
-			if(lstrcmpiW(f, names[i].exe) == 0){
-				lstrcpyn(ret, names[i].name, size);
-				break;
-			}
-		}
-		if(i >= sizeof(names) / sizeof(names[0])){
-			WideCharToMultiByte(CP_ACP, 0, f, -1, ret, size, NULL, NULL);
-			ret[size - 1] = '\0';
-		}
+	if((i = FindBrowser(exe)) >= 0){
+		lstrcpyn(ret, BrowserNames[i].name, size);
+	}else if(WideCharToMultiByte(CP_ACP, 0, exe, -1, ret, size, NULL, NULL) == 0){
+		lstrcpyn(ret, "", size);
 	}
-	CloseHandle(hProcess);
 }
 
 /* Chromium のページの情報を有効にする (支援技術からの問い合わせで有効になる) */
@@ -401,12 +447,12 @@ static BOOL IsOffscreen(IUIAutomationElement *e)
 /* URL のスキームと www. を除いた位置 */
 static const WCHAR *SkipUrlPrefix(const WCHAR *s)
 {
-	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 7, L"http://", 7) == CSTR_EQUAL){
+	if(StartsWithIW(s, L"http://") == TRUE){
 		s += 7;
-	}else if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 8, L"https://", 8) == CSTR_EQUAL){
+	}else if(StartsWithIW(s, L"https://") == TRUE){
 		s += 8;
 	}
-	if(CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, s, 4, L"www.", 4) == CSTR_EQUAL){
+	if(StartsWithIW(s, L"www.") == TRUE){
 		s += 4;
 	}
 	return s;
@@ -489,6 +535,39 @@ static BOOL GetWebDocument(IUIAutomation *uia, IUIAutomationElement *root, IUIAu
 }
 
 
+/* アドレスバーの表示からURLを作成する (スキームを省略して表示されている場合は http とする、URLでない場合は NULL) */
+static char *UrlFromBar(const WCHAR *value)
+{
+	const WCHAR *wt;
+	WCHAR *tmp;
+	char *ret;
+	BOOL host;
+
+	if(value == NULL){
+		return NULL;
+	}
+	if((ret = ToUrl(value)) != NULL){
+		return ret;
+	}
+	//スキームを省略して表示されている場合 (http から https へは移動されるため http とする)
+	host = (value[0] != L'\0') ? TRUE : FALSE;
+	for(wt = value; *wt != L'\0' && *wt != L'/'; wt++){
+		if(*wt == L' ' || (*wt == L':' && !(*(wt + 1) >= L'0' && *(wt + 1) <= L'9'))){
+			host = FALSE;
+		}
+	}
+	if(host == FALSE || HasCharW(value, L'.') == FALSE ||
+		(tmp = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (lstrlenW(value) + 8) * sizeof(WCHAR))) == NULL){
+		return NULL;
+	}
+	lstrcpyW(tmp, L"http://");
+	lstrcatW(tmp, value);
+	ret = ToUrl(tmp);
+	HeapFree(GetProcessHeap(), 0, tmp);
+	return ret;
+}
+
+
 /******************************************************************************
 
 	GetWindowPage
@@ -502,7 +581,8 @@ static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 	IUIAutomationElement *root = NULL, *bar = NULL;
 	IUIAutomationCondition *c1, *c2, *c3, *cor = NULL, *cbar = NULL, *cdoc;
 	BSTR value = NULL;
-	WCHAR *tmp = NULL, *wt;
+	WCHAR *wt;
+	char *barurl;
 	DWORD start;
 	BOOL ret = FALSE;
 
@@ -531,12 +611,14 @@ static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 		return FALSE;
 	}
 	value = GetStringProperty(bar, UIA_ValueValuePropertyId);
+	barurl = UrlFromBar(value);
 
 	//ページの文書から URL とタイトルを取得する
 	//(ブラウザ内部の画面 (同期の案内など) も文書になるため URL が http, https のものを使用する)
 	cdoc = TypeCondition(uia, UIA_DocumentControlTypeId);
 	if(cdoc != NULL){
-		if(GetWebDocument(uia, root, cdoc, value, page) == FALSE){
+		//アドレスバーが Web のページでない場合 (新しいタブや設定の画面) は文書が現れるのを待たない
+		if(GetWebDocument(uia, root, cdoc, value, page) == FALSE && barurl != NULL){
 			WakeAccessibility(hWnd);
 			for(start = GetTickCount(); GetTickCount() - start < BROWSER_DOC_WAIT;){
 				Sleep(BROWSER_DOC_INTERVAL);
@@ -549,24 +631,12 @@ static BOOL GetWindowPage(IUIAutomation *uia, HWND hWnd, BROWSER_PAGE *page)
 	}
 
 	//取得できない場合はアドレスバーとウィンドウのタイトルを使用する
-	if(page->Url == NULL && value != NULL){
-		page->Url = ToUrl(value);
-		if(page->Url == NULL){
-			//スキームを省略して表示されている場合 (http から https へは移動されるため http とする)
-			BOOL host = (value[0] != L'\0') ? TRUE : FALSE;
-			for(wt = value; *wt != L'\0' && *wt != L'/'; wt++){
-				if(*wt == L' ' || (*wt == L':' && !(*(wt + 1) >= L'0' && *(wt + 1) <= L'9'))){
-					host = FALSE;
-				}
-			}
-			if(host == TRUE && HasCharW(value, L'.') == TRUE &&
-				(tmp = (WCHAR *)HeapAlloc(GetProcessHeap(), 0, (lstrlenW(value) + 8) * sizeof(WCHAR))) != NULL){
-				lstrcpyW(tmp, L"http://");
-				lstrcatW(tmp, value);
-				page->Url = ToUrl(tmp);
-				HeapFree(GetProcessHeap(), 0, tmp);
-			}
-		}
+	if(page->Url == NULL){
+		page->Url = barurl;
+		barurl = NULL;
+	}
+	if(barurl != NULL){
+		HeapFree(GetProcessHeap(), 0, barurl);
 	}
 	//タイトルは選択しているタブの名前、無い場合はウィンドウのタイトルを使用する
 	if(page->Url != NULL && page->Title == NULL && (wt = SelectedTabTitle(uia, root)) != NULL){
