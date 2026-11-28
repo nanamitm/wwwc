@@ -365,9 +365,16 @@ INT_PTR CALLBACK AniProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		break;
 
 	case WM_CLOSE:
-		//ビットマップを破棄
-		DeleteObject(hBmp);
 		DestroyWindow(hDlg);
+		break;
+
+	case WM_DESTROY:
+		//ビットマップを破棄
+		//(ツールバーを作り直すときは、子のこのウィンドウは WM_CLOSE 無しで破棄される)
+		if(hBmp != NULL){
+			DeleteObject(hBmp);
+			hBmp = NULL;
+		}
 		break;
 
 	case WM_LBUTTONDBLCLK:
