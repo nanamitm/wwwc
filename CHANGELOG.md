@@ -120,6 +120,12 @@
   server's log and each test's data folder; the release notes take only the
   lines of the version's section (an empty section stops the release instead
   of taking in the headings around it).
+- The installer also installs licenses\THIRD-PARTY-NOTICES.txt (where the
+  source code of win32-darkmodelib is and which version is used), like the zip
+  package. Both are written by tools\third-party-notices.ps1, which stops when
+  the darkmodelib submodule is not a checkout of its own or has local changes.
+- tools\make-package.ps1 requires PowerShell 7 (Windows PowerShell 5.1 made
+  zip entries with backslashes) and reports a missing version clearly.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

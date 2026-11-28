@@ -1,3 +1,6 @@
+#Requires -Version 7
+# (Compress-Archive of Windows PowerShell 5.1 writes the zip entries with
+# backslashes, which other unzip tools take as part of the file name)
 <#
 .SYNOPSIS
   Builds the distribution zip of WWWC for one platform.
@@ -19,8 +22,9 @@ param(
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot
 
-$version = (Select-String -Path (Join-Path $root "version.h") -Pattern '#define\s+WWWC_VERSION_STR\s+"([^"]+)"').Matches[0].Groups[1].Value
-if (-not $version) { throw "WWWC_VERSION_STR not found in version.h" }
+$m = Select-String -Path (Join-Path $root "version.h") -Pattern '#define\s+WWWC_VERSION_STR\s+"([^"]+)"'
+if (-not $m) { throw "WWWC_VERSION_STR not found in version.h" }
+$version = $m.Matches[0].Groups[1].Value
 
 $name = "wwwc-$version-$Platform"
 New-Item -ItemType Directory -Force $OutDir | Out-Null
@@ -47,19 +51,9 @@ Copy-Item (Join-Path $dm "LICENSE-MIT.md") (Join-Path $stage "licenses\darkmodel
 Get-ChildItem (Join-Path $dm "docs") -Filter "LICENSE-*.md" | ForEach-Object {
   Copy-Item $_.FullName (Join-Path $stage "licenses\darkmodelib-$($_.Name)")
 }
-$commit = (git -C $dm rev-parse HEAD).Trim()
-@"
-Third-party software in WWWC $version
-
-win32-darkmodelib
-  Used for the dark mode. Licensed under the Mozilla Public License 2.0
-  (some files under the MIT License); see darkmodelib-*.md in this folder.
-  Source code: https://github.com/ozone10/win32-darkmodelib
-  Version used: commit $commit (not modified)
-
-RSA Data Security, Inc. MD5 Message-Digest Algorithm
-  Used for the MD5 check. See the notice at the end of readme.txt.
-"@ | Set-Content -Path (Join-Path $stage "licenses\THIRD-PARTY-NOTICES.txt") -Encoding utf8
+# the source and version of the third-party code (stops when darkmodelib is
+# not a checkout of its own or has local changes)
+& (Join-Path $PSScriptRoot "third-party-notices.ps1") -Version $version -OutFile (Join-Path $stage "licenses\THIRD-PARTY-NOTICES.txt")
 
 $zip = Join-Path $OutDir "$name.zip"
 if (Test-Path $zip) { Remove-Item $zip }
