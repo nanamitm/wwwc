@@ -12,7 +12,9 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # a new push to a pull request replaces its older run; runs for main and tags
+  # all finish, so every merge commit and release keeps its result
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -71,9 +73,25 @@ jobs:
       - name: Test
         if: matrix.configuration == 'Release'
         shell: pwsh
+        env:
+          WWWC_TEST_ROOT: ${{ runner.temp }}/wwwc-tests
         run: |
           $bin = if ('${{ matrix.platform }}' -eq 'x64') { 'x64\Release' } else { 'Release' }
           ./tests/run-tests.ps1 -BinDir $bin
+
+      # the failures, the test server's log and each test's data folder (the
+      # copied binaries are left out)
+      - name: Upload test logs
+        if: failure() && matrix.configuration == 'Release'
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs-${{ matrix.platform }}
+          path: |
+            ${{ runner.temp }}/wwwc-tests/last-results.txt
+            ${{ runner.temp }}/wwwc-tests/server.*
+            ${{ runner.temp }}/wwwc-tests/*/data/
+          if-no-files-found: ignore
+          retention-days: 14
 
       - name: Upload binaries
         if: matrix.configuration == 'Release'
@@ -123,13 +141,18 @@ jobs:
           WWWC_TEST_ROOT: ${{ runner.temp }}/wwwc-tests
         run: ./tests/run-tests.ps1 -BinDir asan-build\x64
 
-      - name: Upload AddressSanitizer reports
+      - name: Upload AddressSanitizer reports and test logs
         if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: asan-reports
-          path: ${{ runner.temp }}/wwwc-tests/asan/
+          path: |
+            ${{ runner.temp }}/wwwc-tests/asan/
+            ${{ runner.temp }}/wwwc-tests/last-results.txt
+            ${{ runner.temp }}/wwwc-tests/server.*
+            ${{ runner.temp }}/wwwc-tests/*/data/
           if-no-files-found: ignore
+          retention-days: 14
 
   # On a version tag (v1.2.0 etc.): package the tested Release builds and create
   # a draft GitHub release. Publishing the draft is done by hand.
@@ -172,7 +195,16 @@ jobs:
           if ($start -lt 0) { throw "CHANGELOG.md has no section for $env:VERSION" }
           $end = $start + 1
           while ($end -lt $lines.Count -and $lines[$end] -notmatch '^## ') { $end++ }
-          $lines[($start + 1)..($end - 1)] | Set-Content release-notes.md -Encoding utf8
+          # lines between this heading and the next one, without blank lines at either end
+          # (a range a..b with b < a counts down, which would take in the heading itself)
+          # (assigned directly: a one-line array returned from an if block would become a string)
+          $notes = @()
+          if ($end -gt $start + 1) { $notes = @($lines[($start + 1)..($end - 1)]) }
+          $first = 0; $last = $notes.Count - 1
+          while ($first -le $last -and $notes[$first].Trim() -eq '') { $first++ }
+          while ($last -ge $first -and $notes[$last].Trim() -eq '') { $last-- }
+          if ($first -gt $last) { throw "the section for $env:VERSION in CHANGELOG.md is empty" }
+          $notes[$first..$last] | Set-Content release-notes.md -Encoding utf8
 
       - name: Create the draft release
         shell: pwsh

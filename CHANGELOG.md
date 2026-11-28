@@ -115,6 +115,11 @@
   first used.
 - The URL list frees the items it made when an allocation fails, and the FILE
   check and properties check their allocations.
+- CI: a new push cancels an older run only for pull requests (runs for main
+  and tags always finish); a failed test run uploads the failures, the test
+  server's log and each test's data folder; the release notes take only the
+  lines of the version's section (an empty section stops the release instead
+  of taking in the headings around it).
 - The installer also installs licenses\THIRD-PARTY-NOTICES.txt (where the
   source code of win32-darkmodelib is and which version is used), like the zip
   package. Both are written by tools\third-party-notices.ps1, which stops when
