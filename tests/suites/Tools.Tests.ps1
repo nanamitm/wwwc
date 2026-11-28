@@ -123,7 +123,8 @@ Test-Case "open URL tool: a URL with a quote is not passed to the browser" {
   Assert-True (Wait-Until { (Get-Dialogs $e).Count -gt 0 } 10) "a message is shown"
   Start-Sleep 2
   Assert-True (-not (Test-Path $record)) "the browser was not started"
-  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  # the message that the URL is not opened is expected
+  Assert-Equal 0 (Stop-Wwwc $e -AllowMessageBox) "exit code"
 }
 
 # A program tool (cmd.exe) registered in user.ini. Values are written in quotes:

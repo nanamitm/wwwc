@@ -29,7 +29,7 @@ Test-Case 'per-item archive disable keeps its field separate from the certificat
   $mark = Get-ServerMark
   Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $mark) -match '^GET /target ' } 10) 'page was checked'
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) 'exit code'
   Assert-True (-not (Test-Path ($e.Data + '.archive'))) 'disabled item did not create an archive'
   $saved = Get-SavedItem $e 'not archived'
