@@ -185,6 +185,9 @@ foreach ($from in $targetFiles.Keys) {
 	New-Item -Path (Split-Path -Parent $to) -ItemType Directory -Force | Out-Null
 	Copy-Item -Path $from -Destination $to -Force
 }
+# サードパーティのコードのソースの入手先とバージョン (zip の配布物と同じ内容)
+& (Join-Path $RootDir "tools\third-party-notices.ps1") -Version $ver.Text `
+	-OutFile (Join-Path $stageDir "licenses\THIRD-PARTY-NOTICES.txt")
 if (Test-Path $zipPath) {
 	Remove-Item -Path $zipPath -Force
 }
@@ -192,4 +195,4 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 [System.IO.Compression.ZipFile]::CreateFromDirectory(
 	$stageDir, $zipPath, [System.IO.Compression.CompressionLevel]::Optimal, $false)
 Write-Host ("payload.zip を作成しました ({0} ファイル / {1:N0} bytes)" -f `
-	$targetFiles.Count, (Get-Item $zipPath).Length)
+	($targetFiles.Count + 1), (Get-Item $zipPath).Length)
