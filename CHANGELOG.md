@@ -67,6 +67,11 @@
   that character.
 - The character set detection checks the upper bound of the second byte of
   EUC-JP (0xFE); a second byte 0xFF was taken as EUC-JP.
+- Tests: Assert-Equal compares strings case-sensitively and arrays element by
+  element, credentials are matched case-sensitively, the tests wait for the
+  end of a check (Wait-CheckEnd) and for the copied URL on the clipboard
+  instead of a fixed time, and a message box
+  still open when WWWC is closed fails the test unless it is expected.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a
