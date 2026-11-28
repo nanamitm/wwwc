@@ -102,6 +102,11 @@
 - Getting pages from the browser does not wait for a page in windows whose
   address bar is not a web page (such as a new tab), and no longer reads past
   the end of short address bar texts.
+- CI: a new push cancels an older run only for pull requests (runs for main
+  and tags always finish); a failed test run uploads the failures, the test
+  server's log and each test's data folder; the release notes take only the
+  lines of the version's section (an empty section stops the release instead
+  of taking in the headings around it).
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a
