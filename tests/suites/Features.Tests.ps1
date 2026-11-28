@@ -533,3 +533,88 @@ Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
   Assert-Equal "6442450951" $second.Size.TrimEnd("*") "upper 32 bits are preserved"
   Assert-True (($second.Status -band 1) -ne 0) "a 4 GiB size increase is detected without date comparison"
 }
+
+## HTTP item properties: comment escapes, option separators, long meta values
+
+# Open the property sheet of the selected item and return it (or $null)
+function Open-ItemProperties($Env, [string]$Title) {
+  Select-ListItem $Env $Title
+  Send-Command $Env $CMD_PROP
+  $box = @{ Sheet = $null }
+  [void](Wait-Until { $box.Sheet = Get-Dialogs $Env | Select-Object -First 1; $null -ne $box.Sheet } 10)
+  if ($box.Sheet -and $box.Sheet.Title -like "$Title*") { return $box.Sheet }
+  Assert-True $false "item property sheet opened ('$($box.Sheet.Title)')"
+  return $null
+}
+
+# Show a page of the property sheet and return its window
+function Select-PropertyPage($Sheet, [int]$Index) {
+  [void][WwwcWin]::SendMessage($Sheet.Handle, 0x0400 + 101, [IntPtr]$Index, [IntPtr]::Zero)          # PSM_SETCURSEL
+  Start-Sleep -Milliseconds 500
+  [WwwcWin]::SendMessage($Sheet.Handle, 0x0400 + 118, [IntPtr]::Zero, [IntPtr]::Zero)                  # PSM_GETCURRENTPAGEHWND
+}
+
+function Close-ItemProperties($Sheet) {
+  [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($Sheet.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)   # OK
+  Assert-True (Wait-Until { -not [WwwcWin]::IsWindow($Sheet.Handle) } 5) "property sheet closed"
+}
+
+# The fields of an item line in Item.dat
+function Get-ItemFields($Env, [string]$Title) {
+  $line = $script:Enc.GetString([IO.File]::ReadAllBytes($Env.ItemFile)) -split "`r`n" | Where-Object { $_ -like "$Title`t*" } | Select-Object -First 1
+  if ($null -eq $line) { return @() }
+  return ,($line -split "`t")
+}
+
+Test-Case "a backslash in an item comment is kept by the HTTP properties" {
+  $e = New-TestEnv "prop-comment" $BinDir
+  # Item.dat stores a backslash as \\ and a line break as \n; WWWC decodes them before the properties open
+  Set-Items $e @("note`t$(Url '/target')`t`t`t0`t`t`t`t`t2`t0;;0;;;;;;0;;;;;;;;0`t" + 'see C:\\new\nnext' + "`t0`t`t`t")
+  [void](Start-Wwwc $e)
+  $sheet = Open-ItemProperties $e "note"
+  if ($sheet) { Close-ItemProperties $sheet }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-Equal 'see C:\\new\nnext' (Get-ItemFields $e "note")[11] "comment after OK"
+}
+
+Test-Case "a ';;' typed in an option value does not shift the later option fields" {
+  $e = New-TestEnv "prop-separator" $BinDir
+  Set-Items $e @(ItemLine "sep" (Url "/target"))
+  [void](Start-Wwwc $e)
+  $sheet = Open-ItemProperties $e "sep"
+  if ($sheet) {
+    $page = Select-PropertyPage $sheet 2
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1001), 0x000C, [IntPtr]::Zero, "https://r/;;1")       # referer
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1058), 0x000C, [IntPtr]::Zero, "agent;")             # User-Agent
+    Close-ItemProperties $sheet
+  }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $opt = (Get-ItemFields $e "sep")[10] -split ';;'
+  Assert-Equal "https://r/; 1" $opt[7] "referer"
+  Assert-Equal "0" $opt[8] "certificate errors are still not ignored"
+  Assert-Equal "agent" $opt[14] "User-Agent"
+}
+
+Test-Case "long meta values are saved in full with the options after them" {
+  $e = New-TestEnv "prop-meta" $BinDir
+  Set-Items $e @(ItemLine "meta" (Url "/target"))
+  [void](Start-Wwwc $e)
+  $sheet = Open-ItemProperties $e "meta"
+  $type = "t" * 900; $name = "n" * 900; $content = "c" * 900
+  if ($sheet) {
+    $page = Select-PropertyPage $sheet 1
+    [void][WwwcWin]::SendMessage([WwwcWin]::GetDlgItem($page, 1013), 0x00F1, [IntPtr]1, [IntPtr]::Zero)               # meta: BM_SETCHECK
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1012), 0x000C, [IntPtr]::Zero, $type)
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1014), 0x000C, [IntPtr]::Zero, $name)
+    [void][WwwcWin]::SendMessageText([WwwcWin]::GetDlgItem($page, 1015), 0x000C, [IntPtr]::Zero, $content)
+    Close-ItemProperties $sheet
+  }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  $opt = (Get-ItemFields $e "meta")[9] -split ';;'
+  Assert-Equal 9 $opt.Count "number of check option fields"
+  if ($opt.Count -ge 9) {
+    Assert-Equal "1" $opt[4] "meta is on"
+    Assert-Equal $content $opt[7] "meta content"
+    Assert-Equal "0" $opt[8] "MD5 field"
+  }
+}

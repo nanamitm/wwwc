@@ -71,6 +71,10 @@ int ArchiveBrowserWait;							/* ブラウザで読み込み後にスクリプ�
 char DateFormat[BUFSIZE];
 char TimeFormat[BUFSIZE];
 
+//プロキシのパスワード (復号に DLL の読み込みを伴うため DllMain では行わず、使用する前に読み込む)
+static SRWLOCK ProxyPassLock = SRWLOCK_INIT;
+static BOOL ProxyPassLoaded = FALSE;
+
 
 extern FILTER *FilterInfo;
 
@@ -88,7 +92,6 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	char *p, *r;
 	char CuDir[BUFSIZE];
 	char buf[BUFSIZE];
-	char pbuf[PASS_BUFSIZE];
 
 	GetModuleFileName(ghinst, CuDir, BUFSIZE - 1);
 	p = r = CuDir;
@@ -147,16 +150,11 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	pNoCache = GetPrivateProfileInt("PROXY", "pNoCache", 1, app_path);
 	pUsePass = GetPrivateProfileInt("PROXY", "pUsePass", 0, app_path);
 	GetPrivateProfileString("PROXY", "pUser", "", pUser, BUFSIZE - 1, app_path);
-	GetPrivateProfileString("PROXY", "pPass", "", pbuf, PASS_BUFSIZE - 1, app_path);
-	DecodePassword(pbuf, pPass, BUFSIZE);
-	if(*pbuf && !IsEncryptedPassword(pbuf)){
-		char encrypted[PASS_ENC_SIZE];
-		if(EncodePassword(pPass, encrypted, sizeof(encrypted))){
-			WritePrivateProfileString("PROXY", "pPass", encrypted, app_path);
-		}
-		SecureZeroMemory(encrypted, sizeof(encrypted));
-	}
-	SecureZeroMemory(pbuf, sizeof(pbuf));
+	//パスワードは使用するときに読み込み直す
+	AcquireSRWLockExclusive(&ProxyPassLock);
+	ProxyPassLoaded = FALSE;
+	SecureZeroMemory(pPass, BUFSIZE);
+	ReleaseSRWLockExclusive(&ProxyPassLock);
 
 	GetPrivateProfileString("HTTP", "BrowserPath", "", BrowserPath, BUFSIZE - 1, app_path);
 
@@ -165,6 +163,53 @@ __declspec(dllexport) int CALLBACK DllInitialize(void)
 	}
 	Archive_Init();
 	return 0;
+}
+
+
+/******************************************************************************
+
+	EnsureProxyPassword
+
+	プロキシのパスワードを読み込む (初回のみ、従来の形式の場合は暗号化して保存し直す)
+	CryptUnprotectData は DLL を読み込むことがあるため DllMain からは呼ばない
+
+******************************************************************************/
+
+void EnsureProxyPassword(void)
+{
+	char pbuf[PASS_BUFSIZE];
+
+	AcquireSRWLockExclusive(&ProxyPassLock);
+	if(ProxyPassLoaded == FALSE){
+		GetPrivateProfileString("PROXY", "pPass", "", pbuf, PASS_BUFSIZE - 1, app_path);
+		DecodePassword(pbuf, pPass, BUFSIZE);
+		if(*pbuf && !IsEncryptedPassword(pbuf)){
+			char encrypted[PASS_ENC_SIZE];
+			if(EncodePassword(pPass, encrypted, sizeof(encrypted))){
+				WritePrivateProfileString("PROXY", "pPass", encrypted, app_path);
+			}
+			SecureZeroMemory(encrypted, sizeof(encrypted));
+		}
+		SecureZeroMemory(pbuf, sizeof(pbuf));
+		ProxyPassLoaded = TRUE;
+	}
+	ReleaseSRWLockExclusive(&ProxyPassLock);
+}
+
+
+/******************************************************************************
+
+	LoadRichEdit
+
+	ソースの表示に使う RichEdit を読み込む (DllMain では LoadLibrary を呼ばない)
+
+******************************************************************************/
+
+void LoadRichEdit(void)
+{
+	if(hRTFLibdll == NULL){
+		hRTFLibdll = LoadLibrary("RICHED32.DLL");
+	}
 }
 
 
@@ -186,17 +231,11 @@ int WINAPI DllMain(HINSTANCE hInst, DWORD fdwReason, PVOID pvReserved)
 
 		InitCommonControls();
 		DllInitialize();
-
-		if(hRTFLibdll == NULL){
-			hRTFLibdll = LoadLibrary("RICHED32.DLL");
-		}
         break;
 
     case DLL_PROCESS_DETACH:
-		if(hRTFLibdll != NULL){
-			FreeLibrary(hRTFLibdll);
-			hRTFLibdll = NULL;
-		}
+		//RichEdit は FreeLibrary を DllMain で呼ばないため解放しない (プロセスの終了時に解放される)
+		SecureZeroMemory(pPass, BUFSIZE);
 		FreeFilter();
 		FreeResStr();
         break;

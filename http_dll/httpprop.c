@@ -19,6 +19,7 @@
 #include <windows.h>
 #undef  _INC_OLE
 #include <commctrl.h>
+#include <stdio.h>
 
 #include "String.h"
 #include "httptools.h"
@@ -237,7 +238,7 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 	struct TPITEM *tpItemInfo;
 	char tmp[BUFSIZE];
 	char *buf;
-	char *p, *r;
+	char *p;
 	int len;
 
 	switch (uMsg)
@@ -262,28 +263,9 @@ static INT_PTR CALLBACK PropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM
 
 		/* コメント */
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), EM_LIMITTEXT, MAXSIZE - 2, 0);
+		//改行のエスケープは WWWC が戻してから渡すため、そのまま表示する
 		if(tpItemInfo->Comment != NULL){
-			buf = (char *)GlobalAlloc(GPTR, lstrlen(tpItemInfo->Comment) + 1);
-			if(buf != NULL){
-				for(p = tpItemInfo->Comment, r = buf ;*p != '\0'; p++){
-					if(IS_LEAD_BYTE(p)){
-						*(r++) = *(p++);
-						*(r++) = *p;
-					}else if(*p == '\\' && *(p + 1) == 'n'){
-						*(r++) = '\r';
-						*(r++) = '\n';
-						p++;
-					}else if(*p == '\\' && *(p + 1) == '\\'){
-						*(r++) = '\\';
-						p++;
-					}else{
-						*(r++) = *p;
-					}
-				}
-				*r = '\0';
-				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_SETTEXT, 0, (LPARAM)buf);
-				GlobalFree(buf);
-			}
+			SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_SETTEXT, 0, (LPARAM)tpItemInfo->Comment);
 		}
 
 		/* サイズ */
@@ -450,6 +432,7 @@ static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, L
 	char name[BUFSIZE];
 	char content[BUFSIZE];
 	int ReqType;
+	int len;
 	BOOL EnableFlag;
 
 	switch (uMsg)
@@ -551,14 +534,19 @@ static INT_PTR CALLBACK PropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM wParam, L
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_META_TYPE), WM_GETTEXT, BUFSIZE - 1, (LPARAM)type);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_META_TYPENAME), WM_GETTEXT, BUFSIZE - 1, (LPARAM)name);
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_META_CONTENT), WM_GETTEXT, BUFSIZE - 1, (LPARAM)content);
+			//区切りになる並びを除く
+			SanitizeOptionValue(type);
+			SanitizeOptionValue(name);
+			SanitizeOptionValue(content);
 
 			if(tpItemInfo->Option1 != NULL){
 				GlobalFree(tpItemInfo->Option1);
 			}
-			tpItemInfo->Option1 = (char *)GlobalAlloc(GPTR,
-				30 + lstrlen(type) + lstrlen(name) + lstrlen(content));
+			len = 30 + lstrlen(type) + lstrlen(name) + lstrlen(content);
+			tpItemInfo->Option1 = (char *)GlobalAlloc(GPTR, len);
 			if(tpItemInfo->Option1 != NULL){
-				wsprintf(tpItemInfo->Option1, "%d;;%d;;%d;;%d;;%d;;%s;;%s;;%s;;%d",
+				//wsprintf は 1024 文字までしか出力しないため使わない
+				_snprintf_s(tpItemInfo->Option1, len, _TRUNCATE, "%d;;%d;;%d;;%d;;%d;;%s;;%s;;%s;;%d",
 					ReqType,
 					!IsDlgButtonChecked(hDlg, IDC_CHECK_DATE),
 					!IsDlgButtonChecked(hDlg, IDC_CHECK_SIZE),
@@ -709,6 +697,12 @@ static INT_PTR CALLBACK PropertyOptionProc(HWND hDlg, UINT uMsg, WPARAM wParam, 
 			*ua = '\0';
 			SendMessage(GetDlgItem(hDlg, IDC_EDIT_USERAGENT), WM_GETTEXT, BUFSIZE - 1, (LPARAM)ua);
 			NormalizeUserAgent(ua);
+			//区切りになる並びを除く (後ろの項目がずれないようにする)
+			SanitizeOptionValue(proxy);
+			SanitizeOptionValue(port);
+			SanitizeOptionValue(user);
+			SanitizeOptionValue(referer);
+			SanitizeOptionValue(ua);
 
 			//アーカイブの設定など、以降の項目はそのまま残す
 			wsprintf(nb, "%d", IsDlgButtonChecked(hDlg, IDC_CHECK_NOPROXY));
@@ -1097,6 +1091,7 @@ static INT_PTR CALLBACK ProtocolPropertyCheckProc(HWND hDlg, UINT uMsg, WPARAM w
 
 		CheckDlgButton(hDlg, IDC_CHECK_USEPASS, pUsePass);
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_USER), WM_SETTEXT, 0, (LPARAM)pUser);
+		EnsureProxyPassword();
 		SendMessage(GetDlgItem(hDlg, IDC_EDIT_PASS), WM_SETTEXT, 0, (LPARAM)pPass);
 
 		EnableProxyControls(hDlg);

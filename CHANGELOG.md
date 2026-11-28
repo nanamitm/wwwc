@@ -102,6 +102,19 @@
 - Getting pages from the browser does not wait for a page in windows whose
   address bar is not a web page (such as a new tab), and no longer reads past
   the end of short address bar texts.
+- The HTTP item properties keep a backslash in the comment; the escapes were
+  decoded a second time, so `C:\new` became a line break.
+- A `;;` or a trailing `;` typed in an option value of the item properties
+  (meta values, proxy, user, referer, User-Agent) no longer shifts the later
+  option fields (a referer ending in `;;1` turned on ignoring certificate
+  errors).
+- Long meta values are saved in full; the check options were cut at 1024
+  characters and lost the MD5 setting.
+- wwwc.dll no longer calls LoadLibrary or decrypts the proxy password in
+  DllMain; RichEdit is loaded for the source view and the password when it is
+  first used.
+- The URL list frees the items it made when an allocation fails, and the FILE
+  check and properties check their allocations.
 - CI: a new push cancels an older run only for pull requests (runs for main
   and tags always finish); a failed test run uploads the failures, the test
   server's log and each test's data folder; the release notes take only the

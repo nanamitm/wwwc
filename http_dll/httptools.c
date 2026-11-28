@@ -217,6 +217,31 @@ static LRESULT DialogLvNotifyProc(HWND hWnd, LPARAM lParam, HWND hListView)
 
 /******************************************************************************
 
+	FreeItemList
+
+	作成途中のアイテムリストを解放する (cnt は確保したアイテムの数)
+
+******************************************************************************/
+
+static void FreeItemList(struct TPITEM **ItemList, int cnt)
+{
+	int i;
+
+	for(i = 0; i < cnt; i++){
+		if(*(ItemList + i) == NULL){
+			continue;
+		}
+		if((*(ItemList + i))->Title != NULL) GlobalFree((*(ItemList + i))->Title);
+		if((*(ItemList + i))->CheckURL != NULL) GlobalFree((*(ItemList + i))->CheckURL);
+		if((*(ItemList + i))->ViewURL != NULL) GlobalFree((*(ItemList + i))->ViewURL);
+		GlobalFree(*(ItemList + i));
+	}
+	GlobalFree(ItemList);
+}
+
+
+/******************************************************************************
+
 	URLListroc
 
 	URL一覧表示ダイアログのプロシージャ
@@ -237,7 +262,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg)
 	{
 	case WM_INITDIALOG:
-		SetWindowLongPtr(hDlg, DWLP_USER, (long)lParam);
+		SetWindowLongPtr(hDlg, DWLP_USER, (LONG_PTR)lParam);
 
 		i = 0;
 		lvc.mask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM;
@@ -319,9 +344,11 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				//アイテムリストの作成
 				SelectItem = -1;
 				i = 0;
-				while((SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), SelectItem, LVNI_SELECTED)) != -1){
+				cnt = ListView_GetSelectedCount(GetDlgItem(hDlg, IDC_LIST));
+				while(i < cnt && (SelectItem = ListView_GetNextItem(GetDlgItem(hDlg, IDC_LIST), SelectItem, LVNI_SELECTED)) != -1){
 					*(ItemList + i) = (struct TPITEM *)GlobalAlloc(GPTR, sizeof(struct TPITEM));
 					if(*(ItemList + i) == NULL){
+						FreeItemList(ItemList, i);
 						EndDialog(hDlg, FALSE);
 						return TRUE;
 					}
@@ -330,6 +357,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					ListView_GetItemText(GetDlgItem(hDlg, IDC_LIST), SelectItem, 0, Title, MAXSIZE - 1);
 					(*(ItemList + i))->Title = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(Title) + 1);
 					if((*(ItemList + i))->Title == NULL){
+						FreeItemList(ItemList, i + 1);
 						EndDialog(hDlg, FALSE);
 						return TRUE;
 					}
@@ -340,6 +368,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					ListView_GetItemText(GetDlgItem(hDlg, IDC_LIST), SelectItem, 2, URL, MAXSIZE - 1);
 					(*(ItemList + i))->CheckURL = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(URL) + 1);
 					if((*(ItemList + i))->CheckURL == NULL){
+						FreeItemList(ItemList, i + 1);
 						EndDialog(hDlg, FALSE);
 						return TRUE;
 					}
@@ -349,6 +378,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 						//表示するURLの設定
 						(*(ItemList + i))->ViewURL = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(URL) + 1);
 						if((*(ItemList + i))->ViewURL == NULL){
+							FreeItemList(ItemList, i + 1);
 							EndDialog(hDlg, FALSE);
 							return TRUE;
 						}
@@ -357,7 +387,7 @@ INT_PTR CALLBACK URLListroc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
 					i++;
 				}
 				//本体に追加するようにメッセージを送信
-				SendMessage(pWnd, WM_SETITEMLIST, ListView_GetSelectedCount(GetDlgItem(hDlg, IDC_LIST)), (LPARAM)ItemList);
+				SendMessage(pWnd, WM_SETITEMLIST, i, (LPARAM)ItemList);
 				GlobalFree(ItemList);
 
 			}else{

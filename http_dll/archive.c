@@ -3074,6 +3074,7 @@ static void GetProxy(struct TPITEM *tpItemInfo, ARCHIVE_JOB *job)
 	job->ProxyName = WideDup(proxy);
 	//認証情報は全体の設定のプロキシにのみ送る
 	if(pUsePass == 1 && px == pServer){
+		EnsureProxyPassword();
 		job->ProxyUser = WideDup(pUser);
 		job->ProxyPass = WideDup(pPass);
 	}

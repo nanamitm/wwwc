@@ -154,6 +154,10 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 			GlobalFree(tpItemInfo->Size);
 		}
 		tpItemInfo->Size = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(buf) + 1);
+		if(tpItemInfo->Size == NULL){
+			SendMessage(hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
+			return CHECK_END;
+		}
 		lstrcpy(tpItemInfo->Size, buf);
 
 		//更新日の比較
@@ -189,6 +193,10 @@ __declspec(dllexport) int CALLBACK FILE_Start(HWND hWnd, struct TPITEM *tpItemIn
 			GlobalFree(tpItemInfo->Date);
 		}
 		tpItemInfo->Date = (char *)GlobalAlloc(GPTR, sizeof(char) * lstrlen(buf) + 1);
+		if(tpItemInfo->Date == NULL){
+			SendMessage(hWnd, WM_CHECK_RESULT, ST_ERROR, (LPARAM)tpItemInfo);
+			return CHECK_END;
+		}
 		lstrcpy(tpItemInfo->Date,buf);
 	}else{
 		CmpMsg = ST_ERROR;
@@ -365,24 +373,30 @@ static INT_PTR CALLBACK FilePropertyProc(HWND hDlg, UINT uMsg, WPARAM wParam, LP
 				GlobalFree(tpItemInfo->Title);
 			}
 			tpItemInfo->Title = GlobalAlloc(GPTR, SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1);
-			SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXT,
-				SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->Title);
+			if(tpItemInfo->Title != NULL){
+				SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXT,
+					SendMessage(GetDlgItem(hDlg, IDC_EDIT_TITLE), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->Title);
+			}
 
 			/* URL */
 			if(tpItemInfo->CheckURL != NULL){
 				GlobalFree(tpItemInfo->CheckURL);
 			}
 			tpItemInfo->CheckURL = GlobalAlloc(GPTR, SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1);
-			SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT,
-				SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->CheckURL);
+			if(tpItemInfo->CheckURL != NULL){
+				SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXT,
+					SendMessage(GetDlgItem(hDlg, IDC_EDIT_URL), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->CheckURL);
+			}
 
 			/* コメント */
 			if(tpItemInfo->Comment != NULL){
 				GlobalFree(tpItemInfo->Comment);
 			}
 			tpItemInfo->Comment = GlobalAlloc(GPTR, SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1);
-			SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT,
-				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->Comment);
+			if(tpItemInfo->Comment != NULL){
+				SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXT,
+					SendMessage(GetDlgItem(hDlg, IDC_EDIT_COMMENT), WM_GETTEXTLENGTH, 0, 0) + 1, (LPARAM)tpItemInfo->Comment);
+			}
 
 			/* チェックオプション */
 			if(tpItemInfo->Option1 != NULL){
