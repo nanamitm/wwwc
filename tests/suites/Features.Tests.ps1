@@ -274,10 +274,16 @@ Test-Case "copy and paste an item whose drop file path exceeds MAX_PATH" {
   [void](Wait-Until { @(Get-ListTitles $e | Where-Object { $_ -like "`u{3042}*" }).Count -gt 0 } 5)
   Select-ListItem $e (Get-ListTitles $e | Where-Object { $_ -like "`u{3042}*" } | Select-Object -First 1)
   Send-Command $e 40056                                         # ID_MENUITEM_COPY
-  Start-Sleep 1
+  # the copy may take a moment, and Get-Clipboard returns nothing while another
+  # process has the clipboard open: read it until the URL is there
+  $clip = @{ Text = "" }
+  [void](Wait-Until {
+    $clip.Text = (Get-Clipboard -Raw -ErrorAction SilentlyContinue) -replace "`r?`n$", ""
+    $e.Process.HasExited -or $clip.Text -ceq (Url "/longtitle")
+  } 5)
   Assert-True (-not $e.Process.HasExited) "WWWC is running after copy (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
   if (-not $e.Process.HasExited) {
-    Assert-Equal (Url "/longtitle") ((Get-Clipboard -Raw) -replace "`r?`n$", "") "clipboard text is the URL"
+    Assert-Equal (Url "/longtitle") $clip.Text "clipboard text is the URL"
     Send-Command $e 40060                                       # ID_MENUITEM_PASTE
     Assert-True (Wait-Until { @(Get-ListTitles $e).Count -ge 2 } 5) "pasted copy appears ($(@(Get-ListTitles $e).Count) items)"
     Assert-Equal 0 (Stop-Wwwc $e) "exit code"
