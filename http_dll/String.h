@@ -34,6 +34,7 @@ int GetURL(char *URL, char *server, char *path, int DefPort, char *user, char *p
 BOOL IsWebURL(char *URL);
 char *CreateMoveURL(char *FromURL, char *ToURL);
 BOOL GetOptionString(char *buf, char *ret, int num);
+void SanitizeOptionValue(char *buf);
 BOOL GetOptionStringEx(char *buf, char *ret, int size, int num);
 char *ReplaceOptionFields(char *buf, int start, int cnt, char **vals);
 void NormalizeUserAgent(char *buf);

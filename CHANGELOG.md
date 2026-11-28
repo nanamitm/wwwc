@@ -86,6 +86,19 @@
   same lock as adding it to the queue.
 - The archive progress window compares long titles and URLs in full, so they
   no longer flicker.
+- The HTTP item properties keep a backslash in the comment; the escapes were
+  decoded a second time, so `C:\new` became a line break.
+- A `;;` or a trailing `;` typed in an option value of the item properties
+  (meta values, proxy, user, referer, User-Agent) no longer shifts the later
+  option fields (a referer ending in `;;1` turned on ignoring certificate
+  errors).
+- Long meta values are saved in full; the check options were cut at 1024
+  characters and lost the MD5 setting.
+- wwwc.dll no longer calls LoadLibrary or decrypts the proxy password in
+  DllMain; RichEdit is loaded for the source view and the password when it is
+  first used.
+- The URL list frees the items it made when an allocation fails, and the FILE
+  check and properties check their allocations.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a
