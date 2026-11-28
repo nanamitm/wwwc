@@ -38,3 +38,32 @@ Test-Case 'per-item archive disable keeps its field separate from the certificat
   Assert-Equal '1' $savedOptions[8] 'legacy certificate exception preserved'
   Assert-Equal '1' $savedOptions[9] 'archive disable preserved'
 }
+
+Test-Case 'archived resources are marked as downloaded and data: pages are dropped' {
+  $e = New-TestEnv 'archive-res' $BinDir
+  Set-Items $e @(ItemLine 'resource page' (Url '/archive-res'))
+  [void](Start-Wwwc $e)
+  Send-Command $e $CMD_ALLCHECK
+  $archive = $e.Data + '.archive'
+  $saved = Wait-Until {
+    @(Get-ChildItem -LiteralPath $archive -Filter '*.svg' -File -Recurse -ErrorAction SilentlyContinue).Count -ge 1 -and
+    @(Get-ChildItem -LiteralPath $archive -Filter '*.html' -File -Recurse -ErrorAction SilentlyContinue | Where-Object Name -ne 'index.html').Count -ge 1
+  } 15
+  Assert-True $saved 'the page and its SVG were archived'
+  Start-Sleep 1
+  Assert-Equal 0 (Stop-Wwwc $e) 'exit code'
+  if ($saved) {
+    foreach ($svg in @(Get-ChildItem -LiteralPath $archive -Filter '*.svg' -File -Recurse)) {
+      $zone = Get-Content -LiteralPath $svg.FullName -Stream Zone.Identifier -Raw -ErrorAction SilentlyContinue
+      Assert-True ("$zone" -match 'ZoneId=3') "$($svg.Name) has the Mark of the Web"
+    }
+    $page = @(Get-ChildItem -LiteralPath $archive -Filter '*.html' -File -Recurse | Where-Object Name -ne 'index.html' |
+      Where-Object { (Get-Content -LiteralPath $_.FullName -Raw) -match 'resource page' })[0]
+    Assert-True ($null -ne $page) 'archived HTML contains the page'
+    if ($null -ne $page) {
+      $html = Get-Content -LiteralPath $page.FullName -Raw
+      Assert-True ($html -match 'data:image/png') 'data: image is kept'
+      Assert-True ($html -notmatch 'data:text/html') 'data: page link is dropped'
+    }
+  }
+}

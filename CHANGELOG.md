@@ -72,6 +72,20 @@
   end of a check (Wait-CheckEnd) and for the copied URL on the clipboard
   instead of a fixed time, and a message box
   still open when WWWC is closed fails the test unless it is expected.
+- The archive asks WWWC for the data folder with the size of its buffer
+  (the path was limited to 255 bytes).
+- Cancelling an archive no longer lets the download thread use the request
+  handle after it was closed.
+- The browser used for archiving inherits only its standard input and output
+  handles.
+- Every archived resource (such as SVG images) is marked as downloaded from
+  the internet, not only frame pages.
+- When JavaScript is not archived, only `data:image/` URLs are kept; other
+  `data:` URLs (such as `data:text/html` links) are removed.
+- The duplicate and queue size checks of an archive request are done in the
+  same lock as adding it to the queue.
+- The archive progress window compares long titles and URLs in full, so they
+  no longer flicker.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

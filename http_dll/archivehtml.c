@@ -694,7 +694,7 @@ static int AttrAction(const char *tag, long tlen, ATTR *attr, int cnt, ATTR *a, 
 /* 絶対URLにできないURLをそのまま残せるか (JavaScript を保存しない場合) */
 static BOOL KeepRawUrl(const char *v)
 {
-	static const char *scheme[] = { "mailto:", "tel:", "ftp:", "data:" };
+	static const char *scheme[] = { "mailto:", "tel:", "ftp:", "data:image/" };
 	const char *end;
 	int i;
 
@@ -711,7 +711,7 @@ static BOOL KeepRawUrl(const char *v)
 			return TRUE;
 		}
 	}
-	//javascript: など
+	//javascript: や data:text/html など
 	return FALSE;
 }
 

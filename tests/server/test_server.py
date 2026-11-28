@@ -178,6 +178,25 @@ class Handler(http.server.BaseHTTPRequestHandler):
             if send_body:
                 self.wfile.write(body)
             return
+        if path.startswith("/archive-res") or path.startswith("/pic.svg"):
+            # a page with an image resource and data: URLs (for the archive)
+            if path.startswith("/pic.svg"):
+                ctype = "image/svg+xml"
+                body = b'<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>'
+            else:
+                ctype = "text/html"
+                body = (b'<html><head><title>res page</title></head><body><p>resource page</p>'
+                        b'<img src="/pic.svg">'
+                        b'<img src="data:image/png;base64,iVBORw0KGgo=">'
+                        b'<a href="data:text/html,<b>x</b>">inline page</a>'
+                        b'</body></html>')
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            if send_body:
+                self.wfile.write(body)
+            return
         if path.startswith("/slow"):
             time.sleep(30)
         if path.startswith("/drip"):
