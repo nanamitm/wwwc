@@ -86,6 +86,22 @@
   same lock as adding it to the queue.
 - The archive progress window compares long titles and URLs in full, so they
   no longer flicker.
+- The uninstaller deletes the settings folder (%LOCALAPPDATA%\WWWC) with the
+  user's own rights instead of the administrator's, so a link put into the
+  folder while it is deleted cannot make it delete other files.
+- When the uninstaller does not delete the files (a network folder or a folder
+  that standard users can change), it says so and asks before removing WWWC
+  from the list of apps, instead of reporting a complete uninstall.
+- Updating to a different folder warns that the previous folder is not
+  deleted.
+- The installer treats a short write as a failure, and removes all the
+  folders it created when the destination turns out to be unsafe.
+- Getting pages from the browser checks only windows of known browsers; apps
+  built on Electron (VS Code, Teams and others) are no longer searched, which
+  was slow and turned on their accessibility support.
+- Getting pages from the browser does not wait for a page in windows whose
+  address bar is not a web page (such as a new tab), and no longer reads past
+  the end of short address bar texts.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a
