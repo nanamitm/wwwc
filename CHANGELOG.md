@@ -104,7 +104,7 @@
   the end of short address bar texts.
 - The installer also installs licenses\THIRD-PARTY-NOTICES.txt (where the
   source code of win32-darkmodelib is and which version is used), like the zip
-  package. Both are written by tools	hird-party-notices.ps1, which stops when
+  package. Both are written by tools\third-party-notices.ps1, which stops when
   the darkmodelib submodule is not a checkout of its own or has local changes.
 - tools\make-package.ps1 requires PowerShell 7 (Windows PowerShell 5.1 made
   zip entries with backslashes) and reports a missing version clearly.
