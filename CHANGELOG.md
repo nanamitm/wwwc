@@ -38,6 +38,12 @@
 - Tabs and line breaks in item fields (for example a tab pasted into the
   title in the item properties) are saved as spaces instead of shifting the
   fields of the record.
+- A DPI change no longer leaks GDI objects: the update icons added for each
+  protocol were not destroyed, and the bitmap of the check animation in the
+  toolbar was not deleted when the toolbar was rebuilt.
+- The icon selection returns the number of the icon in the file: when an
+  icon could not be extracted, the icons after it were saved with the wrong
+  number, and the previous (already destroyed) icon was added again.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

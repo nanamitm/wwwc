@@ -215,6 +215,32 @@ Test-Case "DPI change (simulated with WM_DPICHANGED)" {
 }
 
 
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+public static class WwwcGdi {
+  [DllImport("user32.dll")] static extern uint GetGuiResources(IntPtr hProcess, uint flags);
+  public static int Objects(IntPtr hProcess) { return (int)GetGuiResources(hProcess, 0); }   // GR_GDIOBJECTS
+}
+"@
+
+Test-Case "DPI changes do not leak GDI objects" {
+  $e = New-TestEnv "feat-dpileak" $BinDir
+  Set-Items $e @(ItemLine "page" (Url "/target"))
+  [void](Start-Wwwc $e)
+  $r = New-Object WwwcWin+RECT; [void][WwwcWin]::GetWindowRect($e.Window, [ref]$r)
+  # every DPI change rebuilds the icons and the toolbar: the update icons of the
+  # protocols and the bitmap of the check animation were not freed (about 12 GDI
+  # objects per change). Rebuilding the toolbar control itself still keeps about 5
+  $change = { param($dpi) [WwwcList]::SendDpiChanged($e.Window, $dpi, $r.L, $r.T, $r.R, $r.B); Start-Sleep -Milliseconds 300 }
+  & $change 144; & $change 120
+  $before = [WwwcGdi]::Objects($e.Process.Handle)
+  for ($i = 0; $i -lt 10; $i++) { & $change 144; & $change 120 }
+  $after = [WwwcGdi]::Objects($e.Process.Handle)
+  Assert-True ($after - $before -lt 160) "GDI objects after 20 more DPI changes: $before -> $after (less than 8 per change)"
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
 Test-Case "delete and undo an item with a clipboard record larger than 32 KiB" {
   $e = New-TestEnv "feat-longrecord" $BinDir
   $comment = "`u{3042}" * 12000

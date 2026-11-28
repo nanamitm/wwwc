@@ -91,6 +91,9 @@ static int SetListIcon(HWND hListView, char *path, int index)
 
 	for(i = 0; i < icon_cnt; i++){
 		//アイコンの抽出
+		//(取り出せなかった場合に前のアイコンのハンドルを使わないよう毎回 NULL にする)
+		hIcon = NULL;
+		hsIcon = NULL;
 		ExtractIconEx(path, i, &hIcon, &hsIcon, 1);
 
 		if(hIcon != NULL){
@@ -99,9 +102,10 @@ static int SetListIcon(HWND hListView, char *path, int index)
 			DestroyIcon(hIcon);
 
 			//リストビューにアイテムを追加
+			//(lParam はファイル内のアイコンの番号。取り出せないアイコンがあるとイメージリストの番号とずれる)
 			wsprintf(buf, "%d", i);
-			j = ListView_InsertItemEx(hListView, buf, ret, ret, -1);
-			if(index == ret){
+			j = ListView_InsertItemEx(hListView, buf, ret, i, -1);
+			if(index == i){
 				ListView_SetItemState(hListView, j, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
 				ListView_EnsureVisible(hListView, j, TRUE);
 			}
