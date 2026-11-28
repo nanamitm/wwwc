@@ -53,6 +53,12 @@
   application (WM_ENDSESSION with wParam FALSE).
 - The folder path column (11) in the main list shows the folder of the item
   instead of crashing.
+- A DPI change no longer leaks GDI objects: the update icons added for each
+  protocol were not destroyed, and the bitmap of the check animation in the
+  toolbar was not deleted when the toolbar was rebuilt.
+- The icon selection returns the number of the icon in the file: when an
+  icon could not be extracted, the icons after it were saved with the wrong
+  number, and the previous (already destroyed) icon was added again.
 - filter.txt: a filter on a last line without a line break is applied,
   lines separated by LF only no longer run into the next line, and files
   with CR-only line breaks are read (the filters were counted by LF).

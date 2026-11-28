@@ -313,6 +313,7 @@ void SetProtocolImage(HWND hWnd)
 		if(*IconPath == '\0'){
 			lstrcpy(IconPath, tpProtocol[i].DLL);
 		}
+		hLIcon = TmpIcon = NULL;
 		ExtractIconEx(IconPath, tpProtocol[i].IconIndex, &hLIcon, &TmpIcon, 1);
 		if(LvLIconSize < LICONSIZE){
 			DestroyIcon(hLIcon);
@@ -323,6 +324,7 @@ void SetProtocolImage(HWND hWnd)
 		if(hLIcon == NULL){
 			hLIcon = (HICON)LoadImage(g_hinst, MAKEINTRESOURCE(IDI_ICON_NO), IMAGE_ICON, LvLIconSize, LvLIconSize, 0);
 		}
+		TmpIcon = hSIcon = NULL;
 		ExtractIconEx(IconPath, tpProtocol[i].IconIndex, &TmpIcon, &hSIcon, 1);
 		if(LvSIconSize >= LICONSIZE){
 			DestroyIcon(hSIcon);
@@ -370,15 +372,21 @@ void SetProtocolImage(HWND hWnd)
 		DestroyIcon(hSIcon);
 
 		//UPアイコンの取得
+		//(ImageList_GetIcon と ExtractIconEx のアイコンはイメージリストに追加した後に破棄する)
 		if(tpProtocol[i].UpIconIndex == -1){
-			ImageList_AddIcon(IconList_NORMAL, ImageList_GetIcon(IconList_NORMAL, ICON_UP, ILD_NORMAL));
-			ImageList_AddIcon(IconList_SMALL, ImageList_GetIcon(IconList_SMALL, ICON_UP, ILD_NORMAL));
+			hLIcon = ImageList_GetIcon(IconList_NORMAL, ICON_UP, ILD_NORMAL);
+			hSIcon = ImageList_GetIcon(IconList_SMALL, ICON_UP, ILD_NORMAL);
+			ImageList_AddIcon(IconList_NORMAL, hLIcon);
+			ImageList_AddIcon(IconList_SMALL, hSIcon);
+			DestroyIcon(hLIcon);
+			DestroyIcon(hSIcon);
 
 		}else{
 			lstrcpy(IconPath, tpProtocol[i].UpIconFile);
 			if(*IconPath == '\0'){
 				lstrcpy(IconPath, tpProtocol[i].DLL);
 			}
+			hLIcon = TmpIcon = NULL;
 			ExtractIconEx(IconPath, tpProtocol[i].UpIconIndex, &hLIcon, &TmpIcon, 1);
 			if(LvLIconSize < LICONSIZE){
 				DestroyIcon(hLIcon);
@@ -389,6 +397,7 @@ void SetProtocolImage(HWND hWnd)
 			if(hLIcon == NULL){
 				hLIcon = (HICON)ImageList_GetIcon(IconList_NORMAL, ICON_UP, ILD_NORMAL);
 			}
+			TmpIcon = hSIcon = NULL;
 			ExtractIconEx(IconPath, tpProtocol[i].UpIconIndex, &TmpIcon, &hSIcon, 1);
 			if(LvSIconSize >= LICONSIZE){
 				DestroyIcon(hSIcon);
@@ -402,6 +411,8 @@ void SetProtocolImage(HWND hWnd)
 
 			ImageList_AddIcon(IconList_NORMAL, hLIcon);
 			ImageList_AddIcon(IconList_SMALL, hSIcon);
+			DestroyIcon(hLIcon);
+			DestroyIcon(hSIcon);
 		}
 	}
 }
