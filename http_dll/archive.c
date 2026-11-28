@@ -578,7 +578,7 @@ BOOL Archive_GetRoot(HWND hWnd, char *ret)
 	*ret = '\0';
 	if((mWnd = GetMainWindow(hWnd)) != NULL){
 		*buf = '\0';
-		SendMessage(mWnd, WM_WWWC_GETINIPATH, 0, (LPARAM)buf);
+		SendMessage(mWnd, WM_WWWC_GETINIPATH, (WPARAM)sizeof(buf), (LPARAM)buf);
 		buf[MAX_PATH - 1] = '\0';
 		//末尾の \ を除く
 		for(p = buf + lstrlen(buf); p > buf && *(p - 1) == '\\'; p--);
@@ -695,6 +695,28 @@ static void SetActiveRequest(ARCHIVE_JOB *job, HINTERNET hReq)
 	LeaveCriticalSection(&ArchiveCs);
 }
 
+/* 中止で閉じられていなければ ArchiveCs に入って TRUE を返す (受信を待たない WinHTTP の呼び出しを囲む)
+   中止は ArchiveCs の中で閉じるため、その間に閉じられることはない */
+static BOOL LockRequest(ARCHIVE_JOB *job, HINTERNET hReq)
+{
+	EnterCriticalSection(&ArchiveCs);
+	if(hReq != NULL && job->ActiveReq == hReq && job->Cancel == 0){
+		return TRUE;
+	}
+	LeaveCriticalSection(&ArchiveCs);
+	return FALSE;
+}
+
+/* 中止で閉じられていないか (受信を待つ呼び出しの直前に確認する、待っている間は中止で閉じて終わらせる) */
+static BOOL IsRequestOpen(ARCHIVE_JOB *job, HINTERNET hReq)
+{
+	if(LockRequest(job, hReq) == FALSE){
+		return FALSE;
+	}
+	LeaveCriticalSection(&ArchiveCs);
+	return TRUE;
+}
+
 /* 登録したリクエストを閉じる (中止で既に閉じた場合は何もしない) */
 static void CloseActiveRequest(ARCHIVE_JOB *job)
 {
@@ -772,7 +794,8 @@ static BOOL ArchiveFetch(ARCHIVE_JOB *job, const char *url, const char *lastmod,
 		}
 		//中止のときは別のスレッドから閉じる (閉じるのは CloseActiveRequest のみで行う)
 		SetActiveRequest(job, hReq);
-		if(IsJobStopped(job) == TRUE){
+		//中止で閉じた後のハンドルは使わない (同じ値が別のリクエストに使われることがある)
+		if(LockRequest(job, hReq) == FALSE){
 			break;
 		}
 		flags = WINHTTP_OPTION_REDIRECT_POLICY_NEVER;
@@ -784,6 +807,7 @@ static BOOL ArchiveFetch(ARCHIVE_JOB *job, const char *url, const char *lastmod,
 			WinHttpSetOption(hReq, WINHTTP_OPTION_PROXY_USERNAME, job->ProxyUser, lstrlenW(job->ProxyUser));
 			WinHttpSetOption(hReq, WINHTTP_OPTION_PROXY_PASSWORD, job->ProxyPass, lstrlenW(job->ProxyPass));
 		}
+		LeaveCriticalSection(&ArchiveCs);
 		//送信ヘッダ
 		Buf_Str(&hb, "Accept: */*");
 		if(hop == 0 && etag != NULL && *etag != '\0' && IsSafeText(etag) == TRUE){
@@ -802,18 +826,32 @@ static BOOL ArchiveFetch(ARCHIVE_JOB *job, const char *url, const char *lastmod,
 		if(header == NULL){
 			break;
 		}
-		if(WinHttpSendRequest(hReq, header, (DWORD)-1, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) == FALSE ||
+		if(IsRequestOpen(job, hReq) == FALSE ||
+			WinHttpSendRequest(hReq, header, (DWORD)-1, WINHTTP_NO_REQUEST_DATA, 0, 0, 0) == FALSE ||
+			IsRequestOpen(job, hReq) == FALSE ||
 			WinHttpReceiveResponse(hReq, NULL) == FALSE){
+			break;
+		}
+		if(LockRequest(job, hReq) == FALSE){
 			break;
 		}
 		size = sizeof(status);
 		if(WinHttpQueryHeaders(hReq, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, WINHTTP_HEADER_NAME_BY_INDEX,
 			&status, &size, WINHTTP_NO_HEADER_INDEX) == FALSE){
+			LeaveCriticalSection(&ArchiveCs);
 			break;
 		}
+		*loc = '\0';
+		if(status == 301 || status == 302 || status == 303 || status == 307 || status == 308){
+			QueryHeader(hReq, WINHTTP_QUERY_LOCATION, loc, sizeof(loc));
+		}else if(status == 200){
+			QueryHeader(hReq, WINHTTP_QUERY_CONTENT_TYPE, r->Type, sizeof(r->Type));
+			QueryHeader(hReq, WINHTTP_QUERY_ETAG, r->ETag, sizeof(r->ETag));
+			QueryHeader(hReq, WINHTTP_QUERY_LAST_MODIFIED, r->LastMod, sizeof(r->LastMod));
+		}
+		LeaveCriticalSection(&ArchiveCs);
 		if(status == 301 || status == 302 || status == 303 || status == 307 || status == 308){
 			//リダイレクト (http, https のみ)
-			QueryHeader(hReq, WINHTTP_QUERY_LOCATION, loc, sizeof(loc));
 			next = (*loc != '\0') ? CreateMoveURL(cur, loc) : NULL;
 			MemFree(cur);
 			cur = NULL;
@@ -834,14 +872,11 @@ static BOOL ArchiveFetch(ARCHIVE_JOB *job, const char *url, const char *lastmod,
 		}
 		r->Status = status;
 		if(status == 200){
-			QueryHeader(hReq, WINHTTP_QUERY_CONTENT_TYPE, r->Type, sizeof(r->Type));
-			QueryHeader(hReq, WINHTTP_QUERY_ETAG, r->ETag, sizeof(r->ETag));
-			QueryHeader(hReq, WINHTTP_QUERY_LAST_MODIFIED, r->LastMod, sizeof(r->LastMod));
 			ParseContentType(r);
 			//本文
 			while(IsJobStopped(job) == FALSE){
 				size = 0;
-				if(WinHttpQueryDataAvailable(hReq, &size) == FALSE){
+				if(IsRequestOpen(job, hReq) == FALSE || WinHttpQueryDataAvailable(hReq, &size) == FALSE){
 					body.err = TRUE;
 					break;
 				}
@@ -859,7 +894,7 @@ static BOOL ArchiveFetch(ARCHIVE_JOB *job, const char *url, const char *lastmod,
 						break;
 					}
 					dwRead = 0;
-					if(WinHttpReadData(hReq, rb, size, &dwRead) == FALSE){
+					if(IsRequestOpen(job, hReq) == FALSE || WinHttpReadData(hReq, rb, size, &dwRead) == FALSE){
 						HeapFree(GetProcessHeap(), 0, rb);
 						body.err = TRUE;
 						break;
@@ -1248,10 +1283,14 @@ static void CleanBrowserProfiles(const char *root)
 static BOOL BrowserFetch(ARCHIVE_JOB *job, const char *url, char **body, long *len)
 {
 	SECURITY_ATTRIBUTES sa;
-	STARTUPINFO si;
+	STARTUPINFOEX six;
+	STARTUPINFO *si = &six.StartupInfo;
+	LPPROC_THREAD_ATTRIBUTE_LIST attr = NULL;
+	SIZE_T attrSize = 0;
+	BOOL attrInit = FALSE;
 	PROCESS_INFORMATION pi;
 	ARCHIVE_BUF cmd, out;
-	HANDLE hRead = NULL, hWrite = NULL, hNul = NULL, hJob = NULL;
+	HANDLE hRead = NULL, hWrite = NULL, hNul = NULL, hJob = NULL, inherit[2];
 	char exe[MAX_PATH], root[MAX_PATH], dir[MAX_PATH], num[32];
 	char *proxy = NULL, *ua = NULL;
 	char *rb = NULL;
@@ -1361,18 +1400,35 @@ static BOOL BrowserFetch(ARCHIVE_JOB *job, const char *url, char **body, long *l
 		hNul = NULL;
 		goto end;
 	}
-	ZeroMemory(&si, sizeof(si));
-	si.cb = sizeof(si);
-	si.dwFlags = STARTF_USESTDHANDLES;
-	si.hStdInput = hNul;
-	si.hStdOutput = hWrite;
-	si.hStdError = hNul;
+	ZeroMemory(&six, sizeof(six));
+	six.StartupInfo.cb = sizeof(six);
+	si->dwFlags = STARTF_USESTDHANDLES;
+	si->hStdInput = hNul;
+	si->hStdOutput = hWrite;
+	si->hStdError = hNul;
+	//ブラウザに引き継ぐのは標準入出力のハンドルのみ (WWWC で開いている他のハンドルは渡さない)
+	InitializeProcThreadAttributeList(NULL, 1, 0, &attrSize);
+	if(attrSize == 0 || (attr = (LPPROC_THREAD_ATTRIBUTE_LIST)HeapAlloc(GetProcessHeap(), 0, attrSize)) == NULL ||
+		(attrInit = InitializeProcThreadAttributeList(attr, 1, 0, &attrSize)) == FALSE){
+		job->BrowserError = ARCHIVE_BERR_START;
+		job->BrowserCode = GetLastError();
+		goto end;
+	}
+	inherit[0] = hNul;
+	inherit[1] = hWrite;
+	if(UpdateProcThreadAttribute(attr, 0, PROC_THREAD_ATTRIBUTE_HANDLE_LIST, inherit, sizeof(inherit), NULL, NULL) == FALSE){
+		job->BrowserError = ARCHIVE_BERR_START;
+		job->BrowserCode = GetLastError();
+		goto end;
+	}
+	six.lpAttributeList = attr;
 	ZeroMemory(&pi, sizeof(pi));
 	hJob = CreateKillJob();
 	//互換性レイヤーの指定を除いた環境変数で起動する (作成できない場合はそのまま引き継ぐ)
 	env = MakeBrowserEnv();
-	if(CreateProcess(NULL, cmd.p, NULL, NULL, TRUE, CREATE_NO_WINDOW | CREATE_SUSPENDED | ((env != NULL) ? CREATE_UNICODE_ENVIRONMENT : 0),
-		env, NULL, &si, &pi) == FALSE){
+	if(CreateProcess(NULL, cmd.p, NULL, NULL, TRUE,
+		EXTENDED_STARTUPINFO_PRESENT | CREATE_NO_WINDOW | CREATE_SUSPENDED | ((env != NULL) ? CREATE_UNICODE_ENVIRONMENT : 0),
+		env, NULL, si, &pi) == FALSE){
 		job->BrowserError = ARCHIVE_BERR_START;
 		job->BrowserCode = GetLastError();
 		goto end;
@@ -1462,6 +1518,8 @@ end:
 	if(hRead != NULL) CloseHandle(hRead);
 	if(hWrite != NULL) CloseHandle(hWrite);
 	if(hNul != NULL) CloseHandle(hNul);
+	if(attrInit == TRUE) DeleteProcThreadAttributeList(attr);
+	if(attr != NULL) HeapFree(GetProcessHeap(), 0, attr);
 	if(rb != NULL) HeapFree(GetProcessHeap(), 0, rb);
 	if(env != NULL) HeapFree(GetProcessHeap(), 0, env);
 	MemFree(proxy);
@@ -1852,9 +1910,8 @@ static const char *ResolveRes(void *ctx, const char *url, int type)
 		lstrcat(name, ext);
 		wsprintf(path, "%s\\%s\\%s", job->Dir, ARCHIVE_RES_DIR, name);
 		if(FileExists(path) == TRUE || WriteAll(path, data, len) == TRUE){
-			if(type == RES_FRAME){
-				SetZoneIdentifier(path, url);
-			}
+			//直接開いたときにインターネットのファイルとして扱われるようにする (SVG など)
+			SetZoneIdentifier(path, url);
 			InterlockedExchangeAdd64(&job->Total, len);
 			SetEntry(job, url, (rewrite == TRUE) ? "" : r.ETag, (rewrite == TRUE) ? "" : r.LastMod, name);
 			file = name;
@@ -3071,10 +3128,11 @@ void Archive_Request(HWND hWnd, struct TPITEM *tpItemInfo, BOOL Update)
 			break;
 		}
 	}
-	LeaveCriticalSection(&ArchiveCs);
 	if(j != NULL || ArchiveQueueCnt >= ARCHIVE_MAX_QUEUE){
+		LeaveCriticalSection(&ArchiveCs);
 		return;
 	}
+	LeaveCriticalSection(&ArchiveCs);
 
 	job = (ARCHIVE_JOB *)HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sizeof(ARCHIVE_JOB));
 	if(job == NULL){
@@ -3104,6 +3162,17 @@ void Archive_Request(HWND hWnd, struct TPITEM *tpItemInfo, BOOL Update)
 	}
 
 	EnterCriticalSection(&ArchiveCs);
+	//確認した後に追加されたものが無いか (確認と追加を同じロックの中で行う)
+	for(j = ArchiveQueue; j != NULL; j = j->next){
+		if(lstrcmp(j->Key, key) == 0){
+			break;
+		}
+	}
+	if(j != NULL || ArchiveQueueCnt >= ARCHIVE_MAX_QUEUE){
+		LeaveCriticalSection(&ArchiveCs);
+		FreeJob(job);
+		return;
+	}
 	job->next = NULL;
 	if(ArchiveQueue == NULL){
 		ArchiveQueue = job;

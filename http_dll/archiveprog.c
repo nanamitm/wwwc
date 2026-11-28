@@ -230,10 +230,19 @@ static void FormatTime(const SYSTEMTIME *t, char *ret, int size)
 /* 内容が変わった場合のみ文字列を設定する (ちらつき防止) */
 static void SetTextIfChanged(HWND hDlg, int id, const char *text)
 {
-	char buf[ARCHIVE_URL_MAX + 1];
+	char *buf;
+	int size;
+	BOOL same = FALSE;
 
-	GetDlgItemText(hDlg, id, buf, sizeof(buf));
-	if(lstrcmp(buf, text) != 0){
+	//設定する文字列より 1 文字多く取得して全体を比べる (長い文字列でも一致を判定できる)
+	size = lstrlen(text) + 2;
+	buf = (char *)HeapAlloc(GetProcessHeap(), 0, size);
+	if(buf != NULL){
+		GetDlgItemText(hDlg, id, buf, size);
+		same = (lstrcmp(buf, text) == 0) ? TRUE : FALSE;
+		HeapFree(GetProcessHeap(), 0, buf);
+	}
+	if(same == FALSE){
 		SetDlgItemText(hDlg, id, text);
 	}
 }
