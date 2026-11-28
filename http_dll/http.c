@@ -248,6 +248,7 @@ static INT_PTR CALLBACK ViewProc(HWND hDlg, UINT uMsg, WPARAM wParam, LPARAM lPa
 			break;
 		}
 
+		LoadRichEdit();
 		CreateWindowEx(WS_EX_CLIENTEDGE, "RICHEDIT",
 			(LPSTR)NULL, WS_TABSTOP | WS_CHILD | WS_VSCROLL | WS_HSCROLL |
 			ES_AUTOHSCROLL | ES_AUTOVSCROLL | ES_MULTILINE | ES_READONLY | ES_SAVESEL |
@@ -2071,6 +2072,7 @@ static BOOL BuildRequest(struct TPITEM *tpItemInfo, struct TPHTTP *tpHTTP)
 	//送られるため、WinHTTPの資格情報として設定してプロキシから要求された場合にのみ送る
 	//(全体の設定の認証情報は、アイテムに設定された別のプロキシには送らない)
 	if(tpHTTP->ProxyMode != PROXY_NONE && pUsePass == 1 && ItemProxy == FALSE){
+		EnsureProxyPassword();
 		tpHTTP->ProxyUser = AllocWideString(pUser);
 		tpHTTP->ProxyPass = AllocWideString(pPass);
 		if(tpHTTP->ProxyUser == NULL || tpHTTP->ProxyPass == NULL){
