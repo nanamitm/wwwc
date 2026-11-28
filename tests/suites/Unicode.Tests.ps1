@@ -101,6 +101,36 @@ Test-Case "filter on a Shift_JIS page that becomes longer in UTF-8" {
   Assert-Equal "$expected" (Get-SavedItem $e "filtered").Size "size after the filter (UTF-8 bytes)"
 }
 
+# Check an item of /filter-text with the filter file and compare the saved size
+# (the page: <html><body><b>kept</b> email-x e-mail y END path C:\data here FIN</body></html>)
+function Test-FilterSize([string]$Name, [string]$Filter, [int]$Expected) {
+  $e = New-TestEnv $Name $BinDir
+  [IO.File]::WriteAllText((Join-Path $e.Bin "filter.txt"), $Filter, $script:Enc)
+  Set-Items $e @(ItemLine "filtered" (Url "/filter-text"))
+  $m = Get-ServerMark
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  [void](Wait-Until { (Get-ServerLog $m) -match "^GET /filter-text " } 15)
+  Start-Sleep 2
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  Assert-Equal "$Expected" (Get-SavedItem $e "filtered").Size "size after the filter"
+}
+
+Test-Case "a filter on a last line without a line break is applied" {
+  # the filters were counted by LF, so the last line without one was not read
+  Test-FilterSize "filter-lastline" "S`t$(Url '/filter-text')`t<b>`t</b>" 11
+}
+
+Test-Case "filter lines separated by LF only or CR only" {
+  # with LF only the last field ran into the next line; with CR only no filter was read
+  Test-FilterSize "filter-lf" "# comment`nS`t$(Url '/filter-text')`t<b>`t</b>`n" 11
+  Test-FilterSize "filter-cr" "# comment`rS`t$(Url '/filter-text')`t<b>`t</b>`r" 11
+}
+
+Test-Case "a backslash in a filter string is kept" {
+  # \ followed by a character other than \, n and t was removed with that character
+  Test-FilterSize "filter-backslash" "S`t$(Url '/filter-text')`tC:\data`tFIN`r`n" 16
+}
+
 Test-Case "Japanese passwords saved by older versions" {
   $e = New-TestEnv "utf8-password" $BinDir
   Add-Type -AssemblyName System.Security

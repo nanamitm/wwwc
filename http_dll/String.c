@@ -2038,7 +2038,7 @@ int GetKanjiType(unsigned char *str)
         (b2 >= 0x40 && b2 <= 0xfc && b2 != 0x7f)) val |= 2;
     if (b1 == 0x8e && (b2 >= 0xa0 && b2 <= 0xdf)) val |= 4;
     if ((b1 >= 0xa1 && b1 <= 0xfe) &&
-        (b2 >= 0xa1 && b1 <= 0xfe)) val |= 8;
+        (b2 >= 0xa1 && b2 <= 0xfe)) val |= 8;
 
     return val;
 }
