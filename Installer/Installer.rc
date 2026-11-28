@@ -142,6 +142,8 @@ BEGIN
     IDS_ERR_PATH_UNSAFE     "インストール先のフォルダは一般ユーザーが変更できるため、インストールできません。\n%s\n別のフォルダを指定してください。"
     IDS_CONFIRM_PATH_NETWORK "ネットワーク上のフォルダは、一般ユーザーが変更できないかを確認できません。\n変更できる場合、WWWC を差し替えられるおそれがあります。\nインストールを続けますか？"
     IDS_ERR_UNINSTALL_START "アンインストーラの準備に失敗しました。\n一時フォルダにファイルを作成できないか、起動できません。"
+    IDS_CONFIRM_UNINSTALL_KEEP "次のフォルダは一般ユーザーが変更できるか、ネットワーク上にあるため、ファイルを削除しませんでした。\n%s\n必要であれば手動で削除してください。\n\nアプリの一覧から WWWC の登録を削除しますか？"
+    IDS_CONFIRM_OLD_FOLDER  "WWWC は次のフォルダにインストールされています。\n%s\n別のフォルダにインストールすると、以前のフォルダのファイルは削除されず、アンインストールもできなくなります。\nインストールを続けますか？"
 END
 
 /////////////////////////////////////////////////////////////////////////////
@@ -190,4 +192,6 @@ BEGIN
     IDS_ERR_PATH_UNSAFE     "The destination folder cannot be used because standard users can modify it.\n%s\nSpecify a different folder."
     IDS_CONFIRM_PATH_NETWORK "For a folder on the network, it cannot be verified that standard users are unable to modify it.\nIf they can, WWWC could be replaced.\nDo you want to continue the installation?"
     IDS_ERR_UNINSTALL_START "Failed to prepare the uninstaller.\nThe file could not be created in the temporary folder or could not be started."
+    IDS_CONFIRM_UNINSTALL_KEEP "The files were not deleted because standard users can modify the following folder or it is on the network.\n%s\nDelete them yourself if needed.\n\nDo you want to remove WWWC from the list of apps?"
+    IDS_CONFIRM_OLD_FOLDER  "WWWC is installed in the following folder.\n%s\nIf you install it in a different folder, the files in the previous folder are not deleted and can no longer be uninstalled.\nDo you want to continue the installation?"
 END
