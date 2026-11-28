@@ -58,7 +58,7 @@ extern int SaveDriveCheck;
 
 static char *AllocItemStr(char *t, char **ret);
 static char *FieldStrCpy(char *ret, char *buf);
-static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *tpItemInfo);
+static int SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct TPITEM *tpItemInfo);
 
 
 /******************************************************************************
@@ -1205,144 +1205,200 @@ int FileSelect(HWND hDlg, char *oFile, char *oFilter, char *oTitle, char *ret, c
 
 /******************************************************************************
 
-	SetExecCommandLine
+	CopyCommandValue
 
-	コマンドラインの作成
+	コマンドラインに文字列を追加する (ret が NULL の場合は長さだけ数える)
+	アイテムの値 (ValueType が 1: URL, 2: その他) の " は置き換える。
+	引用符で囲んだ引数を値の " で閉じて、別の引数やコマンドを足せないようにするため
+	(URL は %22、その他は ')
 
 ******************************************************************************/
 
-static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *tpItemInfo)
+#define CMDVALUE_NONE			0
+#define CMDVALUE_URL			1
+#define CMDVALUE_TEXT			2
+
+static int CopyCommandValue(char *ret, int pos, int size, const char *t, int ValueType)
+{
+	const char *s;
+	char one[2];
+
+	for(; *t != '\0'; t++){
+		if(ValueType != CMDVALUE_NONE && *t == '"'){
+			s = (ValueType == CMDVALUE_URL) ? "%22" : "'";
+		}else{
+			one[0] = *t;
+			one[1] = '\0';
+			s = one;
+		}
+		for(; *s != '\0'; s++){
+			if(ret != NULL && pos < size - 1){
+				*(ret + pos) = *s;
+			}
+			pos++;
+		}
+	}
+	return pos;
+}
+
+
+/******************************************************************************
+
+	SetExecCommandLine
+
+	コマンドラインの作成
+	ret に size バイトまで書き、必要な長さ (終端を除く) を返す
+	(ret が NULL の場合は長さだけ返す)
+
+******************************************************************************/
+
+static int SetExecCommandLine(HWND hWnd, char *buf, char *ret, int size, struct TPITEM *tpItemInfo)
 {
 	char FolderPath[BUFSIZE];
-	char *p, *r, *t;
+	char *p, *t;
+	int pos = 0;
+	int ValueType;
 
+	if(ret != NULL && size > 0){
+		*ret = '\0';
+	}
 	if(buf == NULL){
-		return;
+		return 0;
 	}
 
 	// %文字 の変換を行う
-	for(p = buf, r = ret;*p != '\0';p++){
-		if(IsDBCSLeadByte((BYTE)*p) == TRUE && *(p + 1) != '\0'){
-			*(r++) = *(p++);
-			*(r++) = *p;
+	for(p = buf;*p != '\0';p++){
+		if(*p != '%'){
+			char one[2] = { *p, '\0' };
+			pos = CopyCommandValue(ret, pos, size, one, CMDVALUE_NONE);
+			continue;
+		}
+		p++;
+		if(*p == '\0'){
+			break;
+		}
+		t = NULL;
+		ValueType = CMDVALUE_TEXT;
+		switch(*p)
+		{
+		//%
+		case '%':
+			t = "%";
+			ValueType = CMDVALUE_NONE;
+			break;
 
-		}else if(*p != '%'){
-			*(r++) = *p;
-
-		}else{
-			p++;
-			if(*p == '\0'){
+		//表示するURL,空の場合はチェックするURL
+		case 'u': case 'U':
+			if(tpItemInfo == NULL){
 				break;
 			}
-			t = NULL;
-			switch(*p)
-			{
-			//%
-			case '%':
-				t = "%";
-				break;
-
-			//表示するURL,空の場合はチェックするURL
-			case 'u': case 'U':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				if(tpItemInfo->ViewURL != NULL && *tpItemInfo->ViewURL != '\0'){
-					t = tpItemInfo->ViewURL;
-				}else if(tpItemInfo->CheckURL != NULL){
-					t = tpItemInfo->CheckURL;
-				}
-				break;
-
-			//表示するURL,空の場合は無し
-			case 'v': case 'V':
-				if(tpItemInfo == NULL){
-					break;
-				}
+			if(tpItemInfo->ViewURL != NULL && *tpItemInfo->ViewURL != '\0'){
 				t = tpItemInfo->ViewURL;
-				break;
-
-			//チェックするURL
-			case 'c': case 'C':
-				if(tpItemInfo == NULL){
-					break;
-				}
+			}else if(tpItemInfo->CheckURL != NULL){
 				t = tpItemInfo->CheckURL;
-				break;
+			}
+			ValueType = CMDVALUE_URL;
+			break;
 
-			//アイテムのタイトル
-			case 't': case 'T':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				t = tpItemInfo->Title;
-				break;
-
-			//アイテムのサイズ
-			case 's': case 'S':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				t = tpItemInfo->Size;
-				break;
-
-			//アイテムの更新日時(iniファイルのフォーマットに依存)
-			case 'd': case 'D':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				t = tpItemInfo->Date;
-				break;
-
-			//アイテムのチェック日時(iniファイルのフォーマットに依存)
-			case 'k': case 'K':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				t = tpItemInfo->CheckDate;
-				break;
-
-			//アイテムに設定されているコメント
-			case 'm': case 'M':
-				if(tpItemInfo == NULL){
-					break;
-				}
-				t = tpItemInfo->Comment;
-				break;
-
-			//現在開いているフォルダの実際のパス (長い形式)
-			case 'f':
-				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
-					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
-				t = FolderPath;
-				break;
-
-			//現在開いているフォルダの実際のパス (短い形式)
-			case 'F':
-				SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
-					(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
-				GetShortPathName(FolderPath, FolderPath, BUFSIZE - 1);
-				t = FolderPath;
-				break;
-
-			//ユーザディレクトリのパス (長い形式)
-			case 'p':
-				t = CuDir;
-				break;
-
-			//ユーザディレクトリのパス (短い形式)
-			case 'P':
-				GetShortPathName(CuDir, FolderPath, BUFSIZE - 1);
-				t = FolderPath;
+		//表示するURL,空の場合は無し
+		case 'v': case 'V':
+			if(tpItemInfo == NULL){
 				break;
 			}
-			if(t != NULL){
-				while(*(r++) = *(t++));
-				r--;
+			t = tpItemInfo->ViewURL;
+			ValueType = CMDVALUE_URL;
+			break;
+
+		//チェックするURL
+		case 'c': case 'C':
+			if(tpItemInfo == NULL){
+				break;
 			}
+			t = tpItemInfo->CheckURL;
+			ValueType = CMDVALUE_URL;
+			break;
+
+		//アイテムのタイトル
+		case 't': case 'T':
+			if(tpItemInfo == NULL){
+				break;
+			}
+			t = tpItemInfo->Title;
+			break;
+
+		//アイテムのサイズ
+		case 's': case 'S':
+			if(tpItemInfo == NULL){
+				break;
+			}
+			t = tpItemInfo->Size;
+			break;
+
+		//アイテムの更新日時(iniファイルのフォーマットに依存)
+		case 'd': case 'D':
+			if(tpItemInfo == NULL){
+				break;
+			}
+			t = tpItemInfo->Date;
+			break;
+
+		//アイテムのチェック日時(iniファイルのフォーマットに依存)
+		case 'k': case 'K':
+			if(tpItemInfo == NULL){
+				break;
+			}
+			t = tpItemInfo->CheckDate;
+			break;
+
+		//アイテムに設定されているコメント
+		case 'm': case 'M':
+			if(tpItemInfo == NULL){
+				break;
+			}
+			t = tpItemInfo->Comment;
+			break;
+
+		//現在開いているフォルダの実際のパス (長い形式)
+		case 'f':
+			*FolderPath = '\0';
+			SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
+				(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
+			t = FolderPath;
+			ValueType = CMDVALUE_NONE;
+			break;
+
+		//現在開いているフォルダの実際のパス (短い形式)
+		case 'F':
+			*FolderPath = '\0';
+			SendMessage(WWWCWnd, WM_FOLDER_GETPATH,
+				(WPARAM)TreeView_GetSelection(GetDlgItem(WWWCWnd, WWWC_TREE)), (LPARAM)FolderPath);
+			GetShortPathName(FolderPath, FolderPath, BUFSIZE - 1);
+			t = FolderPath;
+			ValueType = CMDVALUE_NONE;
+			break;
+
+		//ユーザディレクトリのパス (長い形式)
+		case 'p':
+			t = CuDir;
+			ValueType = CMDVALUE_NONE;
+			break;
+
+		//ユーザディレクトリのパス (短い形式)
+		case 'P':
+			*FolderPath = '\0';
+			GetShortPathName(CuDir, FolderPath, BUFSIZE - 1);
+			t = FolderPath;
+			ValueType = CMDVALUE_NONE;
+			break;
+		}
+		if(t != NULL){
+			pos = CopyCommandValue(ret, pos, size, t, ValueType);
 		}
 	}
-	*r = '\0';
+	if(ret != NULL && size > 0){
+		*(ret + ((pos < size) ? pos : size - 1)) = '\0';
+	}
+	return pos;
 }
 
 
@@ -1357,15 +1413,22 @@ static void SetExecCommandLine(HWND hWnd, char *buf, char *ret, struct TPITEM *t
 int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tpItemInfo, int SyncFlag)
 {
 	SHELLEXECUTEINFO sei;
-	char buf[BUFSIZE];
+	char *buf;
 	char *ExeFilePath;
 	char *CommnadLineString;
+	int len;
 	int ret;
 	BOOL b_ret;
 
-	*buf = '\0';
 	//コマンドラインの作成
-	SetExecCommandLine(hWnd, CommandLine, buf, tpItemInfo);
+	//(アイテムのコメントやタイトルは長くなるので、必要な長さを数えてから確保する)
+	len = SetExecCommandLine(hWnd, CommandLine, NULL, 0, tpItemInfo);
+	buf = (char *)GlobalAlloc(GMEM_FIXED, (SIZE_T)len + 1);
+	if(buf == NULL){
+		ErrMsg(hWnd, GetLastError(), EMSG_EXEC_TITLE);
+		return -1;
+	}
+	SetExecCommandLine(hWnd, CommandLine, buf, len + 1, tpItemInfo);
 
 	ExeFilePath = FileName;
 	CommnadLineString = buf;
@@ -1373,6 +1436,7 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 	//ファイル名が指定されていない場合はコマンドラインを設定する（関連付けで実行）
 	if(*ExeFilePath == '\0'){
 		if(*buf == '\0'){
+			GlobalFree(buf);
 			return -1;
 		}
 		ExeFilePath = buf;
@@ -1393,12 +1457,13 @@ int ExecItemFile(HWND hWnd, char *FileName, char *CommandLine, struct TPITEM *tp
 
 	//起動
 	b_ret = ShellExecuteEx(&sei);
+	ret = GetLastError();
+	GlobalFree(buf);
 	if(WWWCWnd == NULL || IsWindow(WWWCWnd) == 0){
 		//プロセスの強制終了
 		exit(0);
 	}
 	if(b_ret == FALSE){
-		ret = GetLastError();
 		WaitCursor(FALSE);
 		ErrMsg(hWnd, ret, EMSG_EXEC_TITLE);
 		return -1;

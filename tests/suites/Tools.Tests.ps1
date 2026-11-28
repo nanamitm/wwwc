@@ -125,3 +125,84 @@ Test-Case "open URL tool: a URL with a quote is not passed to the browser" {
   Assert-True (-not (Test-Path $record)) "the browser was not started"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
+
+# A program tool (cmd.exe) registered in user.ini. Values are written in quotes:
+# profile_get_string removes one quote at each end
+function Set-CmdTool($Env, [string]$CommandLine) {
+  $lines = @("[TOOLS]", "Cnt=1", "title-0=`"run`"", "FileName-0=`"$env:ComSpec`"", "Action-0=1", "MenuIndex-0=-1",
+    "Protocol-0=`"HTTP`"", "CommandLine-0=`"$CommandLine`"", "func-0=`"`"", "Ctrl-0=0", "Key-0=`"`"")
+  [IO.File]::WriteAllText((Join-Path $Env.Data "user.ini"), ($lines -join "`r`n") + "`r`n", $script:Enc)
+}
+
+Test-Case "a tool command line with a long comment is passed in full" {
+  $e = New-TestEnv "tool-longcmd" $BinDir
+  $record = Join-Path $e.Dir "comment.txt"
+  # the command line was built in a 1024-byte stack buffer without a length check
+  $comment = "c" * 3000
+  Set-CmdTool $e "/c echo %m>`"$record`""
+  $fields = (ItemLine "long" (Url "/target")).Split("`t")
+  $fields[11] = $comment
+  Set-Items $e @($fields -join "`t")
+  [void](Start-Wwwc $e)
+  Select-ListItem $e "long"
+  Send-Command $e $CMD_TOOL
+  Assert-True (Wait-Until { (Test-Path $record) -and (Get-Content $record -Raw) } 10) "the tool was started"
+  Assert-True (-not $e.Process.HasExited) "WWWC is running (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (Test-Path $record) { Assert-Equal $comment (Get-Content $record -Raw).Trim() "the whole comment is passed" }
+  if (-not $e.Process.HasExited) { Assert-Equal 0 (Stop-Wwwc $e) "exit code" }
+}
+
+Test-Case "a quote in the item title does not end the quoted tool argument" {
+  $e = New-TestEnv "tool-quote" $BinDir
+  $record = Join-Path $e.Dir "title.txt"
+  $evil = Join-Path $e.Dir "injected.txt"
+  Set-CmdTool $e "/c echo `"%t`">`"$record`""
+  # a title that closes the quotes and adds a command for cmd.exe
+  Set-Items $e @(ItemLine "x`" & echo injected>`"$evil`" & `"y" (Url "/target"))
+  [void](Start-Wwwc $e)
+  [void](Wait-Until { @(Get-ListTitles $e | Where-Object { $_ -like "x*" }).Count -gt 0 } 5)
+  Select-ListItem $e (Get-ListTitles $e | Where-Object { $_ -like "x*" } | Select-Object -First 1)
+  Send-Command $e $CMD_TOOL
+  Assert-True (Wait-Until { (Test-Path $record) -and (Get-Content $record -Raw) } 10) "the tool was started"
+  Start-Sleep 1
+  Assert-True (-not (Test-Path $evil)) "the title did not add a command"
+  if (Test-Path $record) { Assert-True ((Get-Content $record -Raw) -like "*x'*") "the title is passed with the quote replaced ($(Get-Content $record -Raw))" }
+  Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+}
+
+Test-Case "item properties opened from the update message survive a check that ends meanwhile" {
+  $e = New-TestEnv "tool-upprop" $BinDir
+  # /grow is one byte longer on every request: every check finds an update, and
+  # the update message replaces (frees) the listed item that the properties use
+  # the stored size differs from the page: the first check is an update too
+  $fields = (ItemLine "growing" (Url "/grow-upprop")).Split("`t"); $fields[2] = "1"
+  Set-Items $e @($fields -join "`t")
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"), "[UPMSG]`r`nUPSnd=0`r`n", $script:Enc)
+  [IO.File]::WriteAllText((Join-Path $e.Bin "wwwc.ini"), "[ARCHIVE]`r`nEnable=0`r`n", $script:Enc)
+  [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
+  [void](Wait-Until { $script:up = Get-Dialogs $e | Where-Object { [WwwcWin]::GetDlgItem($_.Handle, $script:ID_LIST) -ne [IntPtr]::Zero } | Select-Object -First 1; $null -ne $script:up } 15)
+  $up = $script:up
+  Assert-True ($null -ne $up) "update message window opened"
+  if ($up) {
+    $uplv = [WwwcWin]::GetDlgItem($up.Handle, $script:ID_LIST)
+    [WwwcList]::Select($uplv, 0)
+    [void][WwwcWin]::PostMessage($up.Handle, 0x0111, [IntPtr]$CMD_PROP, [IntPtr]::Zero)
+    [void](Wait-Until { $script:sheet = Get-Dialogs $e | Where-Object { $_.Title -like "growing*" } | Select-Object -First 1; $null -ne $script:sheet } 10)
+    $sheet = $script:sheet
+    Assert-True ($null -ne $sheet) "item property sheet opened from the update message"
+    if ($sheet) {
+      # check again while the properties are open: the item is updated again
+      $m = Get-ServerMark
+      Send-Command $e $CMD_ALLCHECK
+      Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /grow-upprop " } 10) "the second check ran"
+      Start-Sleep 2
+      [void][WwwcWin]::PostMessage([WwwcWin]::GetDlgItem($sheet.Handle, 1), 0x00F5, [IntPtr]::Zero, [IntPtr]::Zero)   # OK
+      Assert-True (Wait-Until { -not [WwwcWin]::IsWindow($sheet.Handle) } 5) "property sheet closed"
+      Start-Sleep 1
+      $titles = @(for ($i = 0; $i -lt [WwwcList]::Count($uplv); $i++) { [WwwcList]::GetText($uplv, $i, 0) })
+      Assert-True ($titles -contains "growing") "the update message lists the item after the properties are closed ($($titles -join ', '))"
+    }
+  }
+  Assert-True (-not $e.Process.HasExited) "WWWC is running (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (-not $e.Process.HasExited) { Assert-Equal 0 (Stop-Wwwc $e) "exit code" }
+}

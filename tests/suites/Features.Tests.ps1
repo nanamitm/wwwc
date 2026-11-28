@@ -471,6 +471,39 @@ Test-Case "a tab entered in the item title does not shift the saved fields" {
   Assert-Equal (Url "/tabbed") $saved[1] "the URL stays in its field"
 }
 
+Test-Case "a cancelled Windows shutdown does not close WWWC" {
+  $e = New-TestEnv "feat-endsession" $BinDir
+  Set-Items $e @(ItemLine "page" (Url "/target"))
+  [void](Start-Wwwc $e)
+  # WM_ENDSESSION with wParam FALSE: another application cancelled the shutdown
+  [void][WwwcWin]::SendMessage($e.Window, 0x0016, [IntPtr]::Zero, [IntPtr]::Zero)
+  Start-Sleep 2
+  Assert-True (-not $e.Process.HasExited) "WWWC is still running"
+  Assert-True ([WwwcWin]::IsWindow($e.Window)) "the main window still exists"
+  if (-not $e.Process.HasExited) { Assert-Equal 0 (Stop-Wwwc $e) "exit code" }
+}
+
+Test-Case "the folder path column in the main list shows the path" {
+  $e = New-TestEnv "feat-pathcol" $BinDir
+  Set-Items $e @(ItemLine "page" (Url "/target"))
+  # column 11 (folder path) works in the update message and find windows; the
+  # main list read the start of the item as a string for it and crashed
+  [IO.File]::WriteAllText((Join-Path $e.Data "user.ini"), "[LISTVIEW]`r`nLvStyle=1`r`nLvColumn=`"2,3,11,`"`r`n", $script:Enc)
+  [void](Start-Wwwc $e)
+  Start-Sleep 1
+  Assert-True (-not $e.Process.HasExited) "WWWC is running (exit code $(if ($e.Process.HasExited) { '0x{0:X8}' -f $e.Process.ExitCode }))"
+  if (-not $e.Process.HasExited) {
+    $lv = Get-ListHandle $e
+    $row = [array]::IndexOf(@(Get-ListTitles $e), "page")
+    Assert-True ($row -ge 0) "the item is listed"
+    if ($row -ge 0) {
+      $path = [WwwcList]::GetText($lv, $row, 3)
+      Assert-True ($path -like "\*") "the path column shows the folder path ('$path')"
+    }
+    Assert-Equal 0 (Stop-Wwwc $e) "exit code"
+  }
+}
+
 Test-Case "FILE protocol compares full 64-bit sizes on sparse files" {
   $e = New-TestEnv "feat-file64" $BinDir
   $file = Join-Path $e.Dir "large.bin"

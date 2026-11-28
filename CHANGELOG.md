@@ -30,6 +30,14 @@
   searches from the root when its folder was deleted.
 - Moving or deleting one of several items with the same title and URL
   removes that item and keeps the others, instead of the first one.
+- A tool command line is no longer built in a 1024-byte buffer: item values
+  such as a long comment (`%m`) or title (`%t`) overflowed the stack.
+- Quotes in item values put into a tool command line (`%t`, `%m`, `%u` and
+  the others) are replaced (`'`, or `%22` in URLs), so a title or URL can no
+  longer close a quoted argument and add arguments or commands.
+- The update message waits until its item properties, tools, open and drag
+  and drop have finished before it refreshes or clears its list; a check
+  that ended meanwhile freed the items they were using.
 - Item.dat is written to a temporary file and then replaces the old file, so
   a failed or interrupted save no longer leaves an empty or partial Item.dat
   (the data of the folder was lost on the next start).
@@ -38,6 +46,13 @@
 - Tabs and line breaks in item fields (for example a tab pasted into the
   title in the item properties) are saved as spaces instead of shifting the
   fields of the record.
+- A folder that is being checked or shown in the properties can no longer
+  be moved by dragging it in the tree (only copied); it stayed in the tree
+  and was created again at the old place when it was saved.
+- WWWC no longer closes when a Windows shutdown is cancelled by another
+  application (WM_ENDSESSION with wParam FALSE).
+- The folder path column (11) in the main list shows the folder of the item
+  instead of crashing.
 - A DPI change no longer leaks GDI objects: the update icons added for each
   protocol were not destroyed, and the bitmap of the check animation in the
   toolbar was not deleted when the toolbar was rebuilt.
