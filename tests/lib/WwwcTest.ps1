@@ -58,6 +58,40 @@ public static class WwwcWin {
     SendMessageW(h, 0x000D, (IntPtr)(n + 1), sb);                    // WM_GETTEXT
     return sb.ToString();
   }
+
+  // state of a menu item of a window (MF_GRAYED | MF_DISABLED when disabled; menus can be read across processes)
+  [DllImport("user32.dll")] static extern IntPtr GetMenu(IntPtr h);
+  [DllImport("user32.dll")] static extern uint GetMenuState(IntPtr m, uint id, uint flags);
+  public static bool IsMenuItemEnabled(IntPtr window, int id) {
+    IntPtr menu = GetMenu(window);
+    if (menu == IntPtr.Zero) return false;
+    uint st = GetMenuState(menu, (uint)id, 0);   // MF_BYCOMMAND
+    return st != 0xFFFFFFFF && (st & 3) == 0;
+  }
+
+  // the text of a message box (a #32770 window with only static controls and the
+  // standard buttons IDOK - IDCONTINUE), or null for other windows
+  public static string MessageBoxText(IntPtr dlg) {
+    var cls = new StringBuilder(32);
+    GetClassName(dlg, cls, cls.Capacity);
+    if (cls.ToString() != "#32770") return null;
+    bool other = false, button = false;
+    string text = null;
+    EnumChildWindows(dlg, (h, l) => {
+      var c = new StringBuilder(32);
+      GetClassName(h, c, c.Capacity);
+      int id = GetDlgCtrlID(h);
+      if (c.ToString() == "Static") {
+        if (id == 0xFFFF) { string s = GetTextW(h); if (s.Length > 0) text = s; }
+      } else if (c.ToString() == "Button" && id >= 1 && id <= 11) {
+        button = true;
+      } else {
+        other = true;
+      }
+      return true;
+    }, IntPtr.Zero);
+    return (!other && button && text != null) ? text : null;
+  }
 }
 
 // Cross-process access to WWWC's list view (ANSI, 32-bit or 64-bit WWWC)
@@ -164,8 +198,26 @@ function Assert-True($Condition, [string]$Message) {
   if (-not $Condition) { [void]$script:CaseErrors.Add($Message) }
 }
 
+# Values are equal: strings case-sensitively, other values with -eq
+function Test-SameValue($A, $B) {
+  if ($A -is [string] -and $B -is [string]) { return $A -ceq $B }
+  if ($null -eq $A -or $null -eq $B) { return ($null -eq $A) -and ($null -eq $B) }
+  return $A -eq $B
+}
+
+# Arrays are compared element by element in order (-ne on an array filters its
+# elements instead, and ignores the case of strings)
 function Assert-Equal($Expected, $Actual, [string]$Message) {
-  if ($Expected -ne $Actual) {
+  $differ = $false
+  if ($Expected -is [array] -or $Actual -is [array]) {
+    $ea = @($Expected); $aa = @($Actual)
+    if ($ea.Count -ne $aa.Count) { $differ = $true }
+    else { for ($i = 0; $i -lt $ea.Count; $i++) { if (-not (Test-SameValue $ea[$i] $aa[$i])) { $differ = $true; break } } }
+    $Expected = "[" + ($ea -join ", ") + "]"; $Actual = "[" + ($aa -join ", ") + "]"
+  } else {
+    $differ = -not (Test-SameValue $Expected $Actual)
+  }
+  if ($differ) {
     $shownExpected = "$Expected"; $shownActual = "$Actual"
     if ($shownExpected.Length -gt 240) { $shownExpected = $shownExpected.Substring(0, 240) + "... (length $($shownExpected.Length))" }
     if ($shownActual.Length -gt 240) { $shownActual = $shownActual.Substring(0, 240) + "... (length $($shownActual.Length))" }
@@ -180,6 +232,16 @@ function Wait-Until([scriptblock]$Condition, [int]$TimeoutSeconds = 15) {
     Start-Sleep -Milliseconds 200
   }
   return [bool](& $Condition)
+}
+
+# Wait until the check has ended ("Stop all checks" (ID_MENUITEM_ALLCHECKEND) is
+# enabled only while a check runs). A check started by a posted command may not
+# have begun yet, so first wait a moment for it to begin.
+function Wait-CheckEnd($Env, [int]$TimeoutSeconds = 30) {
+  [void](Wait-Until { $Env.Process.HasExited -or [WwwcWin]::IsMenuItemEnabled($Env.Window, 40020) } 2)
+  $ended = Wait-Until { $Env.Process.HasExited -or -not [WwwcWin]::IsMenuItemEnabled($Env.Window, 40020) } $TimeoutSeconds
+  Assert-True $ended "the check ended within $TimeoutSeconds seconds"
+  Start-Sleep -Milliseconds 300
 }
 
 ## ---------------------------------------------------------------- AddressSanitizer
@@ -328,8 +390,16 @@ function Start-Wwwc($Env) {
 }
 
 # Close WWWC (answers the "exit while checking" question with Yes) and return the exit code
-function Stop-Wwwc($Env, [int]$TimeoutSeconds = 15) {
+# A message box that is still open fails the test (an error that was shown and
+# would otherwise be closed silently) unless -AllowMessageBox is given.
+function Stop-Wwwc($Env, [int]$TimeoutSeconds = 15, [switch]$AllowMessageBox) {
   if ($Env.Process.HasExited) { return $Env.Process.ExitCode }
+  if (-not $AllowMessageBox) {
+    foreach ($d in Get-Dialogs $Env) {
+      $text = [WwwcWin]::MessageBoxText($d.Handle)
+      if ($null -ne $text) { [void]$script:CaseErrors.Add("unexpected message box '$($d.Title)': $($text -replace '\s+', ' ')") }
+    }
+  }
   Get-Dialogs $Env | ForEach-Object { [void][WwwcWin]::PostMessage($_.Handle, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero) }
   [void][WwwcWin]::PostMessage($Env.Window, 0x0010, [IntPtr]::Zero, [IntPtr]::Zero)
   $deadline = (Get-Date).AddSeconds($TimeoutSeconds)

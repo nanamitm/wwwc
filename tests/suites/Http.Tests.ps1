@@ -9,7 +9,7 @@ Test-Case "check updates size and date" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /target " } 15) "server received GET /target"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $i = Get-SavedItem $e "page"
   Assert-Equal "67" $i.Size "size"
@@ -23,7 +23,7 @@ Test-Case "redirects (302 relative, 301 absolute)" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { @((Get-ServerLog $m) -match "^GET /target ").Count -ge 2 } 20) "both redirects followed to /target"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   foreach ($t in "r302", "r301") {
     $i = Get-SavedItem $e $t
@@ -38,7 +38,7 @@ Test-Case "redirects (303, 308, scheme-relative)" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { @((Get-ServerLog $m) -match "^GET /target ").Count -ge 3 } 20) "all redirects followed to /target ($(Get-ServerLog $m))"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   foreach ($t in "r303", "r308", "rproto") {
     $i = Get-SavedItem $e $t
@@ -53,7 +53,7 @@ Test-Case "redirect to a non-HTTP URL is refused" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /r301bad " } 15) "page was checked"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $i = Get-SavedItem $e "bad"
   Assert-Equal (Url "/r301bad") $i.Url "check URL is not changed"
@@ -65,7 +65,7 @@ Test-Case "connection error is stored on the item" {
   $e = New-TestEnv "http-error" $BinDir
   Set-Items $e @(ItemLine "refused" "http://127.0.0.1:1/x")
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
-  Start-Sleep 6
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $i = Get-SavedItem $e "refused"
   Assert-True (($i.Status -band 2) -ne 0) "status has ST_ERROR (status $($i.Status))"
@@ -81,7 +81,7 @@ Test-Case "a protocol whose DLL cannot be loaded does not take over other URLs" 
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /missingdll " } 15) "the HTTP item is checked ($(Get-ServerLog $m))"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $i = Get-SavedItem $e "page"
   Assert-Equal "67" $i.Size "size"
@@ -163,7 +163,7 @@ Test-Case "proxy set in the item properties is used" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET http://wwwc-item-proxy.invalid/x " } 15) "request went through the item's proxy ($(Get-ServerLog $m))"
-  Start-Sleep 1
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   Assert-Equal "" (Get-SavedItem $e "viaproxy").ErrStatus "no error"
 }
@@ -178,7 +178,7 @@ Test-Case "Windows proxy settings" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { (Get-ServerLog $m) -match "^GET /sysproxy " } 15) "page was checked ($(Get-ServerLog $m))"
-  Assert-True ((Get-ServerLog $m) -match "^GET /sysproxy auth=None proxy_auth=None") "no proxy credentials were sent to the site"
+  Assert-True ((Get-ServerLog $m) -cmatch "^GET /sysproxy auth=None proxy_auth=None") "no proxy credentials were sent to the site"
   Start-Sleep 1
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
@@ -224,7 +224,7 @@ Test-Case "HTTP/1.1 chunked body is not decoded twice" {
   Set-Items $e @($fields -join "`t")
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   [void](Wait-Until { (Get-ServerLog) -match "^GET /chunked " } 10)
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $item = Get-SavedItem $e "chunked"
   Assert-Equal "8" $item.Size "decoded body length excludes the header and NUL"

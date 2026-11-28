@@ -94,7 +94,7 @@ Test-Case "filter on a Shift_JIS page that becomes longer in UTF-8" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   [void](Wait-Until { (Get-ServerLog $m) -match "^GET /filter-sjis " } 15)
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-True (-not $e.Process.HasExited) "WWWC is running"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $expected = $script:Enc.GetByteCount("<html><body><div>" + ("`u{3042}" * 3000) + "</div></body></html>")
@@ -110,7 +110,7 @@ function Test-FilterSize([string]$Name, [string]$Filter, [int]$Expected) {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   [void](Wait-Until { (Get-ServerLog $m) -match "^GET /filter-text " } 15)
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   Assert-Equal "$Expected" (Get-SavedItem $e "filtered").Size "size after the filter"
 }
@@ -143,10 +143,10 @@ Test-Case "Japanese passwords saved by older versions" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   [void](Wait-Until { @((Get-ServerLog $m) -match "^GET /auth-").Count -ge 2 } 15)
-  Start-Sleep 1
+  Wait-CheckEnd $e
   $log = Get-ServerLog $m
-  Assert-True ($log -match [regex]::Escape("GET /auth-legacy auth='tester:$PassJa'")) "old format password ($log)"
-  Assert-True ($log -match [regex]::Escape("GET /auth-dp1 auth='tester:$PassJa'")) "1.2.0 format password ($log)"
+  Assert-True ($log -cmatch [regex]::Escape("GET /auth-legacy auth='tester:$PassJa'")) "old format password ($log)"
+  Assert-True ($log -cmatch [regex]::Escape("GET /auth-dp1 auth='tester:$PassJa'")) "1.2.0 format password ($log)"
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
 }
 
@@ -164,7 +164,7 @@ Test-Case "long Japanese folder and item names" {
   $m = Get-ServerMark
   [void](Start-Wwwc $e); Send-Command $e $CMD_ALLCHECK
   Assert-True (Wait-Until { @((Get-ServerLog $m) -match "^GET /(deep-item|long-title) ").Count -ge 2 } 20) "items in the deep folder and with the long name are checked ($(Get-ServerLog $m))"
-  Start-Sleep 2
+  Wait-CheckEnd $e
   Assert-Equal 0 (Stop-Wwwc $e) "exit code"
   $deepItem = (Read-Utf8 (Join-Path $deep "Item.dat")) -split "`t"
   Assert-Equal "67" $deepItem[2] "the item in the deep folder is saved with the check result"
