@@ -53,6 +53,14 @@
   application (WM_ENDSESSION with wParam FALSE).
 - The folder path column (11) in the main list shows the folder of the item
   instead of crashing.
+- filter.txt: a filter on a last line without a line break is applied,
+  lines separated by LF only no longer run into the next line, and files
+  with CR-only line breaks are read (the filters were counted by LF).
+- A backslash in a filter string followed by a character other than
+  `\\`, `n` and `t` is kept (for example `C:\data`); it was removed with
+  that character.
+- The character set detection checks the upper bound of the second byte of
+  EUC-JP (0xFE); a second byte 0xFF was taken as EUC-JP.
 - Add regression tests for HTTP credentials and redirects: the proxy password
   goes on CONNECT for HTTPS (the test server can require proxy credentials and
   answers CONNECT), the item password is not sent to another server a

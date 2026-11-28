@@ -157,6 +157,11 @@ static char *ConvStr(char *buf)
 			case 't':
 				*(r++) = '\t';
 				break;
+			default:
+				//\\、\n、\t 以外はそのまま (C:\data などのパス)
+				*(r++) = '\\';
+				*(r++) = *p;
+				break;
 			}
 		}else{
 			*(r++) = *p;
@@ -466,8 +471,8 @@ static char *AllocItemStr(char *buf, char **ret)
 		return buf;
 	}
 
-	//文字の区切り位置の取得
-	for(EndPoint = buf; *EndPoint != '\t' && *EndPoint != '\r' && *EndPoint != '\0'; EndPoint++);
+	//文字の区切り位置の取得 (LF だけの改行でも項目は行の終わりまで)
+	for(EndPoint = buf; *EndPoint != '\t' && *EndPoint != '\r' && *EndPoint != '\n' && *EndPoint != '\0'; EndPoint++);
 
 	*ret = (char *)LocalAlloc(LMEM_FIXED, EndPoint - buf + 2);
 	if(*ret == NULL){
@@ -535,12 +540,15 @@ BOOL ReadFilterFile(char *cpath)
 	CloseHandle(hFile);
 	*(buf + FileSize) = '\0';
 
-	//行数のカウント
+	//行数のカウント (CR、LF のどちらでも区切り、最後の行に改行が無くても数える)
 	FilterCount = 0;
-	for(p = buf; *p != '\0'; p++){
-		if(*p == '\n'){
-			FilterCount++;
+	for(p = buf; *p != '\0'; ){
+		for(; *p == '\r' || *p == '\n'; p++);
+		if(*p == '\0'){
+			break;
 		}
+		FilterCount++;
+		for(; *p != '\0' && *p != '\r' && *p != '\n'; p++);
 	}
 	if(FilterCount == 0){
 		LocalFree(buf);
